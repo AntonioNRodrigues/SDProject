@@ -8,7 +8,6 @@ struct list *list_create() {
 	list *l = (list *) malloc(sizeof(list));
 	if (l == NULL)
 		return NULL;
-
 	l->head = NULL;
 	l->size = 0;
 
@@ -35,20 +34,22 @@ void list_destroy(struct list_t *list) {
  * a nova entry deve ser colocada no local correto.
  * Retorna 0 (OK) ou -1 (erro)
  */
-int list_add(struct list_t *list, struct entry_t *entry){
+int list_add(struct list_t *list, struct entry_t *entry) {
 
 }
 
 /* Elimina da lista um elemento com a chave key. 
  * Retorna 0 (OK) ou -1 (erro)
  */
-int list_remove(struct list_t *list, char* key);
+int list_remove(struct list_t *list, char* key){
+
+}
 
 /* Obtem um elemento da lista que corresponda à chave key. 
  * Retorna a referência do elemento na lista (ou seja, uma alteração
  * implica alterar o elemento na lista). 
  */
-struct entry_t *list_get(struct list_t *list, char *key);
+struct entry_t *list_get(struct list_t *list, char *key){
 
 /* Retorna o tamanho (numero de elementos) da lista 
  * Retorna -1 em caso de erro.  */
