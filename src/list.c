@@ -34,23 +34,33 @@ void list_destroy(struct list_t *list) {
  * a nova entry deve ser colocada no local correto.
  * Retorna 0 (OK) ou -1 (erro)
  */
-int list_add(struct list_t *list, struct entry_t *entry) {
-
-}
+int list_add(struct list_t *list, struct entry_t *entry);
 
 /* Elimina da lista um elemento com a chave key. 
  * Retorna 0 (OK) ou -1 (erro)
  */
-int list_remove(struct list_t *list, char* key){
-
-}
+int list_remove(struct list_t *list, char* key);
 
 /* Obtem um elemento da lista que corresponda à chave key. 
  * Retorna a referência do elemento na lista (ou seja, uma alteração
  * implica alterar o elemento na lista). 
+ * --->SE NAO ESTIVER PRESENTE O QUE DEVOLVE!!!!!!!!!<------
  */
-struct entry_t *list_get(struct list_t *list, char *key){
+struct entry_t *list_get(struct list_t *list, char *key) {
+	if (list == NULL || key == NULL)
+		return NULL;
 
+	node *current_node = list->head;
+
+	while (current_node != NULL) {
+		if (strcmp(current_node->entry->key, key) == 0) {
+			return current_node->entry;
+		}
+		current_node = current_node->next;
+	}
+	return NULL;
+
+}
 /* Retorna o tamanho (numero de elementos) da lista 
  * Retorna -1 em caso de erro.  */
 int list_size(struct list_t *list) {
@@ -60,11 +70,38 @@ int list_size(struct list_t *list) {
 /* Devolve um array de char * com a cópia de todas as keys da 
  * tabela, e um último elemento a NULL.
  */
-char **list_get_keys(struct list_t *list);
+char **list_get_keys(struct list_t *list) {
+	if (list == NULL || list->head == NULL) {
+		return NULL;
+	}
+	char **list_keys = (char **) malloc(sizeof(char *) * (list->size + 1));
+	node * current_node = list->head;
+	int i = 0;
+	while (current_node != NULL) {
+		list_keys[i] = strdup(current_node->entry->key);
+		i++;
+
+		//revert cycle to delete all memory if strdup fails
+
+		current_node = current_node->next;
+	}
+	list_keys[i + 1] = NULL;
+	return list_keys;
+}
 
 /* Liberta a memoria reservada por list_get_keys.
  */
-void list_free_keys(char **keys);
+void list_free_keys(char **keys) {
+	if (keys != NULL) {
+		int i = 0;
+		while (keys[i] != NULL) {
+			free(keys[i]);
+			i++;
+		}
+		free(keys);
+	}
+
+}
 
 /**
  *
