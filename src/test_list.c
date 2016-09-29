@@ -113,7 +113,6 @@ int testAddVarios() {
 
 	}
 
-
 	assert(list_size(list) == 1024);
 	result = (list_size(list) == 1024);
 
@@ -335,7 +334,7 @@ int testGetKeys() {
                  strcmp(keys[1], e2->key) == 0 && keys[1] != e2->key && 
                  strcmp(keys[2], e3->key) == 0 && keys[2] != e3->key && 
                  keys[3] == NULL;
-	list_get_keys(list);
+
 	list_free_keys(keys);
 	list_destroy(list);
 	entry_destroy(e1);

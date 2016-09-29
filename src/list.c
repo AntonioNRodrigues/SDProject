@@ -172,7 +172,7 @@ char **list_get_keys(struct list_t *list) {
 	while (current_node != NULL) {
 		list_keys[i] = strdup(current_node->entry->key);
 		i++;
-		printf("%s ", current_node->entry->key);
+		//printf("%s ", current_node->entry->key);
 		//revert cycle to delete all memory if strdup fails
 
 		current_node = current_node->next;

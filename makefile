@@ -41,3 +41,14 @@ $(OBJ)/test_list.o: $(SRC)/test_list.c $(INC)/list.h
 
 clean:
 	rm -fr *.o test_data test_entry test_list
+	
+valgrindData:
+	valgrind -v --leak-check=full --track-origins=yes --log-file=valgrindData.log ./testData
+
+valgrindEntry:
+	valgrind -v --leak-check=full --track-origins=yes --log-file=valgrindEntry.log ./testEntry
+
+valgrindList:
+	valgrind -v --leak-check=full --track-origins=yes --log-file=valgrindList.log ./testList
+
+	
