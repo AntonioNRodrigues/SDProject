@@ -8,14 +8,18 @@ FLAGS = -I$(INC) -lm -Wall
 
 T_DATA_OBJ = $(OBJ)/data.o $(OBJ)/test_data.o
 T_ENTRY_OBJ = $(OBJ)/data.o $(OBJ)/entry.o $(OBJ)/test_entry.o
+T_LIST_OBJ = $(OBJ)/data.o $(OBJ)/entry.o $(OBJ)/list.o $(OBJ)/test_list.o
 
-all: clean test_data test_entry
+all: clean test_data test_entry test_list
 
 test_data: $(T_DATA_OBJ) 
 	$(CC) $(T_DATA_OBJ) -o testData
 
 test_entry:$(T_ENTRY_OBJ)
 	$(CC) $(T_ENTRY_OBJ) -o testEntry
+
+test_list: $(T_LIST_OBJ)
+	$(CC) $(T_LIST_OBJ) -o testList
 	
 $(OBJ)/data.o: $(SRC)/data.c $(INC)/data.h 
 	$(CC) $(FLAGS) -c $(SRC)/data.c -o $(OBJ)/data.o
@@ -23,11 +27,17 @@ $(OBJ)/data.o: $(SRC)/data.c $(INC)/data.h
 $(OBJ)/entry.o: $(INC)/data.h $(SRC)/entry.c $(INC)/entry.h
 	$(CC) $(FLAGS) -c $(SRC)/entry.c -o $(OBJ)/entry.o
 	
+$(OBJ)/list.o: $(SRC)/list.c $(INC)/list.h $(INC)/list-private.h
+	$(CC) $(FLAGS) -c $(SRC)/list.c -o $(OBJ)/list.o
+	
 $(OBJ)/test_data.o: $(SRC)/test_data.c $(INC)/data.h
 	$(CC) $(FLAGS) -c $(SRC)/test_data.c -o $(OBJ)/test_data.o
 	
 $(OBJ)/test_entry.o: $(SRC)/test_entry.c $(INC)/entry.h $(INC)/data.h
 	$(CC) $(FLAGS) -c $(SRC)/test_entry.c -o $(OBJ)/test_entry.o
 
+$(OBJ)/test_list.o: $(SRC)/test_list.c $(INC)/list.h
+	$(CC) $(FLAGS) -c $(SRC)/test_list.c -o $(OBJ)/test_list.o
+
 clean:
-	rm -fr *.o test_data test_entry 
+	rm -fr *.o test_data test_entry test_list

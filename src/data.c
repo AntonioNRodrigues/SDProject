@@ -16,7 +16,6 @@ struct data_t *data_create(int size) {
 	if (newData == NULL)
 		return NULL;
 	//populate the values for the newData
-	newData->datasize = size;
 	newData->data = malloc(size);
 
 	//If the allocation of sapce for the newData-Data has gone wrong return NULL
@@ -24,6 +23,7 @@ struct data_t *data_create(int size) {
 		free(newData);
 		return NULL;
 	}
+	newData->datasize = size;
 
 	return newData;
 

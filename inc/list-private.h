@@ -1,31 +1,34 @@
-#ifndef _LIST_H
-#define _LIST_H
+#ifndef _LISTPRIVATE_H
+#define _LISTPRIVATE_H
 
 #include "entry.h"
+#include "list.h"
+#include "data.h"
 
-typedef struct node_t {
+struct node_t {
 	struct node_t *next;
 	struct entry_t *entry;
-} node;
+};
 
-typedef struct list_t {
+struct list_t {
 	int size;
 	struct node_t *head;
-} list;
+};
 /**
  *create an empty node
  */
-node *create_empty_node();
+struct node_t *create_empty_node();
 /**
  * function to create a node
  */
-node *create_node(struct entry_t *entry);
+struct node_t *create_node(struct entry_t *entry);
 /**
  * function to create a duplicate of the node
  */
-node *dup_node(node *n);
+struct node_t *dup_node(struct node_t *n);
 /**
  * function to destroy a node and its content
  */
-void destroy_node(node *n);
+void destroy_node(struct node_t *n);
+
 #endif

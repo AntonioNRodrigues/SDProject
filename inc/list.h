@@ -2,8 +2,7 @@
 #define _LIST_H
 
 #include "entry.h"
-#include "list-private.h"
-//truct list_t; /*A definir pelo grupo em list-private.h*/
+struct list_t; /*A definir pelo grupo em list-private.h*/
 
 /* Cria uma nova lista. Em caso de erro, retorna NULL.
  */

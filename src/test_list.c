@@ -110,7 +110,9 @@ int testAddVarios() {
 
 		data_destroy(data);
 		list_add(list, entry[i]);
+
 	}
+
 
 	assert(list_size(list) == 1024);
 	result = (list_size(list) == 1024);
@@ -125,7 +127,6 @@ int testAddVarios() {
 	}
 
 	list_destroy(list);
-
 	printf(" %s\n", result ? "passou" : "não passou");
 	return result;
 }
@@ -334,7 +335,7 @@ int testGetKeys() {
                  strcmp(keys[1], e2->key) == 0 && keys[1] != e2->key && 
                  strcmp(keys[2], e3->key) == 0 && keys[2] != e3->key && 
                  keys[3] == NULL;
-
+	list_get_keys(list);
 	list_free_keys(keys);
 	list_destroy(list);
 	entry_destroy(e1);
