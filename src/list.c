@@ -61,13 +61,14 @@ int list_add(struct list_t *list, struct entry_t *entry) {
 			//if the key is in already in the list
 			if (strcmp(current->entry->key, new_node->entry->key) == 0) {
 				//update the value of the list
-				free(new_node);
-				return -1;
+				current->entry = entry_dup(entry);
+				destroy_node(new_node);
+				return 0;
 			}
 			//add the node in the front of the list
-			if (strcmp(current->entry->key, new_node->entry->key) > 0) {
-				new_node->next = current;
+			if (strcmp(current->entry->key, new_node->entry->key) < 0) {
 				list->head = new_node;
+				new_node->next = current;
 				list->size = list->size + 1;
 				return 0;
 
@@ -79,9 +80,8 @@ int list_add(struct list_t *list, struct entry_t *entry) {
 				return 0;
 			}
 			//is the key is the wright position insert
-			if (strcmp(current->entry->key, new_node->entry->key) < 0
-					&& strcmp(current->next->entry->key, new_node->entry->key)
-							> 0) {
+			if (strcmp(current->entry->key, new_node->entry->key) > 0
+			&& strcmp(current->next->entry->key, new_node->entry->key) < 0) {
 				struct node_t *temp = current->next;
 				current->next = new_node;
 				new_node->next = temp;
