@@ -31,3 +31,8 @@
 # Debug files
 *.dSYM/
 *.su
+/testData
+/testEntry
+/testList
+/.valgrindEntry.log.swp
+/.valgrindList.log.swp

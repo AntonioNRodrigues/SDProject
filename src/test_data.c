@@ -18,6 +18,9 @@ int testCreate() {
 	assert(data_create(-1) == NULL);
 	result = (data_create(-1) == NULL);
 
+	assert(data_create(0) == NULL);
+	result = result && (data_create(0) == NULL);
+
 	if ((data = data_create(1024)) == NULL)
 		error(1, errno, "  O teste não pode prosseguir");
 
@@ -43,6 +46,9 @@ int testCreate2() {
 
 	assert(data_create2(-1, data_s) == NULL);
 	result = (data_create2(-1, data_s) == NULL);
+
+        assert(data_create2(0, data_s) == NULL);
+	result = result && (data_create2(0, data_s) == NULL);
 
 	assert(data_create2(data_size, NULL) == NULL);
 	result = result && (data_create2(data_size, NULL) == NULL);

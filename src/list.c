@@ -168,6 +168,10 @@ char **list_get_keys(struct list_t *list) {
 		return NULL;
 	}
 	char **list_keys = (char **) malloc(sizeof(char *) * (list->size + 1));
+	if(list_keys  == NULL){
+		return NULL;
+	}
+
 	struct node_t* current_node = list->head;
 	int i = 0;
 	while (current_node != NULL) {
@@ -181,8 +185,7 @@ char **list_get_keys(struct list_t *list) {
 		//revert cycle to delete all memory if strdup fails
 		current_node = current_node->next;
 	}
-	list_keys[list->size+=1] = NULL;
-	free(current_node);
+	list_keys[list->size] = NULL;
 	return list_keys;
 }
 

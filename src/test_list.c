@@ -110,7 +110,6 @@ int testAddVarios() {
 
 		data_destroy(data);
 		list_add(list, entry[i]);
-
 	}
 
 	assert(list_size(list) == 1024);
@@ -126,6 +125,7 @@ int testAddVarios() {
 	}
 
 	list_destroy(list);
+
 	printf(" %s\n", result ? "passou" : "não passou");
 	return result;
 }
@@ -160,25 +160,25 @@ int testRemoveCabeca() {
 	list_add(list,e2);
 	list_add(list,e3);
 
-	assert(list_remove(NULL, "abc") < 0);
+	assert(list_remove(NULL, "ghi") < 0);
 	result = (list_remove(NULL, "abc") < 0);
 
 	assert(list_remove(list, NULL) < 0);
 	result = result && (list_remove(list, NULL) < 0);
 
 	result = result &&
-		 list_remove(list, "abc") == 0 &&
+		 list_remove(list, "ghi") == 0 &&
 		 list_size(list) == 2;
-
+ 
 	entry = list_get(list, "def");
 	result = result &&
 		 entry != e2 &&
 		 strcmp(entry->key, e2->key) == 0;
 
-	entry = list_get(list, "ghi");
+	entry = list_get(list, "abc");
 	result = result &&
-		 entry != e3 &&
-		 strcmp(entry->key, e3->key) == 0;
+		 entry != e1 &&
+		 strcmp(entry->key, e1->key) == 0;
 
 	list_destroy(list);
 	entry_destroy(e1);
@@ -219,7 +219,7 @@ int testRemoveCauda() {
 	list_add(list,e2);
 	list_add(list,e3);
 
-	result = list_remove(list, "ghi") == 0 &&
+	result = list_remove(list, "abc") == 0 &&
 		 list_size(list) == 2;
 
 	entry = list_get(list, "def");
@@ -227,10 +227,10 @@ int testRemoveCauda() {
 		 entry != e2 &&
 		 strcmp(entry->key, e2->key) == 0;
 
-	entry = list_get(list, "abc");
+	entry = list_get(list, "ghi");
 	result = result &&
-		 entry != e1 &&
-		 strcmp(entry->key, e1->key) == 0;
+		 entry != e3 &&
+		 strcmp(entry->key, e3->key) == 0;
 
 	list_destroy(list);
 	entry_destroy(e1);
@@ -274,15 +274,15 @@ int testRemoveMeio() {
 	result = list_remove(list, "def") == 0 &&
 		 list_size(list) == 2;
 
-	entry = list_get(list, "abc");
-	result = result &&
-		 entry != e1 &&
-		 strcmp(entry->key, e1->key) == 0;
-
 	entry = list_get(list, "ghi");
 	result = result &&
 		 entry != e3 &&
 		 strcmp(entry->key, e3->key) == 0;
+
+	entry = list_get(list, "abc");
+	result = result &&
+		 entry != e1 &&
+		 strcmp(entry->key, e1->key) == 0;
 
 	list_destroy(list);
 	entry_destroy(e1);
@@ -330,9 +330,9 @@ int testGetKeys() {
 	if ((keys = list_get_keys(list)) == NULL)
 		error(1, errno, "  O teste não pode prosseguir");
 
-	result = strcmp(keys[0], e1->key) == 0 && keys[0] != e1->key &&
+	result = strcmp(keys[0], e3->key) == 0 && keys[0] != e3->key &&
                  strcmp(keys[1], e2->key) == 0 && keys[1] != e2->key && 
-                 strcmp(keys[2], e3->key) == 0 && keys[2] != e3->key && 
+                 strcmp(keys[2], e1->key) == 0 && keys[2] != e1->key && 
                  keys[3] == NULL;
 
 	list_free_keys(keys);
