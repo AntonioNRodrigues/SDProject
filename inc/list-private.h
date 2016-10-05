@@ -15,10 +15,6 @@ struct list_t {
 	struct node_t *head;
 };
 /**
- *create an empty node
- */
-struct node_t *create_empty_node();
-/**
  * function to create a node
  */
 struct node_t *create_node(struct entry_t *entry);

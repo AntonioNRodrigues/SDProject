@@ -12,7 +12,6 @@ struct list_t *list_create() {
 		return NULL;
 	l->head = NULL;
 	l->size = 0;
-
 	return l;
 }
 
@@ -21,7 +20,7 @@ struct list_t *list_create() {
  */
 void list_destroy(struct list_t *list) {
 	if (list != NULL) {
-		//node pointer to a tempNode
+		//node pointer to a temp
 		struct node_t *temp;
 		while (list->head != NULL) {
 			temp = list->head;
@@ -49,19 +48,20 @@ int list_add(struct list_t *list, struct entry_t *entry) {
 	//if the list is empty put he node in the list
 	if (list->head == NULL) {
 		list->head = new_node;
-		list->size = 1;
+		list->size += 1;
 		return 0;
 	} else {
 		//pointer of node to the front of the list
 		struct node_t *current = list->head;
 		//if the next has only um element
 		//pointer of node to the back of the list
-
 		while (current != NULL) {
 			//if the key is in already in the list
 			if (strcmp(current->entry->key, new_node->entry->key) == 0) {
 				//update the value of the list
+				entry_destroy(current->entry);
 				current->entry = entry_dup(entry);
+				//---------------------->
 				destroy_node(new_node);
 				return 0;
 			}
@@ -69,7 +69,7 @@ int list_add(struct list_t *list, struct entry_t *entry) {
 			if (strcmp(current->entry->key, new_node->entry->key) < 0) {
 				list->head = new_node;
 				new_node->next = current;
-				list->size = list->size + 1;
+				list->size += 1;
 				return 0;
 
 			}
@@ -81,11 +81,12 @@ int list_add(struct list_t *list, struct entry_t *entry) {
 			}
 			//is the key is the wright position insert
 			if (strcmp(current->entry->key, new_node->entry->key) > 0
-			&& strcmp(current->next->entry->key, new_node->entry->key) < 0) {
+					&& strcmp(current->next->entry->key, new_node->entry->key)
+							< 0) {
 				struct node_t *temp = current->next;
 				current->next = new_node;
 				new_node->next = temp;
-				list->size = list->size + 1;
+				list->size += 1;
 				return 0;
 			}
 			//iterate over the list
@@ -113,7 +114,7 @@ int list_remove(struct list_t *list, char* key) {
 	if (strcmp(current->entry->key, key) == 0) {
 		list->head = current->next;
 		destroy_node(current);
-		list->size = list->size -1;
+		list->size = list->size - 1;
 		return 0;
 	}
 	// if the key its not in the head iterate over the list
@@ -125,7 +126,7 @@ int list_remove(struct list_t *list, char* key) {
 			temp = current->next;
 			current->next = temp->next;
 			destroy_node(temp);
-			list->size = list->size -1;
+			list->size = list->size - 1;
 			return 0;
 		}
 		current = current->next;
@@ -171,13 +172,17 @@ char **list_get_keys(struct list_t *list) {
 	int i = 0;
 	while (current_node != NULL) {
 		list_keys[i] = strdup(current_node->entry->key);
+		if(list_keys[i]== NULL){
+			list_free_keys(list_keys);
+			free(current_node);
+			return NULL;
+		}
 		i++;
-		//printf("%s ", current_node->entry->key);
 		//revert cycle to delete all memory if strdup fails
-
 		current_node = current_node->next;
 	}
-	list_keys[i + 1] = NULL;
+	list_keys[list->size+=1] = NULL;
+	free(current_node);
 	return list_keys;
 }
 
@@ -196,16 +201,6 @@ void list_free_keys(char **keys) {
 }
 
 /**
- *
- */
-struct node_t *create_empty_node() {
-	struct node_t *no = (struct node_t *) malloc(sizeof(struct node_t));
-	no->entry = NULL;
-	no->next = NULL;
-	return no;
-}
-
-/**
  * function to create a node
  */
 struct node_t *create_node(struct entry_t *entry) {
@@ -217,6 +212,9 @@ struct node_t *create_node(struct entry_t *entry) {
 		return NULL;
 	}
 	no->entry = entry_dup(entry);
+	if (no->entry == NULL) {
+
+	}
 	no->next = NULL;
 	return no;
 }
