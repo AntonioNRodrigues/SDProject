@@ -1,3 +1,10 @@
+/*
+ * Grupo 33
+ * Miguel Vale n.39279
+ * António Rodrigues n.º40853
+ * Ricardo Veloso n.º44842
+ */
+
 #include <stdlib.h>
 #include <string.h>
 #include "entry.h"
@@ -60,6 +67,7 @@ int list_add(struct list_t *list, struct entry_t *entry) {
 			if (strcmp(current->entry->key, new_node->entry->key) == 0) {
 				//update the value of the list
 				entry_destroy(current->entry);
+
 				current->entry = entry_dup(entry);
 				//---------------------->
 				destroy_node(new_node);
@@ -182,7 +190,6 @@ char **list_get_keys(struct list_t *list) {
 			return NULL;
 		}
 		i++;
-		//revert cycle to delete all memory if strdup fails
 		current_node = current_node->next;
 	}
 	list_keys[list->size] = NULL;

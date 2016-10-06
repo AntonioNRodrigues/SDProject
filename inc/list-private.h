@@ -1,3 +1,11 @@
+/*
+ * Grupo 33
+ * Miguel Vale n.39279
+ * António Rodrigues n.º40853
+ * Ricardo Veloso n.º44842
+ */
+
+
 #ifndef _LISTPRIVATE_H
 #define _LISTPRIVATE_H
 

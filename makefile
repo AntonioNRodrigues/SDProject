@@ -3,6 +3,7 @@ INC = $(ROOT)/inc
 OBJ = $(ROOT)/obj
 SRC = $(ROOT)/src
 
+GG = grupo33
 CC = gcc
 FLAGS = -I$(INC) -lm -Wall
 
@@ -41,7 +42,7 @@ $(OBJ)/test_list.o: $(SRC)/test_list.c $(INC)/list.h
 
 clean:
 	rm -fr *.o test_data test_entry test_list
-	
+		
 valgrindData:
 	valgrind -v --leak-check=full --track-origins=yes --log-file=valgrindData.log ./testData
 
