@@ -42,6 +42,9 @@ $(OBJ)/test_list.o: test_list.c $(INC)/list.h
 
 clean:
 	rm -fr $(OBJ)/*.o test_data test_entry test_list
+	
+zip_work:
+	zip -r $(GG) $(OBJ) $(INC)/*.h $(SRC)/*.c include makefile	
 		
 valgrindData:
 	valgrind -v --leak-check=full --track-origins=yes --log-file=valgrindData.log ./testData
