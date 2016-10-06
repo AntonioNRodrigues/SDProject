@@ -14,13 +14,13 @@ T_LIST_OBJ = $(OBJ)/data.o $(OBJ)/entry.o $(OBJ)/list.o $(OBJ)/test_list.o
 all: clean test_data test_entry test_list
 
 test_data: $(T_DATA_OBJ) 
-	$(CC) $(T_DATA_OBJ) -o testData
+	$(CC) $(T_DATA_OBJ) -o test_data
 
 test_entry:$(T_ENTRY_OBJ)
-	$(CC) $(T_ENTRY_OBJ) -o testEntry
+	$(CC) $(T_ENTRY_OBJ) -o test_entry
 
 test_list: $(T_LIST_OBJ)
-	$(CC) $(T_LIST_OBJ) -o testList
+	$(CC) $(T_LIST_OBJ) -o test_list
 	
 $(OBJ)/data.o: $(SRC)/data.c $(INC)/data.h 
 	$(CC) $(FLAGS) -c $(SRC)/data.c -o $(OBJ)/data.o
@@ -31,17 +31,17 @@ $(OBJ)/entry.o: $(INC)/data.h $(SRC)/entry.c $(INC)/entry.h
 $(OBJ)/list.o: $(SRC)/list.c $(INC)/list.h $(INC)/list-private.h
 	$(CC) $(FLAGS) -c $(SRC)/list.c -o $(OBJ)/list.o
 	
-$(OBJ)/test_data.o: $(SRC)/test_data.c $(INC)/data.h
-	$(CC) $(FLAGS) -c $(SRC)/test_data.c -o $(OBJ)/test_data.o
+$(OBJ)/test_data.o: test_data.c $(INC)/data.h
+	$(CC) $(FLAGS) -c test_data.c -o $(OBJ)/test_data.o
 	
-$(OBJ)/test_entry.o: $(SRC)/test_entry.c $(INC)/entry.h $(INC)/data.h
-	$(CC) $(FLAGS) -c $(SRC)/test_entry.c -o $(OBJ)/test_entry.o
+$(OBJ)/test_entry.o: test_entry.c $(INC)/entry.h $(INC)/data.h
+	$(CC) $(FLAGS) -c test_entry.c -o $(OBJ)/test_entry.o
 
-$(OBJ)/test_list.o: $(SRC)/test_list.c $(INC)/list.h
-	$(CC) $(FLAGS) -c $(SRC)/test_list.c -o $(OBJ)/test_list.o
+$(OBJ)/test_list.o: test_list.c $(INC)/list.h
+	$(CC) $(FLAGS) -c test_list.c -o $(OBJ)/test_list.o
 
 clean:
-	rm -fr *.o test_data test_entry test_list
+	rm -fr $(OBJ)/*.o test_data test_entry test_list
 		
 valgrindData:
 	valgrind -v --leak-check=full --track-origins=yes --log-file=valgrindData.log ./testData
