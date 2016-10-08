@@ -47,12 +47,12 @@ zip_work:
 	zip -r $(GG) $(OBJ) $(INC)/*.h $(SRC)/*.c *.md makefile	
 		
 valgrindData:
-	valgrind -v --leak-check=full --track-origins=yes --log-file=valgrindData.log ./testData
+	valgrind -v --leak-check=full --track-origins=yes --log-file=valgrindData.log ./test_data
 
 valgrindEntry:
-	valgrind -v --leak-check=full --track-origins=yes --log-file=valgrindEntry.log ./testEntry
+	valgrind -v --leak-check=full --track-origins=yes --log-file=valgrindEntry.log ./test_entry
 
 valgrindList:
-	valgrind -v --leak-check=full --track-origins=yes --log-file=valgrindList.log ./testList
+	valgrind -v --leak-check=full --track-origins=yes --log-file=valgrindList.log ./test_list
 
 	

@@ -14,9 +14,11 @@
  * a estrutura e aloca a memória necessária).
  */
 struct entry_t *entry_create(char *key, struct data_t *data) {
+	//check if params are valid
 	if (key == NULL || data == NULL) {
 		return NULL;
 	}
+	//allocate space for a new entry
 	struct entry_t *newEntry = (struct entry_t *) malloc(
 			sizeof(struct entry_t));
 	if (newEntry == NULL) {
@@ -28,8 +30,8 @@ struct entry_t *entry_create(char *key, struct data_t *data) {
 
 	if (newEntry->key == NULL) {
 		free(newEntry);
-		// use entry_destroy instead of free;
 	}
+
 	newEntry->value = data_dup(data);
 
 	if (newEntry->value == NULL) {

@@ -14,12 +14,12 @@
 /* Cria uma nova lista. Em caso de erro, retorna NULL.
  */
 struct list_t *list_create() {
-	struct list_t *l = (struct list_t*) malloc(sizeof(struct list_t));
-	if (l == NULL)
+	struct list_t *list = (struct list_t *) malloc(sizeof(struct list_t));
+	if (list == NULL)
 		return NULL;
-	l->head = NULL;
-	l->size = 0;
-	return l;
+	list->head = NULL;
+	list->size = 0;
+	return list;
 }
 
 /* Elimina uma lista, libertando *toda* a memoria utilizada pela
@@ -67,9 +67,7 @@ int list_add(struct list_t *list, struct entry_t *entry) {
 			if (strcmp(current->entry->key, new_node->entry->key) == 0) {
 				//update the value of the list
 				entry_destroy(current->entry);
-
 				current->entry = entry_dup(entry);
-				//---------------------->
 				destroy_node(new_node);
 				return 0;
 			}
@@ -153,7 +151,9 @@ struct entry_t *list_get(struct list_t *list, char *key) {
 
 	struct node_t *current_node = list->head;
 
+	//iterate over the list
 	while (current_node != NULL) {
+		//found the entry
 		if (strcmp(current_node->entry->key, key) == 0) {
 			return current_node->entry;
 		}
@@ -172,19 +172,20 @@ int list_size(struct list_t *list) {
  * tabela, e um último elemento a NULL.
  */
 char **list_get_keys(struct list_t *list) {
-	if (list == NULL || list->head == NULL) {
+	if (list == NULL || list->head == NULL)
 		return NULL;
-	}
+	//allocate space to a char**
 	char **list_keys = (char **) malloc(sizeof(char *) * (list->size + 1));
-	if(list_keys  == NULL){
+	if (list_keys == NULL)
 		return NULL;
-	}
 
 	struct node_t* current_node = list->head;
 	int i = 0;
 	while (current_node != NULL) {
 		list_keys[i] = strdup(current_node->entry->key);
-		if(list_keys[i]== NULL){
+		//if the strdup has failed
+		if (list_keys[i] == NULL) {
+			//delete the list already made
 			list_free_keys(list_keys);
 			free(current_node);
 			return NULL;
@@ -214,19 +215,19 @@ void list_free_keys(char **keys) {
  * function to create a node
  */
 struct node_t *create_node(struct entry_t *entry) {
-	if (entry == NULL) {
+	if (entry == NULL)
 		return NULL;
-	}
-	struct node_t *no = (struct node_t *) malloc(sizeof(struct node_t));
-	if (no == NULL) {
-		return NULL;
-	}
-	no->entry = entry_dup(entry);
-	if (no->entry == NULL) {
 
+	struct node_t *node = (struct node_t *) malloc(sizeof(struct node_t));
+	if (node == NULL) {
+		return NULL;
 	}
-	no->next = NULL;
-	return no;
+	node->entry = entry_dup(entry);
+	if (node->entry == NULL) {
+		destroy_node(node);
+	}
+	node->next = NULL;
+	return node;
 }
 /**
  * function to create a duplicate of the node
