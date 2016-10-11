@@ -87,12 +87,12 @@ int table_put(struct table_t *table, char * key, struct data_t *value) {
 		return -1;
 	}
 	/* Criar entry com par chave/valor */
-	struct entry_t new_entry = entry_create(strdup(key), data_dup(value));
+	struct entry_t *new_entry = entry_create(strdup(key), data_dup(value));
 	if (new_entry == NULL) {
 		return -1;
 	}
 	/* Executar hash para determinar onde inserir a entry na tabela */
-	int place_entry = key_hash(key);
+	int place_entry = key_hash(key, table->size);
 
 	/* Inserir entry na tabela */
 	return list_add(table->buckets[place_entry], new_entry);
@@ -100,6 +100,7 @@ int table_put(struct table_t *table, char * key, struct data_t *value) {
 }
 
 int table_update(struct table_t *table, char * key, struct data_t *value) {
+	//WRONG ------------------->
 	return table_put(table, key, value);
 }
 
@@ -107,11 +108,14 @@ struct data_t *table_get(struct table_t *table, char * key) {
 	if (table == NULL || key == NULL)
 		return NULL;
 
-	return list_get(table->buckets[key_hash(key)], key)->value;
+	return list_get(table->buckets[key_hash(key, table->size)], key)->value;
 }
 
 int table_del(struct table_t *table, char *key) {
+	if (table == NULL || key == NULL)
+		return -1;
 
+	return list_remove(table->buckets[key_hash(key), table->size], key);
 }
 
 /* Esta é dada! Ao estilo C! */
