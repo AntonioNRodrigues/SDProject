@@ -7,11 +7,12 @@ int key_hash(char *key, int l) {
 	/* Verificar se key é NULL */
 	if (key == NULL || l <= 0)
 		return -1;
+
 	int soma, i, j = 0;
 	int size_key = strlen(key); // strlen excludes the '/0'
 
 	if (size_key <= 5) {
-		while (strcmp(key[i], '\0') == 0) {
+		while (strcmp(key[i], '\0') != 0) {
 			soma += key[i];
 			i++;
 		}
@@ -19,7 +20,7 @@ int key_hash(char *key, int l) {
 		for (i = 0; i < 3; i++) {
 			soma += key[i];
 		}
-		for (j = size_key - 1; i < (size_key - 3); i--) {
+		for (j = size_key - 1; j < (size_key - 3); j--) {
 			soma += key[j];
 		}
 	}
@@ -29,11 +30,20 @@ int key_hash(char *key, int l) {
 struct table_t *table_create(int n) {
 
 	/* n tem valor válido? */
+	if (n <= 0)
+		return NULL;
 
 	/* Alocar memória para struct table_t */
+	struct table_t * new_table = (struct table_t *) malloc(sizeof(struct table_t));
+	if(new_table == NULL)
+		return NULL;
 
 	/* Alocar memória para array de listas com n entradas
 	 que ficará referenciado na struct table_t alocada.
+
+
+
+
 
 	 Inicializar listas.
 

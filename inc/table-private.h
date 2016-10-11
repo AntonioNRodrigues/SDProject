@@ -4,7 +4,7 @@
 #include "table.h"
 
 struct table_t{
-	struct list_t /* continuar definição */;
+	struct list_t **buckets/* continuar definição */;
 	int size; /* Dimensão da tabela */
 };
 
