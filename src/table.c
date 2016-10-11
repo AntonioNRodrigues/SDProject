@@ -1,57 +1,69 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
-
 #include "table-private.h"
 
-int key_hash(char *key, int l){
+int key_hash(char *key, int l) {
+	/* Verificar se key é NULL */
+	if (key == NULL || l <= 0)
+		return -1;
+	int soma, i, j = 0;
+	int size_key = strlen(key); // strlen excludes the '/0'
 
-  /* Verificar se key é NULL */
-
-  /* l tem valor válido? */
-
-  return soma % l;
+	if (size_key <= 5) {
+		while (strcmp(key[i], '\0') == 0) {
+			soma += key[i];
+			i++;
+		}
+	} else {
+		for (i = 0; i < 3; i++) {
+			soma += key[i];
+		}
+		for (j = size_key - 1; i < (size_key - 3); i--) {
+			soma += key[j];
+		}
+	}
+	return soma % l;
 }
 
 struct table_t *table_create(int n) {
 
-  /* n tem valor válido? */
+	/* n tem valor válido? */
 
-  /* Alocar memória para struct table_t */
+	/* Alocar memória para struct table_t */
 
-  /* Alocar memória para array de listas com n entradas 
-     que ficará referenciado na struct table_t alocada. 
+	/* Alocar memória para array de listas com n entradas
+	 que ficará referenciado na struct table_t alocada.
 
-     Inicializar listas.
+	 Inicializar listas.
 
-     Inicializar atributos da tabela.
-  */
+	 Inicializar atributos da tabela.
+	 */
 
-  return new_table;
+	return new_table;
 }
 
 void table_destroy(struct table_t *table) {
 
-  /* table é NULL? 
+	/* table é NULL?
 
-     Libertar memória das listas.
+	 Libertar memória das listas.
 
-     Libertar memória da tabela.
+	 Libertar memória da tabela.
 
-  */
+	 */
 
-  
 }
 
 int table_put(struct table_t *table, char * key, struct data_t *value) {
 
-  /* Verificar valores de entrada */
+	/* Verificar valores de entrada */
 
-  /* Criar entry com par chave/valor */
+	/* Criar entry com par chave/valor */
 
-  /* Executar hash para determinar onde inserir a entry na tabela */
+	/* Executar hash para determinar onde inserir a entry na tabela */
 
-  /* Inserir entry na tabela */
+	/* Inserir entry na tabela */
 
 }
 
@@ -59,17 +71,17 @@ int table_update(struct table_t *table, char * key, struct data_t *value) {
 
 }
 
-struct data_t *table_get(struct table_t *table, char * key){
+struct data_t *table_get(struct table_t *table, char * key) {
 
 }
 
-int table_del(struct table_t *table, char *key){
+int table_del(struct table_t *table, char *key) {
 
 }
 
 /* Esta é dada! Ao estilo C! */
 int table_size(struct table_t *table) {
-	return table == NULL ? -1 : table->/*atributo*/;
+return table == NULL ? -1 : table->/*atributo*/;
 }
 
 char **table_get_keys(struct table_t *table) {

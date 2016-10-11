@@ -6,7 +6,7 @@
 /* Define os possíveis opcodes da mensagem */
 #define OC_SIZE		10
 #define OC_DEL		20
-#define OC_UPDATE   	30
+#define OC_UPDATE   30
 #define OC_GET		40
 #define OC_PUT		50
 
