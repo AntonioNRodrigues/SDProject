@@ -10,7 +10,7 @@ struct table_t {
 	 * quantitie of keys-value that are in the system.
 	 * each list has its on size and this value the sum of each sizes
 	 * since the table_t has an array with size size of list_t*/
-	int quantity_keys;
+	int quantity_entry;
 };
 
 int key_hash(char *key, int l);

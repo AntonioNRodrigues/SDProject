@@ -45,6 +45,7 @@ int testPutInexistente() {
 
 	for(i = 0; i < 1024; i++) {
 		key[i] = (char*) malloc(16 * sizeof(char));
+		printf(key[i], "a/key/b-%d", i);
 		sprintf(key[i], "a/key/b-%d", i);
 		data[i] = data_create2(strlen(key[i]) + 1, key[i]);
 		table_put(table, key[i], data[i]);
@@ -285,10 +286,17 @@ int testGetKeys() {
 	return result;
 }
 
+void testHash(char* c){
+	printf("TESTE HASH FUNCTION::");
+	int v = key_hash("AAAAABAAAA",10);
+	printf("%d\n",v);
+}
 int main() {
 	int score = 0;
 
 	printf("\nIniciando o teste do módulo table\n");
+
+	testHash("123");
 
 	score += testTableDestroy();
 
