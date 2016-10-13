@@ -34,6 +34,7 @@ int testTabelaVazia() {
 }
 
 int testPutInexistente() {
+	printf("TEST PUT::");
 	int result, i;
 	struct table_t *table;
 	char *key[1024];
@@ -45,17 +46,16 @@ int testPutInexistente() {
 
 	for(i = 0; i < 1024; i++) {
 		key[i] = (char*) malloc(16 * sizeof(char));
-		printf(key[i], "a/key/b-%d", i);
 		sprintf(key[i], "a/key/b-%d", i);
 		data[i] = data_create2(strlen(key[i]) + 1, key[i]);
 		table_put(table, key[i], data[i]);
 	}
-
+	printf("TEST PUT :: 2");
 	result = (table_size(table) == 1024);
-
+	printf("TEST PUT :: 2");
 	for(i=0; i<1024; i++) {
 		d = table_get(table, key[i]);
-
+		printf(d);
 		assert(d->datasize == data[i]->datasize);
 		assert(memcmp(d->data, data[i]->data, d->datasize) == 0);
 		assert(d->data != data[i]->data);
@@ -286,17 +286,10 @@ int testGetKeys() {
 	return result;
 }
 
-void testHash(char* c){
-	printf("TESTE HASH FUNCTION::");
-	int v = key_hash("AAAAABAAAA",10);
-	printf("%d\n",v);
-}
 int main() {
 	int score = 0;
 
 	printf("\nIniciando o teste do módulo table\n");
-
-	testHash("123");
 
 	score += testTableDestroy();
 

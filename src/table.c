@@ -5,22 +5,22 @@
 
 int key_hash(char *key, int l) {
 	/* Verificar se key é NULL */
-	if (key == NULL || l <= 0)
+	if (key == NULL || l <= 0 || strlen(key) < 0)
 		return -1;
 
 	int soma, i, j = 0;
 	int size_key = strlen(key); // strlen excludes the '/0'
 
 	if (size_key <= 5) {
-		while (key[i] != '\0') {
+		for (i = 0; i < size_key; i++) {
 			soma += (int) key[i];
-			i++;
 		}
+
 	} else {
 		for (i = 0; i < 3; i++) {
 			soma += (int) key[i];
 		}
-		for (j = size_key - 1; j < (size_key - 3); j--) {
+		for (j = size_key - 2; j < size_key; j++) {
 			soma += (int) key[j];
 		}
 	}
@@ -45,7 +45,8 @@ struct table_t *table_create(int n) {
 	 Inicializar atributos da tabela.
 	 */
 
-	new_table->buckets = (struct list_t **) malloc((sizeof(struct list_t *)) * n);
+	new_table->buckets = (struct list_t **) malloc(
+			(sizeof(struct list_t *)) * n);
 
 	if (new_table->buckets == NULL) {
 		table_destroy(new_table);
@@ -55,7 +56,7 @@ struct table_t *table_create(int n) {
 	int i, j = 0;
 	for (i = 0; i < n; i++) {
 		new_table->buckets[i] = list_create();
-		if (new_table->buckets[i]	== NULL) {
+		if (new_table->buckets[i] == NULL) {
 			//revert cycle to freeSpace already allocated
 			j = i - 1;
 			while (j != 0) {
@@ -84,14 +85,15 @@ void table_destroy(struct table_t *table) {
 }
 
 int table_put(struct table_t *table, char * key, struct data_t *value) {
-	printf("TABLE PUT :: %s \n", key);
+	printf("TABLE_PUT %s", key);
 	/* Verificar valores de entrada */
+	printf("--->size::%d" , table->quantity_entry);
+
 	if (table == NULL || key == NULL || value == NULL) {
 		return -1;
 	}
-
-	/* Criar entry com par chave/valor */
-	struct entry_t *new_entry = entry_create(strdup(key), data_dup(value));
+	/* Criar entry com par chave/valor the values are copied in the function entry_create*/
+	struct entry_t *new_entry = entry_create(key, value);
 	if (new_entry == NULL) {
 		return -1;
 	}
@@ -104,6 +106,8 @@ int table_put(struct table_t *table, char * key, struct data_t *value) {
 	if (resulted_value == 0) {
 		table->quantity_entry++;
 	}
+	entry_destroy(new_entry);
+	printf("--->number of entries::%d\n" , table_size(table));
 	return resulted_value;
 
 }
@@ -151,8 +155,11 @@ struct data_t *table_get(struct table_t *table, char * key) {
 	struct entry_t *entry = list_get(table->buckets[index_entry], key);
 	if (entry == NULL)
 		return NULL;
+	struct data_t *data = data_dup(entry->value);
+	if (data == NULL)
+		return NULL;
 
-	return data_dup(entry->value);
+	return data;
 }
 /* Função para remover um par chave valor da tabela, especificado
  * pela chave key, libertando a memória associada a esse par.
@@ -168,7 +175,7 @@ int table_del(struct table_t *table, char *key) {
 	int ret_value = list_remove(table->buckets[index_entry], key);
 	//update the number of entries in case of success
 	if (ret_value == 0) {
-		table->quantity_entry--;
+		table->quantity_entry = table->quantity_entry - 1;
 	}
 	return ret_value;
 }
@@ -186,7 +193,7 @@ char **table_get_keys(struct table_t *table) {
 		return NULL;
 
 	char **table_keys = (char **) malloc(
-			sizeof(char *) * table->quantity_entry);
+			sizeof(char *) * table->quantity_entry + 1);
 	if (table_keys == NULL)
 		return NULL;
 
