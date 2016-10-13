@@ -12,7 +12,7 @@ int key_hash(char *key, int l) {
 	int size_key = strlen(key); // strlen excludes the '/0'
 
 	if (size_key <= 5) {
-		while (strcmp(key[i], '\0') != 0) {
+		while (key[i] != '\0') {
 			soma += (int) key[i];
 			i++;
 		}
@@ -120,7 +120,7 @@ int table_del(struct table_t *table, char *key) {
 	if (table == NULL || key == NULL)
 		return -1;
 
-	return list_remove(table->buckets[key_hash(key), table->size], key);
+	return list_remove(table->buckets[key_hash(key, table->size)], key);
 }
 
 /* Esta é dada! Ao estilo C! */
