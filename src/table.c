@@ -105,14 +105,14 @@ int table_put(struct table_t *table, char * key, struct data_t *value) {
 }
 
 int table_update(struct table_t *table, char * key, struct data_t *value) {
-	//WRONG ------------------->
+	//WRONG ------------------->//
 	return table_put(table, key, value);
 }
 
 struct data_t *table_get(struct table_t *table, char * key) {
 	if (table == NULL || key == NULL)
 		return NULL;
-
+	//make a copy of the value.
 	return list_get(table->buckets[key_hash(key, table->size)], key)->value;
 }
 
@@ -124,8 +124,11 @@ int table_del(struct table_t *table, char *key) {
 }
 
 /* Esta é dada! Ao estilo C! */
+/**
+ * number of pairs key->value of the table
+ */
 int table_size(struct table_t *table) {
-	return table == NULL ? -1 : table->size;
+	return table == NULL ? -1 : table->quantity_keys;
 }
 
 char **table_get_keys(struct table_t *table) {
