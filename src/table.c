@@ -95,7 +95,12 @@ int table_put(struct table_t *table, char * key, struct data_t *value) {
 	int place_entry = key_hash(key, table->size);
 
 	/* Inserir entry na tabela */
-	return list_add(table->buckets[place_entry], new_entry);
+	int v = list_add(table->buckets[place_entry], new_entry);
+
+	if (v == 0) {
+		table->quantity_keys++;
+	}
+	return v;
 
 }
 
@@ -124,10 +129,28 @@ int table_size(struct table_t *table) {
 }
 
 char **table_get_keys(struct table_t *table) {
+	if (table == NULL)
+		return NULL;
 
+	char **table_keys = (char **) malloc(sizeof(char *) * table->quantity_keys);
+	if (table_keys == NULL)
+		return NULL;
+	int index_table, index_keys = 0;
+
+	while (index_table < table->size) {
+		int temp_size_list = table->buckets[index_table]->size;
+		char ** temp_list = list_get_keys(table->buckets[index_table]);
+
+		for (int i =0; i<temp_size_list; i++){
+			table_keys[index_table] = temp_list[i];
+			index_table++;
+		}
+
+	}
+	return table_keys;
 }
 
 void table_free_keys(char **keys) {
-
+	list_free_keys(keys);
 }
 

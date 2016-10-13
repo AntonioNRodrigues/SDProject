@@ -10,8 +10,9 @@ FLAGS = -I$(INC) -lm -Wall
 T_DATA_OBJ = $(OBJ)/data.o $(OBJ)/test_data.o
 T_ENTRY_OBJ = $(OBJ)/data.o $(OBJ)/entry.o $(OBJ)/test_entry.o
 T_LIST_OBJ = $(OBJ)/data.o $(OBJ)/entry.o $(OBJ)/list.o $(OBJ)/test_list.o
+T_TABLE_OBJ = $(OBJ)/data.o $(OBJ)/entry.o $(OBJ)/list.o $(OBJ)/table.o $(OBJ)/test_table.o
 
-all: clean test_data test_entry test_list
+all: clean test_data test_entry test_list test_table
 
 test_data: $(T_DATA_OBJ) 
 	$(CC) $(T_DATA_OBJ) -o test_data
@@ -22,6 +23,9 @@ test_entry:$(T_ENTRY_OBJ)
 test_list: $(T_LIST_OBJ)
 	$(CC) $(T_LIST_OBJ) -o test_list
 	
+test_table: $(T_TABLE_OBJ)
+	$(CC) $(T_TABLE_OBJ) -o test_table
+	
 $(OBJ)/data.o: $(SRC)/data.c $(INC)/data.h 
 	$(CC) $(FLAGS) -c $(SRC)/data.c -o $(OBJ)/data.o
 
@@ -31,6 +35,9 @@ $(OBJ)/entry.o: $(INC)/data.h $(SRC)/entry.c $(INC)/entry.h
 $(OBJ)/list.o: $(SRC)/list.c $(INC)/list.h $(INC)/list-private.h
 	$(CC) $(FLAGS) -c $(SRC)/list.c -o $(OBJ)/list.o
 	
+$(OBJ)/table.o: $(SRC)/table.c $(INC)/table.h $(INC)/table-private.h
+	$(CC) $(FLAGS) -c $(SRC)/table.c -o $(OBJ)/table.o
+
 $(OBJ)/test_data.o: test_data.c $(INC)/data.h
 	$(CC) $(FLAGS) -c test_data.c -o $(OBJ)/test_data.o
 	
@@ -40,8 +47,11 @@ $(OBJ)/test_entry.o: test_entry.c $(INC)/entry.h $(INC)/data.h
 $(OBJ)/test_list.o: test_list.c $(INC)/list.h
 	$(CC) $(FLAGS) -c test_list.c -o $(OBJ)/test_list.o
 
+$(OBJ)/test_table.o: test_table.c $(INC)/table.h
+	$(CC) $(FLAGS) -c test_table.c -o $(OBJ)/test_table.o
+
 clean:
-	rm -fr $(OBJ)/*.o test_data test_entry test_list
+	rm -fr $(OBJ)/*.o test_data test_entry test_list test_table
 	
 zip_work:
 	zip -r $(GG) $(OBJ) $(INC)/*.h $(SRC)/*.c *.md makefile	
@@ -55,4 +65,6 @@ valgrindEntry:
 valgrindList:
 	valgrind -v --leak-check=full --track-origins=yes --log-file=valgrindList.log ./test_list
 
+valgrindTable:
+	valgrind -v --leak-check=full --track-origins=yes --log-file=valgrindTable.log ./test_table
 	
