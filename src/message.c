@@ -7,127 +7,116 @@
 
 void free_message(struct message_t *msg) {
 
-	/* Verificar se msg é NULL */
-	if (msg == NULL) {
-		return;
-	}
-	/* Se msg->c_type for:
-	 VALOR, libertar msg->content.data
-	 ENTRY, libertar msg->content.entry_create
-	 CHAVES, libertar msg->content.keys
-	 CHAVE, libertar msg->content.key
-	 */
-if (msg->c_type == CT_VALUE) {
-	free(msg->content.data);
-} else if (msg->c_type == CT_ENTRY) {
-	free(msg->content.entry);
-} else if (msg->c_type == CT_KEYS) {
-	free(msg->content.keys);
-} else if (msg->c_type == CT_KEY) {
-	free(msg->content.key);
-} else if (msg->c_type == CT_RESULT {
-			free(msg->content.result);
+	if (msg != NULL) {
+		if (msg->c_type == CT_VALUE) {
+			data_destroy(msg->content.data);
+		} else if (msg->c_type == CT_ENTRY) {
+			entry_destroy(msg->content.entry);
+		} else if (msg->c_type == CT_KEYS) {
+			table_free_keys(msg->content.keys);
+		} else if (msg->c_type == CT_KEY) {
+			free(msg->content.key);
 		}
 		/* libertar msg */
-		free(msg->opcode);
-		free(msg->c_type);
 		free(msg->content);
-		free( msg);
+		free(msg);
 	}
+}
 
-	int message_to_buffer(struct message_t *msg, char **msg_buf) {
+int message_to_buffer(struct message_t *msg, char **msg_buf) {
 
-		/* Verificar se msg é NULL */
-		if (msg == NULL) {
-			return -1;
+	/* Verificar se msg é NULL */
+	if (msg == NULL) {
+		return -1;
+	}
+	/* Consoante o msg->c_type, determinar o tamanho do vetor de bytes
+	 que tem de ser alocado antes de serializar msg
+	 */
+	int buffer_size;
+
+	if (msg->c_type == CT_RESULT) {
+		buffer_size += _SHORT * 2 + _INT;
+	} else if (msg->c_type == CT_VALUE) {
+		buffer_size += (_SHORT * 2 + _INT + msg->content.data->datasize);
+
+	} else if (msg->c_type == CT_KEYS) {
+
+		char **temp_keys = msg->content.keys;
+		int i = 0;
+		while (temp_keys != NULL) {
+			buffer_size += (strlen(temp_keys[i]) - 1);
+			i++;
 		}
-		/* Consoante o msg->c_type, determinar o tamanho do vetor de bytes
-		 que tem de ser alocado antes de serializar msg
-		 */
-		int buffer_size;
+		buffer_size += (_SHORT * 3 + _INT);
 
-		if (msg->c_type == CT_RESULT) {
-			buffer_size += _SHORT * 2 + _INT;
-		} else if (msg->c_type == CT_VALUE) {
-			buffer_size += (_SHORT * 2 + _INT + msg->content.data->datasize);
+	} else if (msg->c_type == CT_KEY) {
+		buffer_size += _SHORT * 3 + (strlen(msg->content.key) - 1);
 
-		} else if (msg->c_type == CT_KEYS) {
+	} else if (msg->c_type == CT_ENTRY) {
+		buffer_size += (_SHORT * 3 + _INT + msg->content.data->datasize);
+	}
+	/* Alocar quantidade de memória determinada antes
+	 *msg_buf = ....
+	 */
+	*msg_buf = (char *) malloc(buffer_size);
+	/* Inicializar ponteiro auxiliar com o endereço da memória alocada */
 
-			char **temp_keys = msg->content.keys;
-			int i = 0;
-			while (temp_keys != NULL) {
-				buffer_size += (strlen(temp_keys[i]) - 1);
-				i++;
-			}
-			buffer_size += (_SHORT * 3 + _INT);
+	char *ptr;
 
-		} else if (msg->c_type == CT_KEY) {
-			buffer_size += _SHORT * 3 + (strlen(msg->content.key) - 1);
+	ptr = *msg_buf;
 
-		} else if (msg->c_type == CT_ENTRY) {
-			buffer_size += (_SHORT * 3 + _INT + msg->content.data->datasize);
-		}
-		/* Alocar quantidade de memória determinada antes
-		 *msg_buf = ....
-		 */
-		*msg_buf = (char *) malloc(buffer_size);
-		/* Inicializar ponteiro auxiliar com o endereço da memória alocada */
+	uint16_t short_value;
+	uint32_t long_value;
 
-		char *ptr;
+	short_value = htons(msg->opcode);
+	memcpy(ptr, &short_value, _SHORT);
+	ptr += _SHORT;
 
-		ptr = *msg_buf;
+	short_value = htons(msg->c_type);
+	memcpy(ptr, &short_value, _SHORT);
+	ptr += _SHORT;
 
-		uint16_t short_value;
-		uint32_t long_value;
+	/* Consoante o conteúdo da mensagem, continuar a serialização da mesma */
 
-		short_value = htons(msg->opcode);
+	switch (msg->c_type) {
+	case CT_RESULT:
+		long_value = htonl(msg->content.result);
+		memcpy(ptr, &long_value, _INT);
+		ptr += _INT;
+		break;
+	case CT_KEY:
+		short_value = htons(strlen(msg->content.key) - 1);
 		memcpy(ptr, &short_value, _SHORT);
-		ptr += _SHORT;
+		return buffer_size;
+	}
+}
+struct message_t *buffer_to_message(char *msg_buf, int msg_size) {
+	int short_aux = 0;
+	/* Verificar se msg_buf é NULL */
 
-		short_value = htons(msg->c_type);
-		memcpy(ptr, &short_value, _SHORT);
-		ptr += _SHORT;
+	/* msg_size tem tamanho mínimo ? */
 
-		/* Consoante o conteúdo da mensagem, continuar a serialização da mesma */
+	/* Alocar memória para uma struct message_t */
+	struct message_t *msg;
 
-		switch (msg->c_type) {
-		case CT_RESULT:
-			long_value = htonl(msg->content.result);
-			memcpy(ptr, &long_value, _INT);
-			ptr += _INT;
-			break;
-		case CT_KEY:
-			short_value = htons(strlen(msg->content.key)-1);
-			memcpy(ptr, &short_value, _SHORT);
-			return buffer_size;
-		}
+	/* Recuperar o opcode e c_type */
+	memcpy(&short_aux, msg_buf, _SHORT);
+	msg->opcode = ntohs(short_aux);
+	msg_buf += _SHORT;
 
-		struct message_t *buffer_to_message(char *msg_buf, int msg_size) {
+	memcpy(&short_aux, msg_buf, _SHORT);
+	msg->c_type = ntohs(short_aux);
+	msg_buf += _SHORT;
 
-			/* Verificar se msg_buf é NULL */
+	/* A mesma coisa que em cima mas de forma compacta, ao estilo C! */
+	msg->opcode = ntohs(*(short *) msg_buf++);
+	msg->c_type = ntohs(*(short *) ++msg_buf);
+	msg_buf += _SHORT;
 
-			/* msg_size tem tamanho mínimo ? */
+	/* O opcode e c_type são válidos? */
 
-			/* Alocar memória para uma struct message_t */
+	/* Consoante o c_type, continuar a recuperação da mensagem original */
 
-			/* Recuperar o opcode e c_type */
-			memcpy(&short_aux, msg_buf, _SHORT);
-			msg->opcode = ntohs(short_aux);
-			msg_buf += _SHORT;
-
-			memcpy(&short_aux, msg_buf, _SHORT);
-			msg->c_type = ntohs(short_aux);
-			msg_buf += _SHORT;
-
-			/* A mesma coisa que em cima mas de forma compacta, ao estilo C! */
-			msg->opcode = ntohs(*(short *) msg_buf++);
-			msg->c_type = ntohs(*(short *) ++msg_buf);
-			msg_buf += _SHORT;
-
-			/* O opcode e c_type são válidos? */
-
-			/* Consoante o c_type, continuar a recuperação da mensagem original */
-
-			return msg;
-		}
+	return msg;
+}
 
