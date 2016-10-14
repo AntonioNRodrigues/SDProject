@@ -11,8 +11,9 @@ T_DATA_OBJ = $(OBJ)/data.o $(OBJ)/test_data.o
 T_ENTRY_OBJ = $(OBJ)/data.o $(OBJ)/entry.o $(OBJ)/test_entry.o
 T_LIST_OBJ = $(OBJ)/data.o $(OBJ)/entry.o $(OBJ)/list.o $(OBJ)/test_list.o
 T_TABLE_OBJ = $(OBJ)/data.o $(OBJ)/entry.o $(OBJ)/list.o $(OBJ)/table.o $(OBJ)/test_table.o
+T_MESSAGE_OBJ = $(OBJ)/data.o $(OBJ)/entry.o $(OBJ)/list.o $(OBJ)/table.o $(OBJ)/message.o $(OBJ)/test_message.o
 
-all: clean test_data test_entry test_list test_table
+all: clean test_data test_entry test_list test_table test_message
 
 test_data: $(T_DATA_OBJ) 
 	$(CC) $(T_DATA_OBJ) -o test_data
@@ -26,6 +27,9 @@ test_list: $(T_LIST_OBJ)
 test_table: $(T_TABLE_OBJ)
 	$(CC) $(T_TABLE_OBJ) -o test_table
 	
+test_message: $(T_MESSAGE_OBJ)
+	$(CC) $(T_MESSAGE_OBJ) -o test_message
+	
 $(OBJ)/data.o: $(SRC)/data.c $(INC)/data.h 
 	$(CC) $(FLAGS) -c $(SRC)/data.c -o $(OBJ)/data.o
 
@@ -37,6 +41,9 @@ $(OBJ)/list.o: $(SRC)/list.c $(INC)/list.h $(INC)/list-private.h
 	
 $(OBJ)/table.o: $(SRC)/table.c $(INC)/table.h $(INC)/table-private.h
 	$(CC) $(FLAGS) -c $(SRC)/table.c -o $(OBJ)/table.o
+
+$(OBJ)/message.o: $(SRC)/message.c $(INC)/message.h $(INC)/message-private.h
+	$(CC) $(FLAGS) -c $(SRC)/message.c -o $(OBJ)/message.o
 
 $(OBJ)/test_data.o: test_data.c $(INC)/data.h
 	$(CC) $(FLAGS) -c test_data.c -o $(OBJ)/test_data.o
@@ -50,8 +57,11 @@ $(OBJ)/test_list.o: test_list.c $(INC)/list.h
 $(OBJ)/test_table.o: test_table.c $(INC)/table.h
 	$(CC) $(FLAGS) -c test_table.c -o $(OBJ)/test_table.o
 
+$(OBJ)/test_message.o: test_message.c $(INC)/message.h
+	$(CC) $(FLAGS) -c test_message.c -o $(OBJ)/test_message.o
+
 clean:
-	rm -fr $(OBJ)/*.o test_data test_entry test_list test_table
+	rm -fr $(OBJ)/*.o test_data test_entry test_list test_table test_message
 	
 zip_work:
 	zip -r $(GG) $(OBJ) $(INC)/*.h $(SRC)/*.c *.md makefile	
@@ -67,4 +77,6 @@ valgrindList:
 
 valgrindTable:
 	valgrind -v --leak-check=full --track-origins=yes --log-file=valgrindTable.log ./test_table
-	
+
+valgrindMessage:
+	valgrind -v --leak-check=full --track-origins=yes --log-file=valgrindMessage.log ./test_message
