@@ -18,7 +18,7 @@ void free_message(struct message_t *msg) {
 			free(msg->content.key);
 		}
 		/* libertar msg */
-		free(msg->content);
+		//free(msg->content);
 		free(msg);
 	}
 }
@@ -91,13 +91,15 @@ int message_to_buffer(struct message_t *msg, char **msg_buf) {
 	}
 }
 struct message_t *buffer_to_message(char *msg_buf, int msg_size) {
-	int short_aux = 0;
-	/* Verificar se msg_buf é NULL */
+	if (msg_buf == NULL || msg_size <= 0)
+		return NULL;
 
-	/* msg_size tem tamanho mínimo ? */
+	int short_aux = 0, int_aux = 0;
 
 	/* Alocar memória para uma struct message_t */
-	struct message_t *msg;
+	struct message_t *msg = (struct message_t *) malloc(msg_size);
+	if(msg == NULL)
+		return NULL;
 
 	/* Recuperar o opcode e c_type */
 	memcpy(&short_aux, msg_buf, _SHORT);
@@ -109,14 +111,40 @@ struct message_t *buffer_to_message(char *msg_buf, int msg_size) {
 	msg_buf += _SHORT;
 
 	/* A mesma coisa que em cima mas de forma compacta, ao estilo C! */
-	msg->opcode = ntohs(*(short *) msg_buf++);
-	msg->c_type = ntohs(*(short *) ++msg_buf);
-	msg_buf += _SHORT;
-
+	//msg->opcode = ntohs(*(short *) msg_buf++);
+	//msg->c_type = ntohs(*(short *) ++msg_buf);
+	//msg_buf += _SHORT;
 	/* O opcode e c_type são válidos? */
+	if ((valid(msg->opcode, msg->c_type)) != 0)
+		return NULL;
 
 	/* Consoante o c_type, continuar a recuperação da mensagem original */
+	switch (msg->c_type) {
+	case CT_RESULT:
+		memcpy(&int_aux, msg_buf, _INT);
+		msg->content.result = ntohl(int_aux);
+		break;
+	case CT_KEY:
+		memcpy(&short_aux, msg_buf, _SHORT);
+		int size_key = ntohs(short_aux);
+		msg_buf+=size_key;
+		char * temp = (char *) malloc(size_key);
 
+//		memccpy()
+		break;
+	default:
+		break;
+	}
 	return msg;
+}
+/**
+ * valid opcode && c_type returns 0, invalid returns -1
+ */
+int valid(short opcode, short c_type) {
+	return ((opcode == OC_DEL || opcode == OC_SIZE || opcode == OC_PUT
+			|| opcode == OC_UPDATE || opcode == OC_GET)
+			&& (c_type == CT_ENTRY || c_type == CT_KEY || c_type == CT_KEYS
+					|| c_type == CT_RESULT || c_type == CT_VALUE)) ? 0 : -1;
+
 }
 
