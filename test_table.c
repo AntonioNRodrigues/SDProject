@@ -34,7 +34,6 @@ int testTabelaVazia() {
 }
 
 int testPutInexistente() {
-	printf("TEST PUT::");
 	int result, i;
 	struct table_t *table;
 	char *key[1024];
@@ -50,16 +49,14 @@ int testPutInexistente() {
 		data[i] = data_create2(strlen(key[i]) + 1, key[i]);
 		table_put(table, key[i], data[i]);
 	}
-	printf("TEST PUT :: 2");
 	result = (table_size(table) == 1024);
-	printf("TEST PUT :: 2");
+
 	for(i=0; i<1024; i++) {
+
 		d = table_get(table, key[i]);
-		printf(d);
 		assert(d->datasize == data[i]->datasize);
 		assert(memcmp(d->data, data[i]->data, d->datasize) == 0);
 		assert(d->data != data[i]->data);
-
 		result = result &&
 			 d->datasize == data[i]->datasize &&
 			 memcmp(d->data, data[i]->data, d->datasize) == 0 &&
@@ -248,14 +245,16 @@ int testDelExistente() {
 }
 
 int testGetKeys() {
-	int result = 1, i, j, achou;
+
+	int result =1;
+	int i, j, achou;
 	struct table_t *table;
 	char **keys;
+
 	char *k[4] = {"abc","bcd","cde","def"};
 	struct data_t *d;
 
 	printf("Módulo table -> teste sacar chaves:");
-
 	table = table_create(2);
 	d = data_create(5);
 
@@ -263,11 +262,9 @@ int testGetKeys() {
 	table_put(table, k[2], d);
 	table_put(table, k[1], d);
 	table_put(table, k[0], d);
-
 	data_destroy(d);
-
 	keys = table_get_keys(table);
-	
+
 	for(i = 0; keys[i] != NULL; i++) {
 		achou = 0;
 		for(j = 0; j < 4; j++)

@@ -4,31 +4,34 @@
 #include "table-private.h"
 
 int key_hash(char *key, int l) {
-	/* Verificar se key é NULL */
-	if (key == NULL || l <= 0 || strlen(key) < 0)
+
+	int min = 3;
+	int lenght = strlen(key);
+
+	if (lenght < 0) {
 		return -1;
+	}
+	int hashCode = 0;
 
-	int soma, i, j = 0;
-	int size_key = strlen(key); // strlen excludes the '/0'
-
-	if (size_key <= 5) {
-		for (i = 0; i < size_key; i++) {
-			soma += (int) key[i];
+	if (lenght <= 6) {
+		int i;
+		// the '/0' is part of the s
+		for (i = 0; i < lenght; i++) {
+			hashCode = hashCode + (int) key[i];
 		}
-
 	} else {
-		for (i = 0; i < 3; i++) {
-			soma += (int) key[i];
+		int i, j;
+		for (i = 0; i < min; i++) {
+			hashCode = hashCode + (int) key[i];
 		}
-		for (j = size_key - 2; j < size_key; j++) {
-			soma += (int) key[j];
+		for (j = lenght - min; j < lenght; j++) {
+			hashCode = hashCode + (int) key[j];
 		}
 	}
-	return soma % l;
+	return hashCode % l;
 }
 
 struct table_t *table_create(int n) {
-	printf("TABLE CREATE\n");
 	/* n tem valor válido? */
 	if (n <= 0) {
 		return NULL;
@@ -85,13 +88,11 @@ void table_destroy(struct table_t *table) {
 }
 
 int table_put(struct table_t *table, char * key, struct data_t *value) {
-	printf("TABLE_PUT %s", key);
-	/* Verificar valores de entrada */
-	printf("--->size::%d" , table->quantity_entry);
 
 	if (table == NULL || key == NULL || value == NULL) {
 		return -1;
 	}
+
 	/* Criar entry com par chave/valor the values are copied in the function entry_create*/
 	struct entry_t *new_entry = entry_create(key, value);
 	if (new_entry == NULL) {
@@ -100,14 +101,19 @@ int table_put(struct table_t *table, char * key, struct data_t *value) {
 	/* Executar hash para determinar onde inserir a entry na tabela */
 	int place_entry = key_hash(key, table->size);
 
+	//the table already has the key so from this point can't be updated
+	if (table_get(table, key) != NULL) {
+		entry_destroy(new_entry);
+		return -1;
+	}
+
 	/* Inserir entry na tabela */
 	int resulted_value = list_add(table->buckets[place_entry], new_entry);
 
 	if (resulted_value == 0) {
 		table->quantity_entry++;
 	}
-	entry_destroy(new_entry);
-	printf("--->number of entries::%d\n" , table_size(table));
+//	entry_destroy(new_entry);
 	return resulted_value;
 
 }
@@ -153,8 +159,11 @@ struct data_t *table_get(struct table_t *table, char * key) {
 
 	//get the entry
 	struct entry_t *entry = list_get(table->buckets[index_entry], key);
-	if (entry == NULL)
+
+	if (entry == NULL) {
 		return NULL;
+	}
+
 	struct data_t *data = data_dup(entry->value);
 	if (data == NULL)
 		return NULL;
@@ -191,12 +200,11 @@ int table_size(struct table_t *table) {
 char **table_get_keys(struct table_t *table) {
 	if (table == NULL)
 		return NULL;
-
+	printf("TABEL GET KEYS::\n");
 	char **table_keys = (char **) malloc(
 			sizeof(char *) * table->quantity_entry + 1);
 	if (table_keys == NULL)
 		return NULL;
-
 	int index_table = 0;
 	int index_total = 0;
 
@@ -205,17 +213,22 @@ char **table_get_keys(struct table_t *table) {
 		//get the list in each index of the table
 		char **temp = list_get_keys(table->buckets[index_table]);
 		int index_temp = 0;
+		printf("i_table::%d i_total::%d i_table::%d\n", index_table, index_total, index_temp);
 		// iterate over the list until the NULL
-		while (temp != NULL) {
+		while (temp[index_temp] != NULL) {
+			printf(" %s\n ", temp[index_temp]);
 			table_keys[index_total] = strdup(temp[index_temp]);
 			//the strdup failed
-			if (table_keys[index_total] == NULL) {
-				table_free_keys(table_keys);
-				return NULL;
-			}
+			/*if (table_keys[index_total] == NULL) {
+			 table_free_keys(table_keys);
+			 return NULL;
+			 }*/
+			printf("i_table::%d i_total::%d i_table::%d\n", index_table, index_total, index_temp);
 			index_total++;
 			index_temp++;
+			printf("i_table::%d i_total::%d i_table::%d\n", index_table, index_total, index_temp);
 		}
+		printf("--------OUT-----i_table::%d i_total::%d i_table::%d\n", index_table, index_total, index_temp);
 		index_table++;
 
 	}
