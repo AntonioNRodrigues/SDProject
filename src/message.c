@@ -98,7 +98,7 @@ struct message_t *buffer_to_message(char *msg_buf, int msg_size) {
 
 	/* Alocar memória para uma struct message_t */
 	struct message_t *msg = (struct message_t *) malloc(msg_size);
-	if(msg == NULL)
+	if (msg == NULL)
 		return NULL;
 
 	/* Recuperar o opcode e c_type */
@@ -125,13 +125,39 @@ struct message_t *buffer_to_message(char *msg_buf, int msg_size) {
 		msg->content.result = ntohl(int_aux);
 		break;
 	case CT_KEY:
+		//kEYSIZE
 		memcpy(&short_aux, msg_buf, _SHORT);
 		int size_key = ntohs(short_aux);
-		msg_buf+=size_key;
-		char * temp = (char *) malloc(size_key);
-
-//		memccpy()
+		msg_buf += size_key;
+		//KEY
+		msg->content.key = (char *) malloc(size_key + 1);
+		memcpy(msg->content.key, msg_buf, size_key);
+		msg->content.key[size_key] = '\0';
 		break;
+	case CT_VALUE:
+		//DATASIZE
+		memcpy(&int_aux, msg_buf, _INT);
+		int data_size = ntohs(int_aux);
+		msg_buf += data_size;
+		//DATA
+		msg->content.data = data_create(data_size);
+		if (msg->content.data == NULL) {
+			free(msg);
+			return NULL;
+		}
+		memcpy(msg->content.data->data, msg_buf, data_size);
+		break;
+	case CT_ENTRY:
+		//KEYSIZE
+		memcpy(&short_aux, msg_buf, _SHORT);
+		int key_size = ntohs(short_aux);
+		msg_buf += size_key;
+		//KEY
+
+		break;
+	case CT_KEYS:
+		break;
+
 	default:
 		break;
 	}
