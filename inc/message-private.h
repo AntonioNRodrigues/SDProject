@@ -7,4 +7,6 @@
 #include "table-private.h" /* For table_free_keys() */
 #include "message.h"
 
+int valid(short opcode, short c_type);
+
 #endif

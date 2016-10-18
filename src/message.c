@@ -151,7 +151,9 @@ struct message_t *buffer_to_message(char *msg_buf, int msg_size) {
 	int short_aux = 0, int_aux = 0;
 
 	/* Alocar memória para uma struct message_t */
-	struct message_t *msg = (struct message_t *) malloc(msg_size);
+	struct message_t *msg = (struct message_t *) malloc(
+			sizeof(struct message_t));
+
 	if (msg == NULL)
 		return NULL;
 
@@ -179,6 +181,7 @@ struct message_t *buffer_to_message(char *msg_buf, int msg_size) {
 		msg->content.result = ntohl(int_aux);
 		break;
 	case CT_KEY:
+
 		//KEYSIZE
 		memcpy(&short_aux, msg_buf, _SHORT);
 		int size_key = ntohs(short_aux);
@@ -216,11 +219,11 @@ struct message_t *buffer_to_message(char *msg_buf, int msg_size) {
 
 		//DATASIZE
 		memcpy(&int_aux, msg_buf, _INT);
-		int data_size = ntohl(int_aux);
+		data_size = ntohl(int_aux);
 		msg_buf += _INT;
 
 		//ENTRY
-		msg->content.entry = *entry_create(aux_key, data_create(data_size));
+		msg->content.entry = entry_create(aux_key, data_create(data_size));
 		if (msg->content.entry == NULL) {
 			free(msg);
 			return NULL;

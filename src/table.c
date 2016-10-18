@@ -5,18 +5,18 @@
 
 int key_hash(char *key, int l) {
 
-	int min = 3;
-	int lenght = strlen(key);
-
-	if (lenght < 0) {
+	if (key == NULL || l <= 0 || strlen(key) < 0) {
 		return -1;
 	}
+	int min = 3;
+	int lenght_key = strlen(key);
+
 	int hashCode = 0;
 
-	if (lenght <= 6) {
+	if (lenght_key <= 5) {
 		int i;
 		// the '/0' is part of the s
-		for (i = 0; i < lenght; i++) {
+		for (i = 0; i < lenght_key; i++) {
 			hashCode = hashCode + (int) key[i];
 		}
 	} else {
@@ -24,7 +24,7 @@ int key_hash(char *key, int l) {
 		for (i = 0; i < min; i++) {
 			hashCode = hashCode + (int) key[i];
 		}
-		for (j = lenght - min; j < lenght; j++) {
+		for (j = lenght_key - min; j < lenght_key; j++) {
 			hashCode = hashCode + (int) key[j];
 		}
 	}
@@ -32,21 +32,14 @@ int key_hash(char *key, int l) {
 }
 
 struct table_t *table_create(int n) {
-	/* n tem valor válido? */
-	if (n <= 0) {
+
+	if (n <= 0)
 		return NULL;
-	}
-	/* Alocar memória para struct table_t */
+
 	struct table_t *new_table = (struct table_t *) malloc(
 			sizeof(struct table_t));
 	if (new_table == NULL)
 		return NULL;
-
-	/* Alocar memória para array de listas com n entradas
-	 que ficará referenciado na struct table_t alocada.
-	 Inicializar listas.
-	 Inicializar atributos da tabela.
-	 */
 
 	new_table->buckets = (struct list_t **) malloc(
 			(sizeof(struct list_t *)) * n);
@@ -60,7 +53,7 @@ struct table_t *table_create(int n) {
 	for (i = 0; i < n; i++) {
 		new_table->buckets[i] = list_create();
 		if (new_table->buckets[i] == NULL) {
-			//revert cycle to freeSpace already allocated
+			//revert cycle to free the space already allocated
 			j = i - 1;
 			while (j != 0) {
 				list_destroy(new_table->buckets[j]);
@@ -113,7 +106,7 @@ int table_put(struct table_t *table, char * key, struct data_t *value) {
 	if (resulted_value == 0) {
 		table->quantity_entry++;
 	}
-//	entry_destroy(new_entry);
+	entry_destroy(new_entry);
 	return resulted_value;
 
 }
@@ -200,35 +193,29 @@ int table_size(struct table_t *table) {
 char **table_get_keys(struct table_t *table) {
 	if (table == NULL)
 		return NULL;
-	printf("TABEL GET KEYS::\n");
 	char **table_keys = (char **) malloc(
 			sizeof(char *) * table->quantity_entry + 1);
 	if (table_keys == NULL)
 		return NULL;
-	int index_table = 0;
-	int index_total = 0;
+	int index_table = 0, index_total = 0;
 
 	//iterate over the table
 	while (index_table < table->size) {
 		//get the list in each index of the table
 		char **temp = list_get_keys(table->buckets[index_table]);
 		int index_temp = 0;
-		printf("i_table::%d i_total::%d i_table::%d\n", index_table, index_total, index_temp);
 		// iterate over the list until the NULL
 		while (temp[index_temp] != NULL) {
-			printf(" %s\n ", temp[index_temp]);
 			table_keys[index_total] = strdup(temp[index_temp]);
 			//the strdup failed
-			/*if (table_keys[index_total] == NULL) {
-			 table_free_keys(table_keys);
-			 return NULL;
-			 }*/
-			printf("i_table::%d i_total::%d i_table::%d\n", index_table, index_total, index_temp);
+			if (table_keys[index_total] == NULL) {
+				table_free_keys(table_keys);
+				return NULL;
+			}
 			index_total++;
 			index_temp++;
-			printf("i_table::%d i_total::%d i_table::%d\n", index_table, index_total, index_temp);
 		}
-		printf("--------OUT-----i_table::%d i_total::%d i_table::%d\n", index_table, index_total, index_temp);
+
 		index_table++;
 
 	}
