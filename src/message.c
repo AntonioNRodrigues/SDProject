@@ -8,17 +8,18 @@
 void free_message(struct message_t *msg) {
 
 	if (msg != NULL) {
-		if (msg->c_type == CT_VALUE) {
+
+		if (msg->c_type == CT_VALUE)
 			data_destroy(msg->content.data);
-		} else if (msg->c_type == CT_ENTRY) {
+
+		if (msg->c_type == CT_ENTRY)
 			entry_destroy(msg->content.entry);
-		} else if (msg->c_type == CT_KEYS) {
+
+		if (msg->c_type == CT_KEYS)
 			table_free_keys(msg->content.keys);
-		} else if (msg->c_type == CT_KEY) {
+
+		if (msg->c_type == CT_KEY)
 			free(msg->content.key);
-		}
-		/* libertar msg */
-		//free(msg->content);
 		free(msg);
 	}
 }
@@ -89,6 +90,7 @@ int message_to_buffer(struct message_t *msg, char **msg_buf) {
 		memcpy(ptr, &short_value, _SHORT);
 		return buffer_size;
 	}
+	return buffer_size;
 }
 struct message_t *buffer_to_message(char *msg_buf, int msg_size) {
 	if (msg_buf == NULL || msg_size <= 0)
@@ -97,7 +99,8 @@ struct message_t *buffer_to_message(char *msg_buf, int msg_size) {
 	int short_aux = 0, int_aux = 0;
 
 	/* Alocar memória para uma struct message_t */
-	struct message_t *msg = (struct message_t *) malloc(msg_size);
+	struct message_t *msg = (struct message_t *) malloc(
+			sizeof(struct message_t));
 	if (msg == NULL)
 		return NULL;
 
@@ -150,10 +153,26 @@ struct message_t *buffer_to_message(char *msg_buf, int msg_size) {
 	case CT_ENTRY:
 		//KEYSIZE
 		memcpy(&short_aux, msg_buf, _SHORT);
-		int key_size = ntohs(short_aux);
-		msg_buf += size_key;
+		int size = ntohs(short_aux);
+		msg_buf += size;
 		//KEY
-
+		char * temp_key = (char *) malloc(size + 1);
+		memcpy(temp_key, msg_buf, size);
+		msg->content.key[size] = '\0';
+		msg_buf += size;
+		//DATASIZE
+		memcpy(&int_aux, msg_buf, _INT);
+		size = ntohl(int_aux);
+		struct data_t *data_temp = data_create(size);
+		if (data_temp == NULL) {
+			free(msg);
+			free(temp_key);
+			return NULL;
+		}
+		//DATA
+		memcpy(data_temp->data, msg_buf, size);
+		msg_buf += size;
+		msg->content.entry = entry_create(temp_key, data_temp);
 		break;
 	case CT_KEYS:
 		break;
