@@ -106,9 +106,10 @@ struct message_t *network_send_receive(struct server_t *server,
 int network_close(struct server_t *server) {
 	/* Verificar parâmetros de entrada */
 	if(server == NULL)
-		return 1;
+		return 1; //--------------------->DEVE RETORNAR O QUE?---------------1
 	/* Terminar ligação ao servidor */
-
-	/* Libertar memória */
+	int result = close(server->sock_file_descriptor);
+	free(server);
+	return result;
 }
 
