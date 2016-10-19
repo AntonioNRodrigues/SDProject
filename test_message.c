@@ -316,9 +316,9 @@ int main() {
 	score += testEntry();
 
 	score += testKeys();
-/*
+
 	score += testInvalida();
-*/
+
 	printf("Resultados do teste do módulo message: %d em 6\n\n",score);
 
 	return score;
