@@ -5,8 +5,8 @@
 #include "network_client.h"
 
 struct server_t{
-	/* Atributos importantes para interagir com o servidor, */
-	/* tanto antes da ligação estabelecida, como depois.    */
+	int sock_file_descriptor;
+	struct sockaddr_in server;
 };
 
 /* Função que garante o envio de len bytes armazenados em buf,
