@@ -34,7 +34,7 @@ struct message_t *network_send_receive(struct server_t *server,
 	char *message_out;
 	char *message_in;
 	int message_size, msg_size, result;
-	struct message_t msg_resposta; // ISTO TEM DE SER UM message_t* e nao um message_t
+	struct message_t *msg_resposta; // ISTO TEM DE SER UM message_t* e nao um message_t
 
 	/* Verificar parâmetros de entrada */
 	if (msg == NULL || server == NULL) {
@@ -106,7 +106,7 @@ struct message_t *network_send_receive(struct server_t *server,
 int network_close(struct server_t *server) {
 	/* Verificar parâmetros de entrada */
 	if(server == NULL)
-		return 1; //--------------------->DEVE RETORNAR O QUE?---------------1
+		return -1; //--------------------->DEVE RETORNAR O QUE?---------------1
 	/* Terminar ligação ao servidor */
 	int result = close(server->sock_file_descriptor);
 	free(server);

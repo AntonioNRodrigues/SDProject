@@ -9,7 +9,7 @@ int key_hash(char *key, int l) {
 		return -1;
 	}
 	int min = 3;
-	int lenght_key = strlen(key);
+	int lenght_key = strlen(key); //
 
 	int hashCode = 0;
 
@@ -30,7 +30,6 @@ int key_hash(char *key, int l) {
 	}
 	return hashCode % l;
 }
-
 struct table_t *table_create(int n) {
 
 	if (n <= 0)
@@ -160,7 +159,6 @@ struct data_t *table_get(struct table_t *table, char * key) {
 	struct data_t *data = data_dup(entry->value);
 	if (data == NULL)
 		return NULL;
-
 	return data;
 }
 /* Função para remover um par chave valor da tabela, especificado
@@ -177,7 +175,7 @@ int table_del(struct table_t *table, char *key) {
 	int ret_value = list_remove(table->buckets[index_entry], key);
 	//update the number of entries in case of success
 	if (ret_value == 0) {
-		table->quantity_entry = table->quantity_entry - 1;
+		table->quantity_entry -= 1;
 	}
 	return ret_value;
 }
@@ -210,6 +208,7 @@ char **table_get_keys(struct table_t *table) {
 			//the strdup failed
 			if (table_keys[index_total] == NULL) {
 				table_free_keys(table_keys);
+				list_free_keys(temp);
 				return NULL;
 			}
 			index_total++;
@@ -217,9 +216,10 @@ char **table_get_keys(struct table_t *table) {
 		}
 
 		index_table++;
-
+		list_free_keys(temp);
 	}
 	table_keys[index_total] = NULL;
+
 	return table_keys;
 }
 
