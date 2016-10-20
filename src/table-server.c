@@ -30,9 +30,10 @@ int make_server_socket(short port) {
 		return -1;
 	}
 
+	//---------------------------> atencao ao Zero do parametro do listen
 	if (listen(socket_fd, 0) < 0) {
 		perror("Erro ao executar listen");
-		close(sfd);
+		close(socket_fd);
 		return -1;
 	}
 	return socket_fd;
@@ -70,12 +71,35 @@ struct message_t *process_message(struct message_t *msg_pedido,
 		msg_resposta->content.result = result;
 		break;
 	case OC_PUT:
+		result = table_put(tabela, msg_pedido.content->entry->key,
+				msg_pedido.content->entry->value);
+		//table_put failed
+		if (result == -1) {
+			//build error message
+		}
+		msg_resposta->c_type = OC_PUT + 1;
+		msg_resposta->content.result = result;
 		break;
 	case OC_GET:
 		break;
 	case OC_UPDATE:
+		result = table_update(tabela, msg_pedido.content->entry->key,
+				msg_pedido.content->entry->value);
+		//table_update failed
+		if (result == -1) {
+			//build error message
+		}
+		msg_resposta->c_type = OC_UPDATE + 1;
+		msg_resposta->content.result = result;
 		break;
 	case OC_DEL:
+		result = table_del(tabela, msg_pedido.content->key);
+		//table_del failed
+		if (result == -1) {
+			//build error message
+		}
+		msg_resposta->c_type = OC_UPDATE + 1;
+		msg_resposta->content.result = result;
 		break;
 	default:
 		break;
