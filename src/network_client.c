@@ -47,14 +47,10 @@ struct server_t *network_connect(const char *address_port) {
 		return NULL;
 	}
 
-	int sockfd;
-	struct sockaddr_in server_2;
-	char *token;
+	char *token1, *token2;
 
-	token = strtok(strdup(address_port), ":");
-	server->server->sin_addr = strdup(token);
-	token = strtok(NULL, "\n");
-	server->server->sin_port = strdup(token);
+	token1 = strtok(strdup(address_port), ":");
+	token2 = strtok(NULL, "\n");
 
 	/* Estabelecer ligação ao servidor:
 	
@@ -67,24 +63,26 @@ struct server_t *network_connect(const char *address_port) {
 	 Estabelecer ligação.
 	 */
 	
+	//Cria a socket
 	if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0 ) {
-		free(server);
         perror("Erro ao criar socket");
         return NULL;
     }
-
-    server -> sock_file_descriptor = sockfd;
-	server_2.sin_family = AF_INET;
-    server_2.sin_port = htons(atoi(server->port); //Porta TCP
-    if (inet_pton(AF_INET, server->server->sin_addr, &server_2.sin_addr) < 1) {
+	
+	//Preenche estrutura struct sockaddr_in server com dados do endereço do servidor
+	server.sin_family = AF_INET;
+    server.sin_port = htons(atoi(token2); //Porta TCP
+    if (inet_pton(AF_INET, token1, &server.sin_addr) < 1) {
 		printf("Erro ao converter IP\n");
 		close(server->sock_file_descriptor);
 		return NULL;
 	}
-
+	
+	/* Estabelece a ligação */
 	/* Se a ligação não foi estabelecida, retornar NULL */
 
-	if (connect(server->sock_file_descriptor,(struct sockaddr *)&server_2, sizeof(server_2)) < 0) {
+	if (connect(server->sock_file_descriptor,(struct sockaddr *)&server, sizeof(server)) < 0) {
+		free(server);
 		perror("Erro ao conectar-se ao servidor");
 		close(server->sock_file_descriptor);
 		return NULL;
