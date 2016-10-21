@@ -10,8 +10,26 @@
 #include "network_client-private.h"
 
 int testInput(int argc) {
-	if (argc < 3) {
+	if (argc != 2) {
 		printf("Uso: table-client <ip servidor>:<porta servidor>\n");
+		printf("Exemplo de uso: ./table_client 10.101.148.144:54321\n");
+		return -1;
+	}
+	int n;
+	char *token;
+	token = strtok(argv[1],".:");
+	n = atoi(token);
+	for (int i=0;i<4;i++){
+	
+		if (n<0 || n>255){
+			printf("O endereço de IP nao e valido\n");
+			return -1;
+		}
+		token = strtok(NULL, ".:");
+		n = atoi(token);
+	}
+	if (n<0 || n>65535){
+		printf("A porta nao e valida\n");
 		printf("Exemplo de uso: ./table_client 10.101.148.144:54321\n");
 		return -1;
 	}
@@ -25,14 +43,11 @@ int main(int argc, char **argv) {
 	char *token;
 
 	/* Testar os argumentos de entrada */
-	if (testInput(argc) < 0)
+	if (testInput(argc,argv) < 0)
 		return -1;
 
 	/* Usar network_connect para estabelcer ligação ao servidor */
-	strcpy(input, argv[1]);
-	strcat(input, ":");
-	strcat(input, argv[2]);
-	server = network_connect(input);
+	server = network_connect(argv[1]);
 
 	/* Fazer ciclo até que o utilizador resolva fazer "quit" */
 	while (input != "quit") {
@@ -69,27 +84,40 @@ int main(int argc, char **argv) {
 			msg_out->opcode = OC_SIZE;
 
 			msg_resposta = network_send_receive(server, msg_out);
-			free(msg_out);
+			free_message(msg_out);
+			printf("resultado: %d\n" , msg->content.result);
+			free_message(msg_resposta);
 			break;
 		case "get":
 			token = strtok(NULL, " ");
 			if (token == NULL) {
-				printf("erro");
+				printf("Uso: get <chave>\n");
 				break;
 			}
 
 			msg_out = (struct message_t *) malloc(sizeof(struct message_t));
-			msg_out->opcode = OC_SIZE;
+			msg_out->opcode = OC_GET;
 			msg_out->c_type = CT_KEY;
 			msg_out->content.key = strdup(token);
 
 			msg_resposta = network_send_receive(server, msg_out);
-			free(msg_out);
+			free_message(msg_out);
+			if (msg_resposta->c_type == CT_VALUE){
+				printf("Valor: %d\n", msg->content.data->data);
+			} else {
+				printf("Chaves:\n ");
+				int i=0;
+				while (msg->content.keys[i] != NULL) {
+					printf("%s\n", msg->content.keys[i])
+					i++;
+				}
+			}
+			free_message(msg_resposta);
 			break;
 		case "del":
 			token = strtok(NULL, " ");
 			if (token == NULL) {
-				printf("erro");
+				printf("Uso: del <chave>\n");
 				break;
 			}
 
@@ -99,28 +127,29 @@ int main(int argc, char **argv) {
 			msg_out->content.key = strdup(token);
 
 			msg_resposta = network_send_receive(server, msg_out);
-			free(msg_out);
+			free_message(msg_out);
+			printf("resultado: %d\n", msg->content.result);
+			free_message(msg_resposta);
 			break;
 		case "put":
 			token = strtok(NULL, " ");
 			if (token == NULL) {
-				printf("error");
+				printf("Uso: put <chave> <data>\n");
 				break;
 			}
 
 			char key[sizeof(input)];
 			strcpy(key, token);
 			if (token == NULL) {
-				printf("error");
+				printf("error\n");
 				break;
 			}
 			char datastr[sizeof(input)];
 			strcpy(datastr, token);
 			token = strtok(NULL, " ");
 			while (token != NULL) {
-				strcat(datastr, "_");
+				strcat(datastr, " ");
 				strcat(datastr, token);
-
 				token = strtok(NULL, " ");
 			}
 			struct data_t *data;
@@ -134,26 +163,28 @@ int main(int argc, char **argv) {
 			data_destroy(data);
 
 			msg_resposta = network_send_receive(server, msg_out);
-			free(msg_out);
+			free_message(msg_out);
+			printf("resultado: %d\n", msg->content.result);
+			free_message(msg_resposta);
 			break;
 		case "update":
 			token = strtok(NULL, " ");
 			if (token == NULL) {
-				printf("error");
+				printf("Uso: update <chave> <data>\n");
 				break;
 			}
 
 			char key[sizeof(input)];
 			strcpy(key, token);
 			if (token == NULL) {
-				printf("error");
+				printf("Uso: update <chave> <data>\n");
 				break;
 			}
 			char datastr[sizeof(input)];
 			strcpy(datastr, token);
 			token = strtok(NULL, " ");
 			while (token != NULL) {
-				strcat(datastr, "_");
+				strcat(datastr, " ");
 				strcat(datastr, token);
 
 				token = strtok(NULL, " ");
@@ -169,7 +200,12 @@ int main(int argc, char **argv) {
 			data_destroy(data);
 
 			msg_resposta = network_send_receive(server, msg_out);
-			free(msg_out);
+			free_message(msg_out);
+			printf("resultado: %d\n", msg->content.result);
+			free_message(msg_resposta);
+			break;
+		default:
+			printf("comando invalido\n");
 			break;
 		}
 
