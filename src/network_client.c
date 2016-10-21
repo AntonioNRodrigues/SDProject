@@ -52,10 +52,9 @@ struct server_t *network_connect(const char *address_port) {
 	char *token;
 
 	token = strtok(strdup(address_port), ":");
-	server->hostname = strdup(token);
-
+	server->server->sin_addr = strdup(token);
 	token = strtok(NULL, "\n");
-	server->port = strdup(token);
+	server->server->sin_port = strdup(token);
 
 	/* Estabelecer ligação ao servidor:
 	
@@ -77,7 +76,7 @@ struct server_t *network_connect(const char *address_port) {
     server -> sock_file_descriptor = sockfd;
 	server_2.sin_family = AF_INET;
     server_2.sin_port = htons(atoi(server->port); //Porta TCP
-    if (inet_pton(AF_INET, server->hostname, &server_2.sin_addr) < 1) {
+    if (inet_pton(AF_INET, server->server->sin_addr, &server_2.sin_addr) < 1) {
 		printf("Erro ao converter IP\n");
 		close(server->sock_file_descriptor);
 		return NULL;
