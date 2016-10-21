@@ -249,16 +249,16 @@ int main(int argc, char **argv) {
 	while ((connsock = accept(listening_socket, (struct sockaddr *) &client,
 			&size_client)) != -1) {
 		printf(" * Client is connected!\n");
+		
+		struct message_t* msg_pedido;
 
-		while (/* condição */) {
-
+		while (network_receive_send(connsock, table) != 0) {
+			struct message_t* msg_resposta = process_message(msg_pedido, table);
 			/* Fazer ciclo de pedido e resposta */
-			network_receive_send(connsock, table) < 0
-		);
-
+			
 		/* Ciclo feito com sucesso ? Houve erro?
 		 Cliente desligou? */
 
+		}
 	}
-}
 }

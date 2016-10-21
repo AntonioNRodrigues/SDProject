@@ -98,3 +98,9 @@ valgrindTable:
 
 valgrindMessage:
 	valgrind -v --leak-check=full --track-origins=yes --log-file=valgrindMessage.log ./test_message
+
+valgrindTableClient:
+	valgrind -v --leak-check=full --track-origins=yes --log-file=valgrindTableClient.log ./test_table_client
+
+valgrindNetworkClient:
+	valgrind -v --leak-check=full --track-origins=yes --log-file=valgrindNetworkClient.log ./test_network_client	
