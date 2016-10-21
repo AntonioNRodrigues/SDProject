@@ -3,9 +3,39 @@
 #include <stdlib.h>
 
 int write_all(int sock, char *buf, int len) {
+	int nbytes_write = len;
+	int msg;
+	while (len > 0){
+		msg = write(sock, buf, len);
+		if(msg == -1){
+			if(errno==EINTR) continue;
+			prinf("%s \n", "Write failed");
+			return msg;
+		}
+		buf += msg;
+		len -= msg;
+	}
+	return nbytes_write;
 }
 
 int read_all(int sock, char *buf, int len) {
+	int nbytes_read = len;
+	int msg;
+	while(len > 0){
+		msg = read(sock, buf, len);
+		if(msg == 0){
+			return 0;
+		}
+		if(msg == -1){
+			if(errno==EINTR) continue;
+			printf("%s \n", "Read failed");
+			return msg;
+		}
+		buf += msg;
+		len -= msg;
+	}
+	return nbytes_read;
+
 }
 
 struct server_t *network_connect(const char *address_port) {
@@ -13,18 +43,53 @@ struct server_t *network_connect(const char *address_port) {
 	struct server_t *server = malloc(sizeof(struct server_t));
 
 	/* Verificar parâmetro da função e alocação de memória */
+	if(address_port == NULL || server == NULL){
+		return NULL;
+	}
+
+	int sockfd;
+	struct sockaddr_in server;
+	char *token;
+
+	token = strtok(strdup(address_port), ":");
+	server->hostname = strdup(token);
+
+	token = strtok(NULL, "\n");
+	server->port = strdup(token);
 
 	/* Estabelecer ligação ao servidor:
+	
 
 	 Preencher estrutura struct sockaddr_in com dados do
 	 endereço do servidor.
 
 	 Criar a socket.
-
+	
 	 Estabelecer ligação.
 	 */
+	
+	if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0 ) {
+		free(server);
+        perror("Erro ao criar socket");
+        return NULL;
+    }
+
+    server -> sock_file_descriptor = sockfd;
+	server.sin_family = AF_INET;
+    server.sin_port = htons(atoi(server->port); //Porta TCP
+    if (inet_pton(AF_INET, server->hostname, &server.sin_addr) < 1) {
+		printf("Erro ao converter IP\n");
+		close(server->sock_file_descriptor);
+		return NULL;
+	}
 
 	/* Se a ligação não foi estabelecida, retornar NULL */
+
+	if (connect(server->sock_file_descriptor,(struct sockaddr *)&server, sizeof(server)) < 0) {
+		perror("Erro ao conectar-se ao servidor");
+		close(server->sock_file_descriptor);
+		return NULL;
+	}
 
 	return server;
 }
