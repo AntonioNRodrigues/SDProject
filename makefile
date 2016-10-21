@@ -13,7 +13,7 @@ T_LIST_OBJ = $(OBJ)/data.o $(OBJ)/entry.o $(OBJ)/list.o $(OBJ)/test_list.o
 T_TABLE_OBJ = $(OBJ)/data.o $(OBJ)/entry.o $(OBJ)/list.o $(OBJ)/table.o $(OBJ)/test_table.o
 T_MESSAGE_OBJ = $(OBJ)/data.o $(OBJ)/entry.o $(OBJ)/list.o $(OBJ)/table.o $(OBJ)/message.o $(OBJ)/test_message.o
 
-all: clean test_data test_entry test_list test_table test_message
+all: clean test_data test_entry test_list test_table test_message test_table_client test_network_client
 
 test_data: $(T_DATA_OBJ) 
 	$(CC) $(T_DATA_OBJ) -o test_data
@@ -29,6 +29,12 @@ test_table: $(T_TABLE_OBJ)
 	
 test_message: $(T_MESSAGE_OBJ)
 	$(CC) $(T_MESSAGE_OBJ) -o test_message
+
+test_table_client: $(T_TABLE_CLIENT_OBJ)
+	$(CC) $(T_TABLE_CLIENT_OBJ) -o test_table_client
+
+test_network_client: $(T_NETWORK_CLIENT_OBJ)
+	$(CC) $(T_NETWORK_CLIENT_OBJ) -o test_network_client
 	
 $(OBJ)/data.o: $(SRC)/data.c $(INC)/data.h 
 	$(CC) $(FLAGS) -c $(SRC)/data.c -o $(OBJ)/data.o
@@ -45,6 +51,12 @@ $(OBJ)/table.o: $(SRC)/table.c $(INC)/table.h $(INC)/table-private.h
 $(OBJ)/message.o: $(SRC)/message.c $(INC)/message.h $(INC)/message-private.h
 	$(CC) $(FLAGS) -c $(SRC)/message.c -o $(OBJ)/message.o
 
+$(OBJ)/table_client.o: $(SRC)table_client.c $(INC)network_client-private.h
+	$(CC) $(FLAGS) -c $(SRC)table_client.c -o $(OBJ)table_client.o
+
+$(OBJ)/network_client.o: $(SRC)network_client.c $(INC)inet.h $(INC)network_client-private.h
+	$(CC) $(FLAGS) -c $(SRC)network_client.c -o $(OBJ)network_client.o
+
 $(OBJ)/test_data.o: test_data.c $(INC)/data.h
 	$(CC) $(FLAGS) -c test_data.c -o $(OBJ)/test_data.o
 	
@@ -59,6 +71,12 @@ $(OBJ)/test_table.o: test_table.c $(INC)/table.h
 
 $(OBJ)/test_message.o: test_message.c $(INC)/message.h
 	$(CC) $(FLAGS) -c test_message.c -o $(OBJ)/test_message.o
+
+$(OBJ)/test_table_client.o: test_table_client.c $(INC)network_client-private.h
+	$(CC) $(FLAGS) -c test_table_client.c -o $(OBJ)test_table_client.o
+
+S(OBJ)/test_network_client.o: network_client.c $(INC)inet.h $(INC)network_client-private.h
+	$(CC) $(FLAGS) -c test_network_client.c -o $(OBJ)test_network_client.o
 
 clean:
 	rm -fr $(OBJ)/*.o test_data test_entry test_list test_table test_message
