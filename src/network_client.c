@@ -48,7 +48,7 @@ struct server_t *network_connect(const char *address_port) {
 	}
 
 	int sockfd;
-	struct sockaddr_in server;
+	struct sockaddr_in server_2;
 	char *token;
 
 	token = strtok(strdup(address_port), ":");
@@ -75,9 +75,9 @@ struct server_t *network_connect(const char *address_port) {
     }
 
     server -> sock_file_descriptor = sockfd;
-	server.sin_family = AF_INET;
-    server.sin_port = htons(atoi(server->port); //Porta TCP
-    if (inet_pton(AF_INET, server->hostname, &server.sin_addr) < 1) {
+	server_2.sin_family = AF_INET;
+    server_2.sin_port = htons(atoi(server->port); //Porta TCP
+    if (inet_pton(AF_INET, server->hostname, &server_2.sin_addr) < 1) {
 		printf("Erro ao converter IP\n");
 		close(server->sock_file_descriptor);
 		return NULL;
@@ -85,7 +85,7 @@ struct server_t *network_connect(const char *address_port) {
 
 	/* Se a ligação não foi estabelecida, retornar NULL */
 
-	if (connect(server->sock_file_descriptor,(struct sockaddr *)&server, sizeof(server)) < 0) {
+	if (connect(server->sock_file_descriptor,(struct sockaddr *)&server_2, sizeof(server_2)) < 0) {
 		perror("Erro ao conectar-se ao servidor");
 		close(server->sock_file_descriptor);
 		return NULL;
