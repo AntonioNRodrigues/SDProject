@@ -39,6 +39,8 @@ int make_server_socket(short port) {
 	return socket_fd;
 }
 
+
+
 /* Função que recebe uma tabela e uma mensagem de pedido e:
  - aplica a operação na mensagem de pedido na tabela;
  - devolve uma mensagem de resposta com o resultado.
@@ -48,7 +50,6 @@ struct message_t *process_message(struct message_t *msg_pedido,
 
 	struct message_t *msg_resposta = (struct message_t *) malloc(
 			sizeof(struct message_t));
-
 	int result;
 
 	/* Verificar parâmetros de entrada */
@@ -56,6 +57,12 @@ struct message_t *process_message(struct message_t *msg_pedido,
 		return NULL;
 
 	/* Verificar opcode e c_type na mensagem de pedido */
+	if (msg_pedido->opcode == NULL || msg_pedido->c_type == NULL) {
+		return NULL;
+	}
+	/* Aplicar operação na tabela */
+
+	/* Preparar mensagem de resposta */
 
 	switch (msg_pedido->opcode) {
 	case OC_SIZE:
@@ -64,7 +71,7 @@ struct message_t *process_message(struct message_t *msg_pedido,
 		if (result < 0) {
 			msg_resposta->c_type = CT_RESULT;
 			msg_resposta->opcode = OC_RT_ERROR;
-			msg_resposta->content.result = result;
+			msg_resposta->content.result = -1;
 		}
 		msg_resposta->c_type = CT_RESULT;
 		msg_resposta->opcode = OC_SIZE + 1;
@@ -75,12 +82,40 @@ struct message_t *process_message(struct message_t *msg_pedido,
 				msg_pedido.content->entry->value);
 		//table_put failed
 		if (result == -1) {
+			return NULL;
 			//build error message
 		}
 		msg_resposta->c_type = OC_PUT + 1;
 		msg_resposta->content.result = result;
 		break;
 	case OC_GET:
+		char * temp_key = msg_pedido->content.key;
+		// temp_key is NULL
+		if(temp_key == NULL) {
+			return NULL;
+		}
+		//key is ! --> GET ALL KEYS
+		if (strcmp("!", temp_key) == 0) {
+			msg_resposta->c_type = CT_KEYS;
+			msg_resposta->opcode = OC_GET + 1;
+			msg_resposta->content.keys = table_get_keys(temp_key);
+		} else {
+			struct data_t temp_data = table_get(tabela, temp_key);
+			//the key is present
+			if (temp_data != NULL) {
+				msg_resposta->c_type = CT_VALUE;
+				msg_resposta->opcode = OC_GET + 1;
+				msg_resposta->content.data = data_dup(temp_data);
+				data_destroy(temp_data);
+				//key does not exist
+			} else {
+				struct data_t *t = data_create2(0, NULL);
+				msg_resposta->c_type = CT_RESULT;
+				msg_resposta->opcode = OC_RT_ERROR;
+				msg_resposta->content.data = t;
+				data_destroy(t);
+			}
+		}
 		break;
 	case OC_UPDATE:
 		result = table_update(tabela, msg_pedido.content->entry->key,
@@ -88,6 +123,7 @@ struct message_t *process_message(struct message_t *msg_pedido,
 		//table_update failed
 		if (result == -1) {
 			//build error message
+			return NULL;
 		}
 		msg_resposta->c_type = OC_UPDATE + 1;
 		msg_resposta->content.result = result;
@@ -97,6 +133,7 @@ struct message_t *process_message(struct message_t *msg_pedido,
 		//table_del failed
 		if (result == -1) {
 			//build error message
+			return NULL;
 		}
 		msg_resposta->c_type = OC_UPDATE + 1;
 		msg_resposta->content.result = result;
@@ -104,10 +141,6 @@ struct message_t *process_message(struct message_t *msg_pedido,
 	default:
 		break;
 	}
-
-	/* Aplicar operação na tabela */
-
-	/* Preparar mensagem de resposta */
 
 	return msg_resposta;
 }
