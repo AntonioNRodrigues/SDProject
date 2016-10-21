@@ -218,7 +218,9 @@ int network_receive_send(int sockfd, struct table_t *table) {
 	result = write_all(sockfd, message_resposta, message_size);
 
 	/* Verificar se o envio teve sucesso */
-
+	if(result < 0){
+		return -1;
+	}
 	/* Libertar memória */
 
 	return 0;

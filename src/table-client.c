@@ -9,7 +9,7 @@
 
 #include "network_client-private.h"
 
-int testInput(int argc) {
+int testInput(int argc, int argv) {
 	if (argc != 2) {
 		printf("Uso: table-client <ip servidor>:<porta servidor>\n");
 		printf("Exemplo de uso: ./table_client 10.101.148.144:54321\n");
@@ -85,7 +85,7 @@ int main(int argc, char **argv) {
 
 			msg_resposta = network_send_receive(server, msg_out);
 			free_message(msg_out);
-			printf("resultado: %d\n" , msg->content.result);
+			printf("resultado: %d\n" , msg_out->content.result);
 			free_message(msg_resposta);
 			break;
 		case "get":
@@ -103,12 +103,12 @@ int main(int argc, char **argv) {
 			msg_resposta = network_send_receive(server, msg_out);
 			free_message(msg_out);
 			if (msg_resposta->c_type == CT_VALUE){
-				printf("Valor: %d\n", msg->content.data->data);
+				printf("Valor: %d\n", msg_resposta->content.data->data);
 			} else {
 				printf("Chaves:\n ");
 				int i=0;
-				while (msg->content.keys[i] != NULL) {
-					printf("%s\n", msg->content.keys[i])
+				while (msg_resposta->content.keys[i] != NULL) {
+					printf("%s\n", msg_resposta->content.keys[i]);
 					i++;
 				}
 			}
@@ -128,7 +128,7 @@ int main(int argc, char **argv) {
 
 			msg_resposta = network_send_receive(server, msg_out);
 			free_message(msg_out);
-			printf("resultado: %d\n", msg->content.result);
+			printf("resultado: %d\n", msg_resposta->content.result);
 			free_message(msg_resposta);
 			break;
 		case "put":
@@ -164,7 +164,7 @@ int main(int argc, char **argv) {
 
 			msg_resposta = network_send_receive(server, msg_out);
 			free_message(msg_out);
-			printf("resultado: %d\n", msg->content.result);
+			printf("resultado: %d\n", msg_resposta->content.result);
 			free_message(msg_resposta);
 			break;
 		case "update":
@@ -201,7 +201,7 @@ int main(int argc, char **argv) {
 
 			msg_resposta = network_send_receive(server, msg_out);
 			free_message(msg_out);
-			printf("resultado: %d\n", msg->content.result);
+			printf("resultado: %d\n", msg_resposta->content.result);
 			free_message(msg_resposta);
 			break;
 		default:
