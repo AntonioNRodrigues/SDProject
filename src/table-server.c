@@ -8,10 +8,13 @@
 #include "inet.h"
 #include "table-private.h"
 #include "message-private.h"
+#include "network_client-private.h"
+
 
 /* Função para preparar uma socket de receção de pedidos de ligação.
  */
 int make_server_socket(short port) {
+	printf("MAKE SEVER CONNECTION");
 	int socket_fd;
 	struct sockaddr_in server;
 
@@ -45,7 +48,7 @@ int make_server_socket(short port) {
  */
 struct message_t *process_message(struct message_t *msg_pedido,
 		struct table_t *tabela) {
-
+	char * temp_key;
 	struct message_t *msg_resposta = (struct message_t *) malloc(
 			sizeof(struct message_t));
 	int result;
@@ -76,8 +79,8 @@ struct message_t *process_message(struct message_t *msg_pedido,
 		msg_resposta->content.result = result;
 		break;
 	case OC_PUT:
-		result = table_put(tabela, msg_pedido.content->entry->key,
-				msg_pedido.content->entry->value);
+		result = table_put(tabela, msg_pedido->content.entry->key,
+				msg_pedido->content.entry->value);
 		//table_put failed
 		if (result == -1) {
 			return NULL;
@@ -87,7 +90,7 @@ struct message_t *process_message(struct message_t *msg_pedido,
 		msg_resposta->content.result = result;
 		break;
 	case OC_GET:
-		char * temp_key = msg_pedido->content.key;
+		temp_key = strdup(msg_pedido->content.key);
 		// temp_key is NULL
 		if (temp_key == NULL) {
 			return NULL;
@@ -98,7 +101,7 @@ struct message_t *process_message(struct message_t *msg_pedido,
 			msg_resposta->opcode = OC_GET + 1;
 			msg_resposta->content.keys = table_get_keys(temp_key);
 		} else {
-			struct data_t temp_data = table_get(tabela, temp_key);
+			struct data_t *temp_data = table_get(tabela, temp_key);
 			//the key is present
 			if (temp_data != NULL) {
 				msg_resposta->c_type = CT_VALUE;
@@ -116,8 +119,8 @@ struct message_t *process_message(struct message_t *msg_pedido,
 		}
 		break;
 	case OC_UPDATE:
-		result = table_update(tabela, msg_pedido.content->entry->key,
-				msg_pedido.content->entry->value);
+		result = table_update(tabela, msg_pedido->content.entry->key,
+				msg_pedido->content.entry->value);
 		//table_update failed
 		if (result == -1) {
 			//build error message
@@ -127,7 +130,7 @@ struct message_t *process_message(struct message_t *msg_pedido,
 		msg_resposta->content.result = result;
 		break;
 	case OC_DEL:
-		result = table_del(tabela, msg_pedido.content->key);
+		result = table_del(tabela, msg_pedido->content.key);
 		//table_del failed
 		if (result == -1) {
 			//build error message
@@ -232,13 +235,13 @@ int main(int argc, char **argv) {
 	socklen_t size_client;
 	struct table_t *table;
 
-	if (argc != 2) {
+	if (argc != 3) {
 		printf("Uso: ./server <porta TCP> <dimensão da tabela>\n");
 		printf("Exemplo de uso: ./table-server 54321 10\n");
 		return -1;
 	}
 
-	if ((listening_socket = make_server(atoi(argv[1]))) < 0)
+	if ((listening_socket = make_server_socket(atoi(argv[1]))) < 0)
 		return -1;
 
 	if ((table = table_create(atoi(argv[2]))) == NULL) {

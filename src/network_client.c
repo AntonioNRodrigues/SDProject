@@ -8,7 +8,7 @@ int write_all(int sock, char *buf, int len) {
 	while (len > 0){
 		msg = write(sock, buf, len);
 		if(msg == -1){
-			prinf("%s \n", "Write failed");
+			//prinf("%s \n", "Write failed");
 			return msg;
 		}
 		buf += msg;
@@ -26,7 +26,7 @@ int read_all(int sock, char *buf, int len) {
 			return 0;
 		}
 		if(msg == -1){
-			printf("%s \n", "Read failed");
+			//printf("%s \n", "Read failed");
 			return msg;
 		}
 		buf += msg;
@@ -72,7 +72,7 @@ struct server_t *network_connect(const char *address_port) {
 	server->server.sin_family = AF_INET;
     server->server.sin_port = htons(atoi(token2)); //Porta TCP
     if (inet_pton(AF_INET, token1, &server->server.sin_addr) < 1) {
-		printf("Erro ao converter IP\n");
+		//printf("Erro ao converter IP\n");
 		close(server->sock_file_descriptor);
 		return NULL;
 	}
@@ -141,7 +141,7 @@ struct message_t *network_send_receive(struct server_t *server,
 	 Com a função read_all, receber a mensagem de resposta.
 
 	 */
-	/*int size_returned_msg;*/
+	int size_returned_msg;
 	char* aux = malloc(4);
 	result = read_all(server->sock_file_descriptor, aux, _INT);
 	if (size_returned_msg <= 0) {

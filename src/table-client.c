@@ -9,7 +9,8 @@
 
 #include "network_client-private.h"
 
-int testInput(int argc, int argv) {
+int testInput(int argc, char ** argv) {
+	printf("TEST_INPUT");
 	if (argc != 2) {
 		printf("Uso: table-client <ip servidor>:<porta servidor>\n");
 		printf("Exemplo de uso: ./table_client 10.101.148.144:54321\n");
@@ -18,7 +19,9 @@ int testInput(int argc, int argv) {
 	int n;
 	char *token;
 	token = strtok(argv[1],".:");
+
 	n = atoi(token);
+	printf("%d",n);
 	for (int i=0;i<4;i++){
 	
 		if (n<0 || n>255){
@@ -33,6 +36,7 @@ int testInput(int argc, int argv) {
 		printf("Exemplo de uso: ./table_client 10.101.148.144:54321\n");
 		return -1;
 	}
+	printf("%d", 3333);
 	return 0;
 }
 
@@ -41,11 +45,14 @@ int main(int argc, char **argv) {
 	char input[81];
 	struct message_t *msg_out, *msg_resposta;
 	char *token;
-
+	printf("-----------------");
 	/* Testar os argumentos de entrada */
-	if (testInput(argc,argv) < 0)
-		return -1;
+	if (testInput(argc,argv) < 0){
 
+		printf("server\n");
+
+		return -1;
+	}
 	/* Usar network_connect para estabelcer ligação ao servidor */
 	server = network_connect(argv[1]);
 
@@ -67,9 +74,9 @@ int main(int argc, char **argv) {
 		 não há mais nada a fazer a não ser terminar decentemente.
 		 */
 		token = strtok(input, " ");
-		switch (token) {
-		case "quit":
-			break;
+			if(strcmp(token, "quit")){
+				return network_close(server);
+			}
 			/* Caso contrário:
 
 			 Verificar qual o comando;
@@ -79,7 +86,8 @@ int main(int argc, char **argv) {
 			 Usar network_send_receive para enviar msg_out para
 			 o server e receber msg_resposta.
 			 */
-		case "size":
+			if(strcmp(token, "size")){
+
 			msg_out = (struct message_t *) malloc(sizeof(struct message_t));
 			msg_out->opcode = OC_SIZE;
 
@@ -87,8 +95,10 @@ int main(int argc, char **argv) {
 			free_message(msg_out);
 			printf("resultado: %d\n" , msg_out->content.result);
 			free_message(msg_resposta);
-			break;
-		case "get":
+
+			}
+			if(strcmp(token, "get")){
+
 			token = strtok(NULL, " ");
 			if (token == NULL) {
 				printf("Uso: get <chave>\n");
@@ -113,8 +123,9 @@ int main(int argc, char **argv) {
 				}
 			}
 			free_message(msg_resposta);
-			break;
-		case "del":
+			}
+			if(strcmp(token, "del")){
+
 			token = strtok(NULL, " ");
 			if (token == NULL) {
 				printf("Uso: del <chave>\n");
@@ -130,8 +141,10 @@ int main(int argc, char **argv) {
 			free_message(msg_out);
 			printf("resultado: %d\n", msg_resposta->content.result);
 			free_message(msg_resposta);
-			break;
-		case "put":
+			}
+
+			if(strcmp(token, "put")){
+
 			token = strtok(NULL, " ");
 			if (token == NULL) {
 				printf("Uso: put <chave> <data>\n");
@@ -166,8 +179,9 @@ int main(int argc, char **argv) {
 			free_message(msg_out);
 			printf("resultado: %d\n", msg_resposta->content.result);
 			free_message(msg_resposta);
-			break;
-		case "update":
+			}
+			if(strcmp(token, "update")){
+
 			token = strtok(NULL, " ");
 			if (token == NULL) {
 				printf("Uso: update <chave> <data>\n");
@@ -203,10 +217,10 @@ int main(int argc, char **argv) {
 			free_message(msg_out);
 			printf("resultado: %d\n", msg_resposta->content.result);
 			free_message(msg_resposta);
-			break;
-		default:
+			}
+			else{
+
 			printf("comando invalido\n");
-			break;
 		}
 
 	}
