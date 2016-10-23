@@ -15,12 +15,12 @@ int testInput(int argc, char ** argv) {
 		printf("Exemplo de uso: ./table_client 10.101.148.144:54321\n");
 		return -1;
 	}
-	int n;
+	int n, i;
 	char *token;
 	token = strtok(strdup(argv[1]), ".:");
 
 	n = atoi(token);
-	for (int i = 0; i < 4; i++) {
+	for (i = 0; i < 4; i++) {
 
 		if (n < 0 || n > 255) {
 			printf("O endereço de IP nao e valido\n");
