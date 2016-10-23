@@ -271,8 +271,6 @@ int main(int argc, char **argv) {
 	while ((connsock = accept(listening_socket, (struct sockaddr *) &client,
 			&size_client)) != -1) {
 		printf(" * Client is connected!\n");
-		
-		struct message_t* msg_pedido;
 
 		while (network_receive_send(connsock, table) != 0) {
 			
