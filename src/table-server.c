@@ -58,7 +58,7 @@ struct message_t *process_message(struct message_t *msg_pedido,
 		return NULL;
 
 	/* Verificar opcode e c_type na mensagem de pedido */
-	if (msg_pedido->opcode == NULL || msg_pedido->c_type == NULL) {
+	if (msg_pedido->opcode < 0 || msg_pedido->c_type < 0) {
 		return NULL;
 	}
 	/* Aplicar operação na tabela */
