@@ -48,7 +48,9 @@ int main(int argc, char **argv) {
 		return -1;
 	}
 	/* Usar network_connect para estabelcer ligação ao servidor */
+
 	server = network_connect(argv[1]);
+	printf("----------------");
 	if (server==NULL) return -1;
 	/* Fazer ciclo até que o utilizador resolva fazer "quit" */
 	while (strcmp(input, "quit") != 0) {

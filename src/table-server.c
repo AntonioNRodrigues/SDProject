@@ -14,7 +14,7 @@
 /* Função para preparar uma socket de receção de pedidos de ligação.
  */
 int make_server_socket(short port) {
-	printf("MAKE SEVER CONNECTION");
+	printf("MAKE SEVER CONNECTION\n");
 	int socket_fd;
 	struct sockaddr_in server;
 
@@ -241,10 +241,14 @@ int main(int argc, char **argv) {
 		return -1;
 	}
 
-	if ((listening_socket = make_server_socket(atoi(argv[1]))) < 0)
+	if ((listening_socket = make_server_socket(atoi(argv[1]))) < 0){
+		printf("LISTENING\n");
 		return -1;
 
+	}
+
 	if ((table = table_create(atoi(argv[2]))) == NULL) {
+		printf("table\n");
 		result = close(listening_socket);
 		return -1;
 	}

@@ -5,10 +5,10 @@
 int write_all(int sock, char *buf, int len) {
 	int nbytes_write = len;
 	int msg;
-	while (len > 0){
+	while (len > 0) {
 		msg = write(sock, buf, len);
-		if(msg == -1){
-			//prinf("%s \n", "Write failed");
+		if (msg == -1) {
+			printf("%s \n", "Write failed");
 			return msg;
 		}
 		buf += msg;
@@ -20,13 +20,13 @@ int write_all(int sock, char *buf, int len) {
 int read_all(int sock, char *buf, int len) {
 	int nbytes_read = len;
 	int msg;
-	while(len > 0){
+	while (len > 0) {
 		msg = read(sock, buf, len);
-		if(msg == 0){
+		if (msg == 0) {
 			return 0;
 		}
-		if(msg == -1){
-			//printf("%s \n", "Read failed");
+		if (msg == -1) {
+			printf("%s \n", "Read failed");
 			return msg;
 		}
 		buf += msg;
@@ -38,55 +38,58 @@ int read_all(int sock, char *buf, int len) {
 
 struct server_t *network_connect(const char *address_port) {
 
-	struct server_t *server = malloc(sizeof(struct server_t));
-
 	/* Verificar parâmetro da função e alocação de memória */
-	if(address_port == NULL || server == NULL){
+	if (address_port == NULL) {
 		return NULL;
 	}
 
-	int sockfd;
+	struct server_t *server = (struct server_t *) malloc(
+			sizeof(struct server_t));
+	if (server == NULL) {
+		return NULL;
+	}
+
 	char *token1, *token2;
 
 	token1 = strtok(strdup(address_port), ":");
 	token2 = strtok(NULL, "\n");
 
 	/* Estabelecer ligação ao servidor:
-	
+
 
 	 Preencher estrutura struct sockaddr_in com dados do
 	 endereço do servidor.
 
 	 Criar a socket.
-	
+
 	 Estabelecer ligação.
 	 */
-	
+
 	//Cria a socket
-	if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0 ) {
-        perror("Erro ao criar socket");
-        return NULL;
-    }
-	
+	if ((server->sock_file_descriptor = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+		perror("Erro ao criar socket");
+		return NULL;
+	}
+
 	//Preenche estrutura struct sockaddr_in server com dados do endereço do servidor
 	server->server.sin_family = AF_INET;
-    server->server.sin_port = htons(atoi(token2)); //Porta TCP
-    if (inet_pton(AF_INET, token1, &server->server.sin_addr) < 1) {
-		//printf("Erro ao converter IP\n");
+	server->server.sin_port = htons(atoi(token2)); //Porta TCP
+
+	if (inet_pton(AF_INET, token1, &server->server.sin_addr) < 1) {
+		printf("Erro ao converter IP\n");
 		close(server->sock_file_descriptor);
 		return NULL;
 	}
-	
 	/* Estabelece a ligação */
 	/* Se a ligação não foi estabelecida, retornar NULL */
 
-	if (connect(server->sock_file_descriptor,(struct sockaddr *)&server, sizeof(server)) < 0) {
-		free(server);
+	if (connect(server->sock_file_descriptor, (struct sockaddr *) &server->server,
+			sizeof(server->server)) < 0) {
+		free(server); // nao chega------
 		perror("Erro ao conectar-se ao servidor");
 		close(server->sock_file_descriptor);
 		return NULL;
 	}
-
 	return server;
 }
 
@@ -150,13 +153,14 @@ struct message_t *network_send_receive(struct server_t *server,
 	}
 	message_in = (char *) malloc(size_returned_msg);
 
-	result = read_all(server->sock_file_descriptor, message_in, size_returned_msg);
+	result = read_all(server->sock_file_descriptor, message_in,
+			size_returned_msg);
 
 	/* Desserializar a mensagem de resposta */
 	msg_resposta = buffer_to_message(message_in, size_returned_msg);
 
 	/* Verificar se a desserialização teve sucesso */
-	if(msg_resposta == NULL){
+	if (msg_resposta == NULL) {
 		return NULL;
 	}
 
@@ -167,7 +171,7 @@ struct message_t *network_send_receive(struct server_t *server,
 
 int network_close(struct server_t *server) {
 	/* Verificar parâmetros de entrada */
-	if(server == NULL)
+	if (server == NULL)
 		return -1; //--------------------->DEVE RETORNAR O QUE?---------------1
 	/* Terminar ligação ao servidor */
 	int result = close(server->sock_file_descriptor);
