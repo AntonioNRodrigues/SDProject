@@ -267,7 +267,7 @@ int main(int argc, char **argv) {
 		return -1;
 	}
 
-	printTable(table);
+	//printTable(table);
 	while ((connsock = accept(listening_socket, (struct sockaddr *) &client,
 			&size_client)) != -1) {
 		printf(" * Client is connected!\n");
@@ -281,7 +281,7 @@ int main(int argc, char **argv) {
 			//msg_pedido->opcode = msg_resposta->opcode+1;
 			struct message_t* msg_resposta = process_message(msg_pedido, table);
 
-			printTable(table);
+			//printTable(table);
 
 			if(msg_resposta == NULL){
 				perror("Error while sending answer to client");
