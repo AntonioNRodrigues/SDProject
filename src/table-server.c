@@ -14,7 +14,7 @@
 /* Função para preparar uma socket de receção de pedidos de ligação.
  */
 int make_server_socket(short port) {
-	printf("MAKE SEVER CONNECTION\n");
+	printf("MAKE SERVER CONNECTION\n");
 	int socket_fd;
 	struct sockaddr_in server;
 
