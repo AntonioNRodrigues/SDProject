@@ -30,8 +30,7 @@ int message_to_buffer(struct message_t *msg, char **msg_buf) {
 		/* Consoante o msg->c_type, determinar o tamanho do vetor de bytes
 		 que tem de ser alocado antes de serializar msg
 		 */
-		int buffer_size, size, nkeys, i;
-		char **temp_keys;
+		int buffer_size, nkeys, i;
 
 		if (msg->c_type == CT_RESULT) {
 			buffer_size += _SHORT * 2 + _INT;
@@ -39,7 +38,7 @@ int message_to_buffer(struct message_t *msg, char **msg_buf) {
 			buffer_size += (_SHORT * 2 + _INT + msg->content.data->datasize);
 
 		} else if (msg->c_type == CT_KEYS) {
-			i=0;
+			i = 0;
 			//temp_keys = msg->content.keys;
 			while (msg->content.keys[i] != NULL) {
 				buffer_size += (strlen(msg->content.keys[i]));
@@ -54,6 +53,8 @@ int message_to_buffer(struct message_t *msg, char **msg_buf) {
 		} else if (msg->c_type == CT_ENTRY) {
 			buffer_size += (_SHORT * 3 + strlen(msg->content.entry->key) + _INT
 					+ msg->content.entry->value->datasize);
+		} else if (msg->opcode == OC_SIZE) {
+			buffer_size += (_SHORT);
 		}
 		/* Alocar quantidade de memória determinada antes
 		 *msg_buf = ....
@@ -72,10 +73,11 @@ int message_to_buffer(struct message_t *msg, char **msg_buf) {
 		memcpy(ptr, &short_value, _SHORT);
 		ptr += _SHORT;
 
-		short_value = htons(msg->c_type);
-		memcpy(ptr, &short_value, _SHORT);
-		ptr += _SHORT;
-
+		if (msg->opcode != OC_SIZE) {
+			short_value = htons(msg->c_type);
+			memcpy(ptr, &short_value, _SHORT);
+			ptr += _SHORT;
+		}
 		/* Consoante o conteúdo da mensagem, continuar a serialização da mesma */
 
 		switch (msg->c_type) {
@@ -108,7 +110,7 @@ int message_to_buffer(struct message_t *msg, char **msg_buf) {
 			memcpy(ptr, &long_value, _INT);
 			ptr += _INT;
 
-			i=0;
+			i = 0;
 			while (msg->content.keys[i] != NULL) {
 				size = strlen(msg->content.keys[i]);
 				short_value = htons(size);
@@ -158,9 +160,11 @@ struct message_t *buffer_to_message(char *msg_buf, int msg_size) {
 	msg->opcode = ntohs(short_aux);
 	msg_buf += _SHORT;
 
-	memcpy(&short_aux, msg_buf, _SHORT);
-	msg->c_type = ntohs(short_aux);
-	msg_buf += _SHORT;
+	if (msg->opcode != OC_SIZE) {
+		memcpy(&short_aux, msg_buf, _SHORT);
+		msg->c_type = ntohs(short_aux);
+		msg_buf += _SHORT;
+	}
 
 	/* O opcode e c_type são válidos? */
 	if ((valid(msg->opcode, msg->c_type)) != 0)
@@ -214,7 +218,7 @@ struct message_t *buffer_to_message(char *msg_buf, int msg_size) {
 		data_size = ntohl(int_aux);
 		msg_buf += _INT;
 		struct data_t * temp_data = data_create(data_size);
-		if(temp_data == NULL){
+		if (temp_data == NULL) {
 			free(aux_key);
 			free_message(msg);
 			return NULL;
