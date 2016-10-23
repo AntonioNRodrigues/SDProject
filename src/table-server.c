@@ -99,7 +99,8 @@ struct message_t *process_message(struct message_t *msg_pedido,
 		if (strcmp("!", temp_key) == 0) {
 			msg_resposta->c_type = CT_KEYS;
 			msg_resposta->opcode = OC_GET + 1;
-			msg_resposta->content.keys = table_get_keys(temp_key);
+			msg_resposta->content.keys = table_get_keys(temp_key); //temp_key é char* e table_get_keys tem um argumento struct table_t*
+			//msg_resposta->content.keys = table_get_keys(tabela);
 		} else {
 			struct data_t *temp_data = table_get(tabela, temp_key);
 			//the key is present
@@ -229,6 +230,19 @@ int network_receive_send(int sockfd, struct table_t *table) {
 	return 0;
 }
 
+/*void printTable(struct table_t* table){
+	int x, y;
+	for(x = 0; x < table->quantity_entry; x++){
+		printf("lista %d:\n", x);
+		struct node_t* aux = table->buckets[x]->head;
+		while(aux != NULL){
+			printf("\t KEY: %s  DATASIZE: %d  DATA: %s \n", aux->entry->key, aux->entry->value->datasize, (char *)aux->entry->value->data);
+			aux = aux->next;
+		}
+	}
+
+}*/
+
 int main(int argc, char **argv) {
 	int listening_socket, connsock, result;
 	struct sockaddr_in client;
@@ -253,6 +267,7 @@ int main(int argc, char **argv) {
 		return -1;
 	}
 
+	printTable(table);
 	while ((connsock = accept(listening_socket, (struct sockaddr *) &client,
 			&size_client)) != -1) {
 		printf(" * Client is connected!\n");
@@ -260,12 +275,28 @@ int main(int argc, char **argv) {
 		struct message_t* msg_pedido;
 
 		while (network_receive_send(connsock, table) != 0) {
-			struct message_t* msg_resposta = process_message(msg_pedido, table);
-			/* Fazer ciclo de pedido e resposta */
 			
-		/* Ciclo feito com sucesso ? Houve erro?
-		 Cliente desligou? */
+			//network_receive_send(connsock, table) < 0);
+			struct message_t* msg_pedido = (struct message_t*) malloc(sizeof(struct message_t));
+			//msg_pedido->opcode = msg_resposta->opcode+1;
+			struct message_t* msg_resposta = process_message(msg_pedido, table);
+
+			printTable(table);
+
+			if(msg_resposta == NULL){
+				perror("Error while sending answer to client");
+				close(connsock);
+				continue;
+			}
 
 		}
+		
+		close(connsock);
+		printf("Connection closed.\n Waiting for new connection.\n");
+		/* Ciclo feito com sucesso ? Houve erro?
+		 Cliente desligou? */
 	}
+
+	close(listening_socket);
+	return 0;
 }

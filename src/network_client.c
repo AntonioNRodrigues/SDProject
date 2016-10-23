@@ -175,6 +175,8 @@ int network_close(struct server_t *server) {
 		return -1; //--------------------->DEVE RETORNAR O QUE?---------------1
 	/* Terminar ligação ao servidor */
 	int result = close(server->sock_file_descriptor);
+	if(result < 0)
+		return -1;
 	free(server);
 	return result;
 }
