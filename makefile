@@ -15,12 +15,12 @@ T_MESSAGE_OBJ = $(OBJ)/data.o $(OBJ)/entry.o $(OBJ)/list.o $(OBJ)/table.o $(OBJ)
 CLIENT_OBJ = $(OBJ)/data.o $(OBJ)/entry.o $(OBJ)/list.o $(OBJ)/table.o $(OBJ)/message.o $(OBJ)/network_client.o $(OBJ)/table-client.o
 SERVER_OBJ = $(OBJ)/data.o $(OBJ)/entry.o $(OBJ)/list.o $(OBJ)/table.o $(OBJ)/message.o  $(OBJ)/network_client.o $(OBJ)/table-server.o
 
-all: clean test_data test_entry test_list test_table test_message server client
+all: clean test_data test_entry test_list test_table test_message table-server table-client
 
-server: $(SERVER_OBJ)
+table-server: $(SERVER_OBJ)
 	$(CC) $(SERVER_OBJ) -o table-server
 
-client: $(CLIENT_OBJ)
+table-client: $(CLIENT_OBJ)
 	$(CC) $(CLIENT_OBJ) -o table-client
 	
 test_data: $(T_DATA_OBJ) 
@@ -38,12 +38,6 @@ test_table: $(T_TABLE_OBJ)
 test_message: $(T_MESSAGE_OBJ)
 	$(CC) $(T_MESSAGE_OBJ) -o test_message
 
-#test_table_client: $(T_TABLE_CLIENT_OBJ)
-#	$(CC) $(T_TABLE_CLIENT_OBJ) -o test_table_client
-
-#test_network_client: $(T_NETWORK_CLIENT_OBJ)
-#	$(CC) $(T_NETWORK_CLIENT_OBJ) -o test_network_client
-	
 $(OBJ)/data.o: $(SRC)/data.c $(INC)/data.h 
 	$(CC) $(FLAGS) -c $(SRC)/data.c -o $(OBJ)/data.o
 
@@ -83,14 +77,8 @@ $(OBJ)/test_table.o: test_table.c $(INC)/table.h
 $(OBJ)/test_message.o: test_message.c $(INC)/message.h
 	$(CC) $(FLAGS) -c test_message.c -o $(OBJ)/test_message.o
 
-#$(OBJ)/test_table_client.o: test_table_client.c $(INC)network_client-private.h
-#	$(CC) $(FLAGS) -c test_table_client.c -o $(OBJ)test_table_client.o
-
-#S(OBJ)/test_network_client.o: network_client.c $(INC)inet.h $(INC)network_client-private.h
-#	$(CC) $(FLAGS) -c test_network_client.c -o $(OBJ)test_network_client.o
-
 clean:
-	rm -fr $(OBJ)/*.o test_data test_entry test_list test_table test_message
+	rm -fr $(OBJ)/*.o test_data test_entry test_list test_table test_message table-client table-server
 	
 zip_work:
 	zip -r $(GG) $(OBJ) $(INC)/*.h $(SRC)/*.c *.md makefile	
