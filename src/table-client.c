@@ -47,11 +47,10 @@ int main(int argc, char **argv) {
 		return -1;
 	}
 	/* Usar network_connect para estabelcer ligação ao servidor */
-	printf("A tentar estabelecer ligacao\n"
+	printf("A tentar estabelecer ligacao\n\n");
 	server = network_connect(argv[1]);
-	printf("----------------");
 	if (server==NULL) return -1;
-	printf("ligacao estabelecida");
+	printf("ligacao estabelecida\n\n");
 	/* Fazer ciclo até que o utilizador resolva fazer "quit" */
 	while (strcmp(input, "quit") != 0) {
 
@@ -108,9 +107,9 @@ int main(int argc, char **argv) {
 					msg_out->opcode = OC_GET;
 					msg_out->c_type = CT_KEY;
 					msg_out->content.key = strdup(token);
-					printf("a enviar mensagem");
+					printf("a enviar mensagem\n");
 					msg_resposta = network_send_receive(server, msg_out);
-					printf("mensagem enviada");
+					printf("mensagem enviada\n");
 					free_message(msg_out);
 					if (msg_resposta != NULL) {
 
