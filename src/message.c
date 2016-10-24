@@ -168,8 +168,8 @@ struct message_t *buffer_to_message(char *msg_buf, int msg_size) {
 	}
 
 	/* O opcode e c_type são válidos? */
-	if ((valid(msg->opcode, msg->c_type)) != 0)
-		return NULL;
+	//if ((valid(msg->opcode, msg->c_type)) != 0)
+	//	return NULL;
 
 	/* Consoante o c_type, continuar a recuperação da mensagem original */
 	switch (msg->c_type) {
