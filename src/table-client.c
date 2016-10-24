@@ -111,8 +111,12 @@ int main(int argc, char **argv) {
 					msg_resposta = network_send_receive(server, msg_out);
 					printf("mensagem enviada\n");
 					free_message(msg_out);
-					if (msg_resposta != NULL) {
-
+					if (msg_resposta == NULL) {
+						printf("Nao houve resposta\n");
+					} else if (msg_resposta->opcode == OC_RT_ERROR){
+						printf("Chave nao existe\n");
+						free_message(msg_resposta);
+					} else {
 						if (msg_resposta->c_type == CT_VALUE) {
 							printf("Valor: %s\n",
 									msg_resposta->content.data->data);
@@ -125,8 +129,6 @@ int main(int argc, char **argv) {
 							}
 						}
 						free_message(msg_resposta);
-					} else {
-						printf("Nao houve resposta\n");
 					}
 				}
 			} else if (strcmp(token, "del") == 0) {
@@ -143,11 +145,14 @@ int main(int argc, char **argv) {
 
 					msg_resposta = network_send_receive(server, msg_out);
 					free_message(msg_out);
-					if (msg_resposta != NULL) {
+					if (msg_resposta == NULL) {
+						printf("Nao houve resposta\n");
+					} else if (msg_resposta->opcode == OC_RT_ERROR){
+						printf("Chave nao existe\n");
+						free_message(msg_resposta);
+					}else {
 						printf("resultado: %d\n", msg_resposta->content.result);
 						free_message(msg_resposta);
-					} else {
-						printf("Nao houve resposta\n");
 					}
 				}
 			}
@@ -182,8 +187,9 @@ int main(int argc, char **argv) {
 						msg_out->c_type = CT_ENTRY;
 						msg_out->content.entry = entry_create(key, data);
 						data_destroy(data);
-
+						printf("a enviar mensagem\n");
 						msg_resposta = network_send_receive(server, msg_out);
+						printf("mensagem enviada\n");
 						free_message(msg_out);
 						if (msg_resposta != NULL) {
 							printf("resultado: %d\n",
