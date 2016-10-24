@@ -10,7 +10,6 @@
 #include "message-private.h"
 #include "network_client-private.h"
 
-
 /* Função para preparar uma socket de receção de pedidos de ligação.
  */
 int make_server_socket(short port) {
@@ -48,15 +47,22 @@ int make_server_socket(short port) {
  */
 struct message_t *process_message(struct message_t *msg_pedido,
 		struct table_t *tabela) {
+	printf("PROCESS_MESSAGE --> BEGIN\n");
 	char * temp_key;
 	struct message_t *msg_resposta = (struct message_t *) malloc(
 			sizeof(struct message_t));
+	if (msg_resposta == NULL) {
+		printf("PROCESS_MESSAGE --> msg-resposta is NULL\n");
+		return NULL;
+	}
 	int result;
 
 	/* Verificar parâmetros de entrada */
-	if (msg_pedido == NULL || tabela == NULL)
+	if (msg_pedido == NULL || tabela == NULL) {
+		printf("PROCESS_MESSAGE --> msg_pedido || tabels is NULL\n");
 		return NULL;
-
+	}
+	printf("PROCESS_MESSAGE --> PARAM CHECK\n");
 	/* Verificar opcode e c_type na mensagem de pedido */
 	if (msg_pedido->opcode < 0 || msg_pedido->c_type < 0) {
 		return NULL;
@@ -64,23 +70,27 @@ struct message_t *process_message(struct message_t *msg_pedido,
 	/* Aplicar operação na tabela */
 
 	/* Preparar mensagem de resposta */
-
+	printf("PROCESS_MESSAGE --> OPCODE = %d\n", msg_pedido->opcode);
 	switch (msg_pedido->opcode) {
 	case OC_SIZE:
 		result = table_size(tabela);
 		//the table is empty
+		printf("PROCESS_MESSAGE --> SIZE TABELA::::%d\n", result);
 		if (result < 0) {
 			msg_resposta->c_type = CT_RESULT;
 			msg_resposta->opcode = OC_RT_ERROR;
 			msg_resposta->content.result = -1;
+		} else {
+			msg_resposta->c_type = CT_RESULT;
+			msg_resposta->opcode = OC_SIZE + 1;
+			msg_resposta->content.result = result;
 		}
-		msg_resposta->c_type = CT_RESULT;
-		msg_resposta->opcode = OC_SIZE + 1;
-		msg_resposta->content.result = result;
 		break;
 	case OC_PUT:
+		printf("PROCESS_MESSAGE:::::OC_PUT\n");
 		result = table_put(tabela, msg_pedido->content.entry->key,
 				msg_pedido->content.entry->value);
+		printf("PROCESS_MESSAGE --> PUT TABELA::::%d\n", result);
 		//table_put failed
 		if (result == -1) {
 			return NULL;
@@ -90,7 +100,9 @@ struct message_t *process_message(struct message_t *msg_pedido,
 		msg_resposta->content.result = result;
 		break;
 	case OC_GET:
+		printf("PROCESS_MESSAGE:::::OC_GET\n");
 		temp_key = strdup(msg_pedido->content.key);
+		printf("PROCESS_MESSAGE --> %s\n", temp_key);
 		// temp_key is NULL
 		if (temp_key == NULL) {
 			return NULL;
@@ -131,19 +143,26 @@ struct message_t *process_message(struct message_t *msg_pedido,
 		msg_resposta->content.result = result;
 		break;
 	case OC_DEL:
+		printf("PROCESS_MESSAFE:::::OC_DEL\n");
 		result = table_del(tabela, msg_pedido->content.key);
+		printf("PROCESS_MESSAFE:::::OC_GET::RESULT=%d\n", result);
 		//table_del failed
 		if (result == -1) {
-			//build error message
+			printf("PROCESS_MESSAGE --> message de errro\n");
+			msg_resposta->c_type = CT_RESULT;
+			msg_resposta->opcode = OC_RT_ERROR;
+			msg_resposta->content.result = -1;
+			printf("PROCESS_MESSAGE --> end message erro\n");
 			return NULL;
+		} else {
+			msg_resposta->c_type = OC_UPDATE + 1;
+			msg_resposta->content.result = result;
 		}
-		msg_resposta->c_type = OC_UPDATE + 1;
-		msg_resposta->content.result = result;
 		break;
 	default:
 		break;
 	}
-
+	printf("PROCESS_MESSAGE --> END\n");
 	return msg_resposta;
 }
 
@@ -156,10 +175,8 @@ struct message_t *process_message(struct message_t *msg_pedido,
  */
 int network_receive_send(int sockfd, struct table_t *table) {
 	char *message_resposta, *message_pedido;
-	int msg_length;
 	int message_size, msg_size, result;
 	struct message_t *msg_pedido, *msg_resposta;
-	struct list_t *results;
 
 	/* Verificar parâmetros de entrada */
 	if (table == NULL || sockfd == -1) {
@@ -170,39 +187,41 @@ int network_receive_send(int sockfd, struct table_t *table) {
 	 mensagem de pedido que será recebida de seguida.*/
 
 	result = read_all(sockfd, (char *) &msg_size, _INT);
-
+	printf("NETWORK_RECEIVE_SEND-->READ ALL RESULT:: %d\n", result);
+	printf("NETWORK_RECEIVE_SEND-->READ ALL MSG_SIZE:: %d\n", msg_size);
 	/* Verificar se a receção teve sucesso */
 	if (msg_size < 0) {
 		return -1;
 	}
 	message_size = ntohl(msg_size);
-
+	printf("NETWORK_RECEIVE_SEND-->MESSAGE_SIZE:: %d\n", message_size);
 	/* Alocar memória para receber o número de bytes da
 	 mensagem de pedido. */
 	message_pedido = (char *) malloc(message_size);
 
 	/* Com a função read_all, receber a mensagem de pedido. */
 	result = read_all(sockfd, message_pedido, message_size);
-
+	printf("NETWORK_RECEIVE_SEND-->READ-All RESULT MESSAGE PEDIDDO:: %d\n",
+			result);
 	/* Verificar se a receção teve sucesso */
-	if(result < 0){
-		return - 1;
+	if (result < 0) {
+		return -1;
 	}
 	/* Desserializar a mensagem do pedido */
 	msg_pedido = buffer_to_message(message_pedido, message_size);
-
+	printf("NETWORK_RECEIVE_SEND-->MSG_PEDIDO % \n", msg_pedido->c_type);
 	/* Verificar se a desserialização teve sucesso */
-	if(msg_pedido == NULL){
+	if (msg_pedido == NULL) {
 		return -1;
 	}
 	/* Processar a mensagem */
 	msg_resposta = process_message(msg_pedido, table);
-
+	printf("NETWORK_RECEIVE_SEND-->AFTER PROCESS MESSAGE\n");
 	/* Serializar a mensagem recebida */
 	message_size = message_to_buffer(msg_resposta, &message_resposta);
 
 	/* Verificar se a serialização teve sucesso */
-	if(message_size < 0){
+	if (message_size < 0) {
 		return -1;
 	}
 
@@ -213,7 +232,7 @@ int network_receive_send(int sockfd, struct table_t *table) {
 	result = write_all(sockfd, (char *) &msg_size, _INT);
 
 	/* Verificar se o envio teve sucesso */
-	if(result < 0){
+	if (result < 0) {
 		return -1;
 	}
 
@@ -222,7 +241,7 @@ int network_receive_send(int sockfd, struct table_t *table) {
 	result = write_all(sockfd, message_resposta, message_size);
 
 	/* Verificar se o envio teve sucesso */
-	if(result < 0){
+	if (result < 0) {
 		return -1;
 	}
 	/* Libertar memória */
@@ -231,17 +250,17 @@ int network_receive_send(int sockfd, struct table_t *table) {
 }
 
 /*void printTable(struct table_t* table){
-	int x, y;
-	for(x = 0; x < table->quantity_entry; x++){
-		printf("lista %d:\n", x);
-		struct node_t* aux = table->buckets[x]->head;
-		while(aux != NULL){
-			printf("\t KEY: %s  DATASIZE: %d  DATA: %s \n", aux->entry->key, aux->entry->value->datasize, (char *)aux->entry->value->data);
-			aux = aux->next;
-		}
-	}
+ int x, y;
+ for(x = 0; x < table->quantity_entry; x++){
+ printf("lista %d:\n", x);
+ struct node_t* aux = table->buckets[x]->head;
+ while(aux != NULL){
+ printf("\t KEY: %s  DATASIZE: %d  DATA: %s \n", aux->entry->key, aux->entry->value->datasize, (char *)aux->entry->value->data);
+ aux = aux->next;
+ }
+ }
 
-}*/
+ }*/
 
 int main(int argc, char **argv) {
 	int listening_socket, connsock, result;
@@ -255,7 +274,7 @@ int main(int argc, char **argv) {
 		return -1;
 	}
 
-	if ((listening_socket = make_server_socket(atoi(argv[1]))) < 0){
+	if ((listening_socket = make_server_socket(atoi(argv[1]))) < 0) {
 		printf("LISTENING\n");
 		return -1;
 
@@ -272,23 +291,24 @@ int main(int argc, char **argv) {
 			&size_client)) != -1) {
 		printf(" * Client is connected!\n");
 
-		while (network_receive_send(connsock, table) != 0) {
-			
-			//network_receive_send(connsock, table) < 0);
-			struct message_t* msg_pedido = (struct message_t*) malloc(sizeof(struct message_t));
-			//msg_pedido->opcode = msg_resposta->opcode+1;
-			struct message_t* msg_resposta = process_message(msg_pedido, table);
+		//while (network_receive_send(connsock, table) != 0) {
 
-			//printTable(table);
+		network_receive_send(connsock, table);
+		//struct message_t* msg_pedido = (struct message_t*) malloc(
+		//		sizeof(struct message_t));
+		//msg_pedido->opcode = msg_resposta->opcode+1;
+		//struct message_t* msg_resposta = process_message(msg_pedido, table);
 
-			if(msg_resposta == NULL){
-				perror("Error while sending answer to client");
-				close(connsock);
-				continue;
-			}
+		//printTable(table);
 
+	/*	if (msg_resposta == NULL) {
+			perror("Error while sending answer to client");
+			close(connsock);
+			continue;
 		}
-		
+*/
+		//}
+
 		close(connsock);
 		printf("Connection closed.\n Waiting for new connection.\n");
 		/* Ciclo feito com sucesso ? Houve erro?
@@ -298,3 +318,4 @@ int main(int argc, char **argv) {
 	close(listening_socket);
 	return 0;
 }
+

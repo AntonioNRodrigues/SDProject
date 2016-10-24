@@ -166,6 +166,7 @@ struct data_t *table_get(struct table_t *table, char * key) {
  * Devolve: 0 (OK), -1 (nenhum tuplo encontrado; outros erros)
  */
 int table_del(struct table_t *table, char *key) {
+	printf("TABLE DEL\n:: key = %s", key);
 	if (table == NULL || key == NULL)
 		return -1;
 

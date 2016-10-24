@@ -83,14 +83,15 @@ int main(int argc, char **argv) {
 			 o server e receber msg_resposta.
 			 */
 			else if (strcmp(token, "size") == 0) {
-
+				printf("TABLE CLIENT :: SIZE");
 				msg_out = (struct message_t *) malloc(sizeof(struct message_t));
 				msg_out->opcode = OC_SIZE;
 
 				msg_resposta = network_send_receive(server, msg_out);
+				printf("TABLE CLIENT :: SIZE--> AFTER RESPONSE\n");
 				free_message(msg_out);
 				if (msg_resposta != NULL) {
-				printf("resultado: %d\n", msg_out->content.result);
+				printf("resultado: %d\n", msg_resposta->content.result);
 				free_message(msg_resposta);
 				} else {
 					printf("Nao houve resposta\n");
@@ -107,7 +108,8 @@ int main(int argc, char **argv) {
 					msg_out->opcode = OC_GET;
 					msg_out->c_type = CT_KEY;
 					msg_out->content.key = strdup(token);
-					printf("a enviar mensagem\n");
+					printf("a enviar mensagem, oo_code:%d\n", msg_out->opcode);
+
 					msg_resposta = network_send_receive(server, msg_out);
 					printf("mensagem enviada\n");
 					free_message(msg_out);
