@@ -41,18 +41,19 @@ int message_to_buffer(struct message_t *msg, char **msg_buf) {
 			i = 0;
 			//temp_keys = msg->content.keys;
 			while (msg->content.keys[i] != NULL) {
-				buffer_size += (strlen(msg->content.keys[i]));
+				buffer_size += (strlen(msg->content.keys[i])-1);
 				i++;
 			}
 			nkeys = i;
 			buffer_size += (_SHORT * (nkeys + 3) + _INT);
 
 		} else if (msg->c_type == CT_KEY) {
-			buffer_size += _SHORT * 3 + (strlen(msg->content.key));
+			buffer_size += _SHORT * 3 + (strlen(msg->content.key) - 1);
 
 		} else if (msg->c_type == CT_ENTRY) {
-			buffer_size += (_SHORT * 3 + strlen(msg->content.entry->key) + _INT
+			buffer_size += (_SHORT * 3 + strlen(msg->content.entry->key) - 1 + _INT
 					+ msg->content.entry->value->datasize);
+					printf("BS: %d\n", buffer_size);
 		} else if (msg->opcode == OC_SIZE) {
 			buffer_size += (_SHORT);
 		}

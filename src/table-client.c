@@ -109,7 +109,7 @@ int main(int argc, char **argv) {
 					msg_out->content.key = strdup(token);
 					printf("a enviar mensagem\n");
 					msg_resposta = network_send_receive(server, msg_out);
-					printf("mensagem recebida\n");
+					printf("mensagem enviada\n");
 					free_message(msg_out);
 					if (msg_resposta == NULL) {
 						printf("Nao houve resposta\n");
@@ -189,7 +189,7 @@ int main(int argc, char **argv) {
 						data_destroy(data);
 						printf("a enviar mensagem\n");
 						msg_resposta = network_send_receive(server, msg_out);
-						printf("mensagem recebida\n");
+						printf("mensagem enviada\n");
 						free_message(msg_out);
 						if (msg_resposta != NULL) {
 							printf("resultado: %d\n",
