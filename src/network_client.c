@@ -98,7 +98,7 @@ struct message_t *network_send_receive(struct server_t *server,
 	char *message_out;
 	char *message_in;
 	int message_size, msg_size, result;
-	struct message_t *msg_resposta; // ISTO TEM DE SER UM message_t* e nao um message_t
+	struct message_t *msg_resposta;
 
 	/* Verificar parâmetros de entrada */
 	if (msg == NULL || server == NULL) {
@@ -144,20 +144,20 @@ struct message_t *network_send_receive(struct server_t *server,
 	 Com a função read_all, receber a mensagem de resposta.
 
 	 */
-	int size_returned_msg;
-	char* aux = malloc(4);
-	result = read_all(server->sock_file_descriptor, aux, _INT);
-	if (size_returned_msg <= 0) {
+	int size_returned_msg = 0;
+	result = read_all(server->sock_file_descriptor, (char *) &size_returned_msg,_INT);
+	if (result <= 0) {
 		//free
 		return NULL;
 	}
-	message_in = (char *) malloc(size_returned_msg);
+	int msg_returned = ntohl(size_returned_msg);
+	message_in = (char *) malloc(msg_returned);
 
 	result = read_all(server->sock_file_descriptor, message_in,
-			size_returned_msg);
+			msg_returned);
 
 	/* Desserializar a mensagem de resposta */
-	msg_resposta = buffer_to_message(message_in, size_returned_msg);
+	msg_resposta = buffer_to_message(message_in, msg_returned);
 
 	/* Verificar se a desserialização teve sucesso */
 	if (msg_resposta == NULL) {
