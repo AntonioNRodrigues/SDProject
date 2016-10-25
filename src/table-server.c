@@ -93,11 +93,14 @@ struct message_t *process_message(struct message_t *msg_pedido,
 		printf("PROCESS_MESSAGE --> PUT TABELA::::%d\n", result);
 		//table_put failed
 		if (result == -1) {
-			return NULL;
-			//build error message
+			msg_resposta->c_type = CT_RESULT;
+			msg_resposta->opcode = OC_RT_ERROR;
+			msg_resposta->content.result = -1;
+
+		} else {
+			msg_resposta->c_type = CT_RESULT + 1;
+			msg_resposta->content.result = result;
 		}
-		msg_resposta->c_type = OC_PUT + 1;
-		msg_resposta->content.result = result;
 		break;
 	case OC_GET:
 		printf("PROCESS_MESSAGE:::::OC_GET\n");
@@ -289,24 +292,11 @@ int main(int argc, char **argv) {
 	while ((connsock = accept(listening_socket, (struct sockaddr *) &client,
 			&size_client)) != -1) {
 		printf(" * Client is connected!\n");
-
-		//while (network_receive_send(connsock, table) != 0) {
-
-		network_receive_send(connsock, table);
-		//struct message_t* msg_pedido = (struct message_t*) malloc(
-		//		sizeof(struct message_t));
-		//msg_pedido->opcode = msg_resposta->opcode+1;
-		//struct message_t* msg_resposta = process_message(msg_pedido, table);
+		do {
+			network_receive_send(connsock, table);
+		} while (listening_socket != 0);
 
 		//printTable(table);
-
-	/*	if (msg_resposta == NULL) {
-			perror("Error while sending answer to client");
-			close(connsock);
-			continue;
-		}
-*/
-		//}
 
 		close(connsock);
 		printf("Connection closed.\n Waiting for new connection.\n");
