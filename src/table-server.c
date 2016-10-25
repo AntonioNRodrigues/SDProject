@@ -111,8 +111,7 @@ struct message_t *process_message(struct message_t *msg_pedido,
 		if (strcmp("!", temp_key) == 0) {
 			msg_resposta->c_type = CT_KEYS;
 			msg_resposta->opcode = OC_GET + 1;
-			msg_resposta->content.keys = table_get_keys(temp_key); //temp_key é char* e table_get_keys tem um argumento struct table_t*
-			//msg_resposta->content.keys = table_get_keys(tabela);
+			msg_resposta->content.keys = table_get_keys(tabela);
 		} else {
 			struct data_t *temp_data = table_get(tabela, temp_key);
 			//the key is present
@@ -209,7 +208,7 @@ int network_receive_send(int sockfd, struct table_t *table) {
 	}
 	/* Desserializar a mensagem do pedido */
 	msg_pedido = buffer_to_message(message_pedido, message_size);
-	printf("NETWORK_RECEIVE_SEND-->MSG_PEDIDO % \n", msg_pedido->c_type);
+	printf("NETWORK_RECEIVE_SEND-->MSG_PEDIDO %d \n", msg_pedido->c_type);
 	/* Verificar se a desserialização teve sucesso */
 	if (msg_pedido == NULL) {
 		return -1;

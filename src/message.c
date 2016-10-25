@@ -30,7 +30,7 @@ int message_to_buffer(struct message_t *msg, char **msg_buf) {
 		/* Consoante o msg->c_type, determinar o tamanho do vetor de bytes
 		 que tem de ser alocado antes de serializar msg
 		 */
-		int buffer_size, nkeys, i;
+		int buffer_size = 0, nkeys, i;
 
 		if (msg->c_type == CT_RESULT) {
 			buffer_size += _SHORT * 2 + _INT;
