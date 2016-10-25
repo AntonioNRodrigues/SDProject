@@ -2,38 +2,39 @@
 
 #include <stdlib.h>
 
-int write_all(int sock, char *buf, int len) {
+int write_all(int sock_fd, char *buffer, int lenght) {
 	printf("WRITE_ALL-->BEGIN\n");
-	int nbytes_write = len;
-	int msg;
-	while (len > 0) {
-		msg = write(sock, buf, len);
-		if (msg == -1) {
+	int nbytes_write = lenght;
+
+	while (lenght > 0) {
+		nbytes_write = write(sock_fd, buffer, lenght);
+		if (nbytes_write < 0) {
 			printf("%s \n", "Write failed");
-			return msg;
+			return -1;
 		}
-		buf += msg;
-		len -= msg;
+		lenght -= nbytes_write;
+		buffer += nbytes_write;
 	}
 	printf("WRITE_ALL-->END %d\n", nbytes_write);
 	return nbytes_write;
 }
 
-int read_all(int sock, char *buf, int len) {
-	printf("WRITE_ALL-->BEGIN\n");
-	int nbytes_read = len;
-	int msg;
-	while (len > 0) {
-		msg = read(sock, buf, len);
-		if (msg == 0) {
+int read_all(int sock_fd, char *buffer, int length) {
+	printf("READ_ALL-->BEGIN\n");
+	int nbytes_read;
+	while (length > 0) {
+		nbytes_read = read(sock_fd, buffer, length);
+		if (nbytes_read < 0) {
+			perror("Error reading from the buffer");
+			return -1;
+		}
+		if (nbytes_read == 0) {
+			printf("%s \n", "Read failed");
 			return 0;
 		}
-		if (msg == -1) {
-			printf("%s \n", "Read failed");
-			return msg;
-		}
-		buf += msg;
-		len -= msg;
+
+		buffer += nbytes_read;
+		length -= nbytes_read;
 	}
 	printf("READ-->END %d\n", nbytes_read);
 	return nbytes_read;
@@ -152,13 +153,13 @@ struct message_t *network_send_receive(struct server_t *server,
 	 Com a função read_all, receber a mensagem de resposta.
 
 	 */
-	int size_returned_msg = 0;
-	result = read_all(server->sock_file_descriptor, (char *) &size_returned_msg, _INT);
+	int size_returned_msg;
+	result = read_all(server->sock_file_descriptor, &size_returned_msg, _INT);
 	if (result != _INT) {
 		//free
 		return NULL;
 	}
-	printf("NETWORK_SEND_RECEIVE-->READ ALL MESSAGE_SIZE:: %d\n", result);
+	printf("NETWORK_SEND_RECEIVE-->READ ALL MESSAGE_SIZE:: %d\n", size_returned_msg);
 
 	int msg_returned = ntohl(size_returned_msg);
 	message_in = (char *) malloc(msg_returned);
@@ -167,10 +168,11 @@ struct message_t *network_send_receive(struct server_t *server,
 	printf("NETWORK_SEND_RECEIVE-->READ ALL MESSAGE :: %d\n", result);
 	/* Desserializar a mensagem de resposta */
 	msg_resposta = buffer_to_message(message_in, msg_returned);
-	printf("NETWORK_SEND_RECEIVE-->READ ALL MESSAGE_RESPONSE:: %d\n", msg_resposta->content.result);
+	printf("NETWORK_SEND_RECEIVE-->READ ALL MESSAGE_RESPONSE::\n ");
 
 	/* Verificar se a desserialização teve sucesso */
 	if (msg_resposta == NULL) {
+		printf("---NULL -----\n");
 		return NULL;
 	}
 

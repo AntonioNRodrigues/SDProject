@@ -144,7 +144,7 @@ int message_to_buffer(struct message_t *msg, char **msg_buf) {
 }
 
 struct message_t *buffer_to_message(char *msg_buf, int msg_size) {
-	if (msg_buf == NULL || msg_size <= 0)
+	if (msg_buf == NULL || msg_size < 0)
 		return NULL;
 
 	int short_aux = 0, int_aux = 0;

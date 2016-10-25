@@ -80,7 +80,7 @@ void table_destroy(struct table_t *table) {
 }
 
 int table_put(struct table_t *table, char * key, struct data_t *value) {
-
+	printf("TABLE PUT:: key = %s", key);
 	if (table == NULL || key == NULL || value == NULL) {
 		return -1;
 	}
