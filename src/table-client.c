@@ -98,7 +98,7 @@ int main(int argc, char **argv) {
 				}
 
 			} else if (strcmp(token, "get") == 0) {
-
+				printf("TABLE CLIENT :: GET\n");
 				token = strtok(NULL, " ");
 				if (token == NULL) {
 					printf("Uso: get <chave>\n");
@@ -108,6 +108,8 @@ int main(int argc, char **argv) {
 					msg_out->opcode = OC_GET;
 					msg_out->c_type = CT_KEY;
 					msg_out->content.key = strdup(token);
+					printf("TABLE CLIENT :: GET KEY == %s\n", token);
+					printf("TABLE CLIENT :: GET KEY == %s\n", msg_out->content.key);
 					printf("a enviar mensagem, oo_code:%d\n", msg_out->opcode);
 
 					msg_resposta = network_send_receive(server, msg_out);
@@ -115,18 +117,20 @@ int main(int argc, char **argv) {
 					free_message(msg_out);
 					if (msg_resposta == NULL) {
 						printf("Nao houve resposta\n");
-					} else if (msg_resposta->opcode == OC_RT_ERROR){
+					}
+
+					printf("mensagem recebido com:%d\n", msg_resposta->opcode);
+					if (msg_resposta->opcode == OC_RT_ERROR){
 						printf("Chave nao existe\n");
 						free_message(msg_resposta);
 					} else {
 						if (msg_resposta->c_type == CT_VALUE) {
-							printf("Valor: %s\n",
-									msg_resposta->content.data->data);
+							printf("Valor: %s\n", msg_resposta->content.data->data);
 						} else {
-							printf("Chaves:\n ");
+							printf("Chaves:\n");
 							int i = 0;
 							while (msg_resposta->content.keys[i] != NULL) {
-								printf("%s\n", msg_resposta->content.keys[i]);
+								printf(" |Key = %s|\n", msg_resposta->content.keys[i]);
 								i++;
 							}
 						}
@@ -144,8 +148,9 @@ int main(int argc, char **argv) {
 					msg_out->opcode = OC_DEL;
 					msg_out->c_type = CT_KEY;
 					msg_out->content.key = strdup(token);
-
+					printf("TABLE CLIENT :: DEL KEY == %s\n", msg_out->content.key);
 					msg_resposta = network_send_receive(server, msg_out);
+
 					free_message(msg_out);
 					if (msg_resposta == NULL) {
 						printf("Nao houve resposta\n");

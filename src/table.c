@@ -115,6 +115,7 @@ int table_put(struct table_t *table, char * key, struct data_t *value) {
  * Devolve 0 (OK) ou -1 (out of memory, outros erros)
  */
 int table_update(struct table_t *table, char * key, struct data_t *value) {
+	printf("TABLE UPDATE:: key = %s\n", key);
 	/* Verificar valores de entrada */
 	if (table == NULL || key == NULL || value == NULL) {
 		return -1;
@@ -144,6 +145,7 @@ int table_update(struct table_t *table, char * key, struct data_t *value) {
 }
 
 struct data_t *table_get(struct table_t *table, char * key) {
+	printf("TABLE GET:: key = %s\n", key);
 	if (table == NULL || key == NULL)
 		return NULL;
 	//index of the entry
@@ -166,18 +168,21 @@ struct data_t *table_get(struct table_t *table, char * key) {
  * Devolve: 0 (OK), -1 (nenhum tuplo encontrado; outros erros)
  */
 int table_del(struct table_t *table, char *key) {
-	printf("TABLE DEL\n:: key = %s", key);
+	printf("TABLE DEL:: key = %s\n", key);
 	if (table == NULL || key == NULL)
 		return -1;
 
 	//index of the entry
 	int index_entry = key_hash(key, table->size);
 	//operation success 0 or error -1
+	printf("TABLE DEL:: key_index = %d\n", index_entry);
 	int ret_value = list_remove(table->buckets[index_entry], key);
+	printf("TABLE DEL:: returned value = %d\n", ret_value);
 	//update the number of entries in case of success
 	if (ret_value == 0) {
 		table->quantity_entry -= 1;
 	}
+	printf("TABLE DEL:: END\n");
 	return ret_value;
 }
 
@@ -186,10 +191,12 @@ int table_del(struct table_t *table, char *key) {
  * number of pairs key->value of the table
  */
 int table_size(struct table_t *table) {
+	printf("TABLE SIZE\n::");
 	return table == NULL ? -1 : table->quantity_entry;
 }
 
 char **table_get_keys(struct table_t *table) {
+	printf("TABLE GET KEYS\n");
 	if (table == NULL)
 		return NULL;
 	char **table_keys = (char **) malloc(

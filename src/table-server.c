@@ -48,7 +48,7 @@ int make_server_socket(short port) {
 struct message_t *process_message(struct message_t *msg_pedido,
 		struct table_t *tabela) {
 	printf("PROCESS_MESSAGE --> BEGIN\n");
-	char * temp_key;
+	char *temp_key;
 	struct message_t *msg_resposta = (struct message_t *) malloc(
 			sizeof(struct message_t));
 	if (msg_resposta == NULL) {
@@ -105,7 +105,8 @@ struct message_t *process_message(struct message_t *msg_pedido,
 	case OC_GET:
 		printf("PROCESS_MESSAGE:::::OC_GET\n");
 		temp_key = strdup(msg_pedido->content.key);
-		printf("PROCESS_MESSAGE --> %s\n", temp_key);
+		printf("PROCESS_MESSAGE MSG_PEDIDO--> %s\n", msg_pedido->content.key);
+		printf("PROCESS_MESSAGE TOKEN--> %s\n", temp_key);
 		// temp_key is NULL
 		if (temp_key == NULL) {
 			return NULL;
@@ -138,26 +139,25 @@ struct message_t *process_message(struct message_t *msg_pedido,
 				msg_pedido->content.entry->value);
 		//table_update failed
 		if (result == -1) {
-			//build error message
-			return NULL;
+			msg_resposta->c_type = CT_RESULT;
+			msg_resposta->opcode = OC_RT_ERROR;
+			msg_resposta->content.result = result;
 		}
 		msg_resposta->c_type = OC_UPDATE + 1;
 		msg_resposta->content.result = result;
 		break;
+
 	case OC_DEL:
-		printf("PROCESS_MESSAFE:::::OC_DEL\n");
+		printf("PROCESS_MESSAGE ::::: OC_DEL\n");
 		result = table_del(tabela, msg_pedido->content.key);
-		printf("PROCESS_MESSAFE:::::OC_GET::RESULT=%d\n", result);
+		printf("PROCESS_MESSAGE ::::: OC_DEL::RESULT = %d\n", result);
 		//table_del failed
 		if (result == -1) {
-			printf("PROCESS_MESSAGE --> message de errro\n");
 			msg_resposta->c_type = CT_RESULT;
 			msg_resposta->opcode = OC_RT_ERROR;
-			msg_resposta->content.result = -1;
-			printf("PROCESS_MESSAGE --> end message erro\n");
-			return NULL;
+			msg_resposta->content.result = result;
 		} else {
-			msg_resposta->c_type = OC_UPDATE + 1;
+			msg_resposta->c_type = OC_DEL + 1;
 			msg_resposta->content.result = result;
 		}
 		break;
@@ -206,7 +206,7 @@ int network_receive_send(int sockfd, struct table_t *table) {
 	printf("NETWORK_RECEIVE_SEND-->READ-All RESULT MESSAGE PEDIDDO:: %d\n",
 			result);
 	/* Verificar se a receção teve sucesso */
-	if (result < 0) {
+	if (result != message_size) {
 		return -1;
 	}
 	/* Desserializar a mensagem do pedido */
@@ -292,8 +292,10 @@ int main(int argc, char **argv) {
 	while ((connsock = accept(listening_socket, (struct sockaddr *) &client,
 			&size_client)) != -1) {
 		printf(" * Client is connected!\n");
+		printf(" ================================= \n");
 		do {
 			network_receive_send(connsock, table);
+			printf(" ================================= \n");
 		} while (listening_socket != 0);
 
 		//printTable(table);
