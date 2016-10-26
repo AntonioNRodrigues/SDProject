@@ -108,14 +108,16 @@ int list_add(struct list_t *list, struct entry_t *entry) {
  * Retorna 0 (OK) ou -1 (erro)
  */
 int list_remove(struct list_t *list, char* key) {
+	printf("LIST REMOVE:: key = %s\n", key);
 	//if the list is empty or == NULL or or the key is NULL
-	if (list == NULL || key == NULL) {
+	if (list == NULL || key == NULL || list->head == NULL) {
+		printf("LIST IS NULL\n");
 		return -1;
 	}
+
 	struct node_t *current = list->head;
 
 	struct node_t *temp;
-
 	//if the key is in the head
 	if (strcmp(current->entry->key, key) == 0) {
 		list->head = current->next;
@@ -137,6 +139,7 @@ int list_remove(struct list_t *list, char* key) {
 		}
 		current = current->next;
 	}
+	printf("LIST REMOVE:: END\n");
 	return -1;
 
 }
