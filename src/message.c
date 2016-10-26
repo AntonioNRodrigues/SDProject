@@ -33,29 +33,33 @@ int message_to_buffer(struct message_t *msg, char **msg_buf) {
 		int buffer_size = 0, nkeys, i;
 
 		if (msg->c_type == CT_RESULT) {
-			buffer_size += _SHORT * 2 + _INT;
+			buffer_size += (_SHORT * 2 + _INT);
+			printf("MESSAGE::MESSAGE_TO_BUFFER::: C_TYPE==CT-RESULT-->BUFFERSIZE = %d\n", buffer_size);
 		} else if (msg->c_type == CT_VALUE) {
 			buffer_size += (_SHORT * 2 + _INT + msg->content.data->datasize);
-
+			printf("MESSAGE::MESSAGE_TO_BUFFER::: C_TYPE==CT_VALUE-->BUFFERSIZE = %d\n", buffer_size);
 		} else if (msg->c_type == CT_KEYS) {
+
 			i = 0;
 			//temp_keys = msg->content.keys;
 			while (msg->content.keys[i] != NULL) {
-				buffer_size += (strlen(msg->content.keys[i])-1);
+				buffer_size += (strlen(msg->content.keys[i]));
 				i++;
 			}
 			nkeys = i;
 			buffer_size += (_SHORT * (nkeys + 3) + _INT);
+			printf("MESSAGE::MESSAGE_TO_BUFFER::: C_TYPE==CT_KEYS-->BUFFERSIZE = %d\n", buffer_size);
 
 		} else if (msg->c_type == CT_KEY) {
-			buffer_size += _SHORT * 3 + (strlen(msg->content.key) - 1);
-
+			buffer_size += _SHORT * 3 + (strlen(msg->content.key));
+			printf("MESSAGE::MESSAGE_TO_BUFFER::: C_TYPE==CT_KEY-->BUFFERSIZE = %d\n", buffer_size);
 		} else if (msg->c_type == CT_ENTRY) {
-			buffer_size += (_SHORT * 3 + strlen(msg->content.entry->key) - 1 + _INT
+			buffer_size += (_SHORT * 3 + strlen(msg->content.entry->key) + _INT
 					+ msg->content.entry->value->datasize);
 					printf("BS: %d\n", buffer_size);
 		} else if (msg->opcode == OC_SIZE) {
 			buffer_size += (_SHORT);
+			printf("MESSAGE::MESSAGE_TO_BUFFER::: OPCODE == OC_SIZE -->BUFFERSIZE = %d\n", buffer_size);
 		}
 		/* Alocar quantidade de memória determinada antes
 		 *msg_buf = ....
