@@ -113,9 +113,17 @@ struct message_t *process_message(struct message_t *msg_pedido,
 		}
 		//key is ! --> GET ALL KEYS
 		if (strcmp("!", temp_key) == 0) {
-			msg_resposta->c_type = CT_KEYS;
-			msg_resposta->opcode = OC_GET + 1;
-			msg_resposta->content.keys = table_get_keys(tabela);
+			printf("TABLE GET ALLLLLLL KEYS\n");
+			if (tabela->quantity_entry == 0) {
+				msg_resposta->c_type = CT_RESULT;
+				msg_resposta->opcode = OC_RT_ERROR;
+				msg_resposta->content.result = -1;
+			} else {
+				msg_resposta->c_type = CT_KEYS;
+				msg_resposta->opcode = OC_GET + 1;
+				msg_resposta->content.keys = table_get_keys(tabela);
+				printf("TABLE KEYS = %d", msg_resposta->opcode);
+			}
 		} else {
 			struct data_t *temp_data = table_get(tabela, temp_key);
 			//the key is present
@@ -129,7 +137,7 @@ struct message_t *process_message(struct message_t *msg_pedido,
 				struct data_t *t = data_create2(0, NULL);
 				msg_resposta->c_type = CT_RESULT;
 				msg_resposta->opcode = OC_RT_ERROR;
-				msg_resposta->content.data = t;
+				msg_resposta->content.result = -1;
 				data_destroy(t);
 			}
 		}
@@ -248,7 +256,7 @@ int network_receive_send(int sockfd, struct table_t *table) {
 	}
 	/* Libertar memória */
 
-	return 0;
+	return 1;
 }
 
 /*void printTable(struct table_t* table){
@@ -291,12 +299,18 @@ int main(int argc, char **argv) {
 	//printTable(table);
 	while ((connsock = accept(listening_socket, (struct sockaddr *) &client,
 			&size_client)) != -1) {
+		int ret = 0;
 		printf(" * Client is connected!\n");
 		printf(" ================================= \n");
-		do {
+		while (listening_socket != 0) {
 			network_receive_send(connsock, table);
+
+			//correu tudo bem
+			//erro
+			//client fechou sai do ciclo close connection
+
 			printf(" ================================= \n");
-		} while (listening_socket != 0);
+		}
 
 		//printTable(table);
 

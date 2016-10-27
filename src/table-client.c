@@ -130,7 +130,7 @@ int main(int argc, char **argv) {
 							printf("Chaves:\n");
 							int i = 0;
 							while (msg_resposta->content.keys[i] != NULL) {
-								printf(" |Key = %s|\n", msg_resposta->content.keys[i]);
+								printf("|Key = %s|\n", msg_resposta->content.keys[i]);
 								i++;
 							}
 						}

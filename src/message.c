@@ -173,7 +173,7 @@ struct message_t *buffer_to_message(char *msg_buf, int msg_size) {
 
 	/* O opcode e c_type são válidos? */
 	//if ((valid(msg->opcode, msg->c_type)) != 0)
-	//	return NULL;
+		//return NULL;
 
 	/* Consoante o c_type, continuar a recuperação da mensagem original */
 	switch (msg->c_type) {
@@ -247,6 +247,7 @@ struct message_t *buffer_to_message(char *msg_buf, int msg_size) {
 		int nkeys = ntohl(int_aux);
 		msg_buf += _INT;
 		int i = 0;
+
 		msg->content.keys = (char **) malloc((nkeys + 1) * sizeof(char *));
 		while (i < nkeys) {
 			//KEYSIZE
@@ -256,8 +257,8 @@ struct message_t *buffer_to_message(char *msg_buf, int msg_size) {
 			//KEY
 			msg->content.keys[i] = (char *) malloc((size_key + 1));
 			memcpy(msg->content.keys[i], msg_buf, size_key);
-			msg->content.keys[i][size_key] = '\0';
-			msg_buf += size_key;
+			msg->content.keys[i][size_key+1] = '\0';
+			msg_buf += size_key+1;
 			i++;
 		}
 		msg->content.keys[i] = NULL;

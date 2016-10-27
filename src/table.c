@@ -197,21 +197,34 @@ int table_size(struct table_t *table) {
 
 char **table_get_keys(struct table_t *table) {
 	printf("TABLE GET KEYS\n");
-	if (table == NULL)
+	if (table == NULL) {
 		return NULL;
+	}if(table->quantity_entry == 0){
+		return NULL;
+	}
+	printf("TABLE QUANTITIES %d\n", table->quantity_entry + 1);
 	char **table_keys = (char **) malloc(
 			sizeof(char *) * table->quantity_entry + 1);
-	if (table_keys == NULL)
+	if (table_keys == NULL) {
 		return NULL;
+	}
 	int index_table = 0, index_total = 0;
 
 	//iterate over the table
 	while (index_table < table->size) {
+		printf("TABLE GET KEYS\n");
 		//get the list in each index of the table
 		char **temp = list_get_keys(table->buckets[index_table]);
+		int i =0;
+		while(temp[i]!=NULL){
+			printf("%s\n", temp[i]);
+			i++;
+		}
+		printf("TABLE GET KEYS\n");
 		int index_temp = 0;
 		// iterate over the list until the NULL
 		while (temp[index_temp] != NULL) {
+			printf("TABLE GET KEYS %s\n", temp[index_temp]);
 			table_keys[index_total] = strdup(temp[index_temp]);
 			//the strdup failed
 			if (table_keys[index_total] == NULL) {
@@ -219,15 +232,17 @@ char **table_get_keys(struct table_t *table) {
 				list_free_keys(temp);
 				return NULL;
 			}
+			printf("TABLE GET KEYS After\n");
 			index_total++;
 			index_temp++;
 		}
-
+		printf("TABLE GET ALL KEYS\n");
 		index_table++;
 		list_free_keys(temp);
 	}
+	printf("TABLE GET ALL KEYS\n");
 	table_keys[index_total] = NULL;
-
+	printf("TABLE GET ALL KEYS\n");
 	return table_keys;
 }
 
