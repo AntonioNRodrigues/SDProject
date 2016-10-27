@@ -261,7 +261,6 @@ struct message_t *buffer_to_message(char *msg_buf, int msg_size) {
 	case CT_KEYS:
 		memcpy(&int_aux, msg_buf, _INT);
 		int nkeys = ntohl(int_aux);
-		printf("--NKEYS-->::: %d\n", nkeys);
 		msg_buf += _INT;
 		int i = 0;
 
@@ -271,12 +270,10 @@ struct message_t *buffer_to_message(char *msg_buf, int msg_size) {
 			memcpy(&short_aux, msg_buf, _SHORT);
 			size_key = ntohs(short_aux);
 			msg_buf += _SHORT;
-			printf("--size_key-->::: %d", size_key);
 			//KEY
 			msg->content.keys[i] = (char *) malloc((size_key + 1));
 			memcpy(msg->content.keys[i], msg_buf, size_key);
 			msg->content.keys[i][size_key] = '\0';
-			printf("---->%s\n", msg->content.keys[i]);
 			msg_buf += size_key;
 			i++;
 		}
