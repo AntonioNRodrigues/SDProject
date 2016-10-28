@@ -93,11 +93,13 @@ int main(int argc, char **argv) {
 
 				msg_resposta = network_send_receive(server, msg_out);
 				printf("TABLE CLIENT :: SIZE--> AFTER RESPONSE\n");
+				print_msg(msg_out);
 				free_message(msg_out);
 
 				if (msg_resposta == NULL) {
 					printf("Nao houve resposta\n");
 				} else {
+					print_msg(msg_resposta);
 					if (msg_resposta->opcode == OC_RT_ERROR) {
 						printf("Houve um erro\n");
 					} else {
@@ -124,6 +126,7 @@ int main(int argc, char **argv) {
 
 					msg_resposta = network_send_receive(server, msg_out);
 					printf("mensagem enviada\n");
+					print_msg(msg_out);
 					free_message(msg_out);
 					if (msg_resposta == NULL) {
 						printf("Nao houve resposta\n");
@@ -131,7 +134,7 @@ int main(int argc, char **argv) {
 						printf("mensagem recebido com:%d\n",
 								msg_resposta->opcode);
 						if (msg_resposta->opcode == OC_RT_ERROR) {
-							printf("Chave nao existe ou outro erro\n");
+							printf("Tabela vazia ou outro erro\n");
 						} else {
 							if (msg_resposta->c_type == CT_VALUE) {
 								printf("Valor: %s\n",
@@ -146,6 +149,7 @@ int main(int argc, char **argv) {
 								}
 							}
 						}
+						print_msg(msg_resposta);
 						free_message(msg_resposta);
 					}
 				}
@@ -164,6 +168,7 @@ int main(int argc, char **argv) {
 					printf("TABLE CLIENT :: DEL KEY == %s\n",
 							msg_out->content.key);
 					msg_resposta = network_send_receive(server, msg_out);
+					print_msg(msg_out);
 					free_message(msg_out);
 					if (msg_resposta == NULL) {
 						printf("Nao houve resposta\n");
@@ -174,6 +179,7 @@ int main(int argc, char **argv) {
 							printf("resultado: %d\n",
 									msg_resposta->content.result);
 						}
+						print_msg(msg_resposta);
 						free_message(msg_resposta);
 					}
 				}
@@ -215,16 +221,18 @@ int main(int argc, char **argv) {
 								msg_out->opcode);
 						msg_resposta = network_send_receive(server, msg_out);
 						printf("mensagem enviada\n");
+						print_msg(msg_out);
 						free_message(msg_out);
 						if (msg_resposta == NULL) {
 							printf("Nao houve resposta\n");
 						} else {
 							if (msg_resposta->opcode == OC_RT_ERROR) {
-								printf("Chave nao existe ou outro erro\n");
+								printf("Chave ja existe ou outro erro\n");
 							} else {
 								printf("resultado: %d\n",
 										msg_resposta->content.result);
 							}
+							print_msg(msg_resposta);
 							free_message(msg_resposta);
 						}
 					}
@@ -262,6 +270,7 @@ int main(int argc, char **argv) {
 						data_destroy(data);
 
 						msg_resposta = network_send_receive(server, msg_out);
+						print_msg(msg_out);
 						free_message(msg_out);
 						if (msg_resposta == NULL) {
 							printf("Nao houve resposta\n");
@@ -272,6 +281,7 @@ int main(int argc, char **argv) {
 							printf("resultado: %d\n",
 									msg_resposta->content.result);
 							}
+							print_msg(msg_resposta);
 							free_message(msg_resposta);
 						}
 					}

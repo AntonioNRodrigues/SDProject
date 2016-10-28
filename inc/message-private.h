@@ -11,4 +11,6 @@
 
 int valid(short opcode, short c_type);
 
+void print_msg(struct message_t *msg);
+
 #endif
