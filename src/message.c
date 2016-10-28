@@ -182,8 +182,10 @@ struct message_t *buffer_to_message(char *msg_buf, int msg_size) {
 	msg_buf += _SHORT;
 
 	/* O opcode e c_type são válidos? */
-	if ((valid(msg->opcode, msg->c_type)) != 0)
+	if ((valid(msg->opcode, msg->c_type)) != 0){
+		free_message(msg);
 		return NULL;
+	}
 	/* Consoante o c_type, continuar a recuperação da mensagem original */
 	switch (msg->c_type) {
 	case CT_RESULT:
