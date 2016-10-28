@@ -177,28 +177,21 @@ struct message_t *buffer_to_message(char *msg_buf, int msg_size) {
 	msg->opcode = ntohs(short_aux);
 	msg_buf += _SHORT;
 
-	if (msg->opcode == NULL) {
-		printf("OPCODE NULL\n");
-	}
-
 	memcpy(&short_aux, msg_buf, _SHORT);
 	msg->c_type = ntohs(short_aux);
 	msg_buf += _SHORT;
 
-	if (msg->c_type == NULL) {
-		printf("CTYPE NULL\n");
-	}
 
 	/* O opcode e c_type são válidos? */
-	if ((valid(msg->opcode, msg->c_type)) != 0)
-		return NULL;
+	//if ((valid(msg->opcode, msg->c_type)) != 0)
+		//return NULL;
 	/* Consoante o c_type, continuar a recuperação da mensagem original */
 	switch (msg->c_type) {
 	case CT_RESULT:
 		memcpy(&int_aux, msg_buf, _INT);
 		msg->content.result = ntohl(int_aux);
-		if (msg->content.result == NULL) {
-			printf("RESULT NULL\n");
+		if (msg->content.result < 0) {
+			printf("RESULT %d\n", msg->content.result);
 		}
 		break;
 	case CT_KEY:

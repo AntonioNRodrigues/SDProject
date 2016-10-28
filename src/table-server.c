@@ -98,18 +98,20 @@ struct message_t *process_message(struct message_t *msg_pedido,
 			msg_resposta->content.result = -1;
 
 		} else {
-			msg_resposta->c_type = CT_RESULT + 1;
+			msg_resposta->c_type = CT_RESULT;
+			msg_resposta->opcode = OC_PUT + 1;
 			msg_resposta->content.result = result;
 		}
 		break;
 	case OC_GET:
-		printf("PROCESS_MESSAGE:::::OC_GET\n");
+
 		temp_key = strdup(msg_pedido->content.key);
-		printf("PROCESS_MESSAGE MSG_PEDIDO--> %s\n", msg_pedido->content.key);
-		printf("PROCESS_MESSAGE TOKEN--> %s\n", temp_key);
+
 		// temp_key is NULL
 		if (temp_key == NULL) {
-			return NULL;
+			msg_resposta->c_type = CT_RESULT;
+			msg_resposta->opcode = OC_RT_ERROR;
+			msg_resposta->content.result = -1;
 		}
 		//key is ! --> GET ALL KEYS
 		if (strcmp("!", temp_key) == 0) {
@@ -134,11 +136,9 @@ struct message_t *process_message(struct message_t *msg_pedido,
 				data_destroy(temp_data);
 				//key does not exist
 			} else {
-				struct data_t *t = data_create2(0, NULL);
 				msg_resposta->c_type = CT_RESULT;
 				msg_resposta->opcode = OC_RT_ERROR;
 				msg_resposta->content.result = -1;
-				data_destroy(t);
 			}
 		}
 		break;
@@ -150,9 +150,11 @@ struct message_t *process_message(struct message_t *msg_pedido,
 			msg_resposta->c_type = CT_RESULT;
 			msg_resposta->opcode = OC_RT_ERROR;
 			msg_resposta->content.result = result;
+		} else {
+			msg_resposta->c_type = CT_RESULT;
+			msg_resposta->opcode = OC_UPDATE + 1;
+			msg_resposta->content.result = result;
 		}
-		msg_resposta->c_type = OC_UPDATE + 1;
-		msg_resposta->content.result = result;
 		break;
 
 	case OC_DEL:
@@ -165,14 +167,14 @@ struct message_t *process_message(struct message_t *msg_pedido,
 			msg_resposta->opcode = OC_RT_ERROR;
 			msg_resposta->content.result = result;
 		} else {
-			msg_resposta->c_type = OC_DEL + 1;
+			msg_resposta->opcode = OC_DEL + 1;
+			msg_resposta->c_type = CT_RESULT;
 			msg_resposta->content.result = result;
 		}
 		break;
 	default:
 		break;
 	}
-	printf("PROCESS_MESSAGE --> END\n");
 	return msg_resposta;
 }
 
@@ -197,36 +199,29 @@ int network_receive_send(int sockfd, struct table_t *table) {
 	 mensagem de pedido que será recebida de seguida.*/
 
 	result = read_all(sockfd, (char *) &msg_size, _INT);
-	printf("NETWORK_RECEIVE_SEND-->READ ALL RESULT:: %d\n", result);
-	printf("NETWORK_RECEIVE_SEND-->READ ALL MSG_SIZE:: %d\n", msg_size);
 	/* Verificar se a receção teve sucesso */
 	if (msg_size < 0) {
 		return -1;
 	}
 	message_size = ntohl(msg_size);
-	printf("NETWORK_RECEIVE_SEND-->MESSAGE_SIZE:: %d\n", message_size);
 	/* Alocar memória para receber o número de bytes da
 	 mensagem de pedido. */
 	message_pedido = (char *) malloc(message_size);
 
 	/* Com a função read_all, receber a mensagem de pedido. */
 	result = read_all(sockfd, message_pedido, message_size);
-	printf("NETWORK_RECEIVE_SEND-->READ-All RESULT MESSAGE PEDIDDO:: %d\n",
-			result);
 	/* Verificar se a receção teve sucesso */
 	if (result != message_size) {
 		return -1;
 	}
 	/* Desserializar a mensagem do pedido */
 	msg_pedido = buffer_to_message(message_pedido, message_size);
-	printf("NETWORK_RECEIVE_SEND-->MSG_PEDIDO %d \n", msg_pedido->c_type);
 	/* Verificar se a desserialização teve sucesso */
 	if (msg_pedido == NULL) {
 		return -1;
 	}
 	/* Processar a mensagem */
 	msg_resposta = process_message(msg_pedido, table);
-	printf("NETWORK_RECEIVE_SEND-->AFTER PROCESS MESSAGE\n");
 	/* Serializar a mensagem recebida */
 	message_size = message_to_buffer(msg_resposta, &message_resposta);
 
@@ -299,7 +294,7 @@ int main(int argc, char **argv) {
 	//printTable(table);
 	while ((connsock = accept(listening_socket, (struct sockaddr *) &client,
 			&size_client)) != -1) {
-		int ret = 0;
+
 		printf(" * Client is connected!\n");
 		printf(" ================================= \n");
 		while (listening_socket != 0) {
