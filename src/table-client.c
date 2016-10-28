@@ -200,14 +200,14 @@ int main(int argc, char **argv) {
 						struct data_t *data;
 
 						data = data_create2(strlen(datastr) + 1,
-								strdup(datastr));
+								datastr);
 
 						msg_out = (struct message_t *) malloc(
 								sizeof(struct message_t));
 						msg_out->opcode = OC_PUT;
 						msg_out->c_type = CT_ENTRY;
-						msg_out->content.entry = entry_create(strdup(key),
-								data_dup(data));
+						msg_out->content.entry = entry_create(key,
+								data);
 						data_destroy(data);
 						printf("a enviar mensagem opcode %d\n",
 								msg_out->opcode);

@@ -284,10 +284,11 @@ int main(int argc, char **argv) {
 	}
 
 	//printTable(table);
+	printf("A espera de cliente\n");
 	while ((connsock = accept(listening_socket, (struct sockaddr *) &client,
 			&size_client)) != -1) {
 
-		printf(" * Client is connected!\n");
+		printf(" * Client esta ligado!\n");
 		printf(" =========================================================\n");
 		while (listening_socket != 0) {
 			int aux1 = network_receive_send(connsock, table);
