@@ -289,7 +289,6 @@ int main(int argc, char **argv) {
 				break;
 			}
 		}
-
 		close(connsock);
 		printf("Connection closed.\n Waiting for new connection.\n");
 		/* Ciclo feito com sucesso ? Houve erro?

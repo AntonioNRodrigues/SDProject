@@ -8,7 +8,6 @@
 void free_message(struct message_t *msg) {
 
 	if (msg != NULL) {
-
 		if (msg->c_type == CT_VALUE)
 			data_destroy(msg->content.data);
 
@@ -43,7 +42,6 @@ int message_to_buffer(struct message_t *msg, char **msg_buf) {
 			//temp_keys = msg->content.keys;
 			while (msg->content.keys[i] != NULL) {
 				buffer_size += (strlen(msg->content.keys[i]));
-				int len = strlen(msg->content.keys[i]);
 				i++;
 			}
 			nkeys = i;
@@ -283,7 +281,7 @@ int valid(short opcode, short c_type) {
 void print_msg(struct message_t *msg) {
 	int i;
 
-	printf("----- MESSAGE -----\n");
+	printf("====== MESSAGE =========\n");
 	printf("opcode: %d, c_type: %d\n", msg->opcode, msg->c_type);
 	switch (msg->c_type) {
 	case CT_ENTRY: {
@@ -310,6 +308,6 @@ void print_msg(struct message_t *msg) {
 	}
 		;
 	}
-	printf("-------------------\n");
+	printf("========================\n\n");
 }
 
