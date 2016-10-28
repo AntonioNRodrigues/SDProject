@@ -85,14 +85,12 @@ int main(int argc, char **argv) {
 			 */
 			//CASE SIZE
 			else if (strcmp(token, "size") == 0) {
-				printf("TABLE CLIENT :: SIZE");
 				msg_out = (struct message_t *) malloc(sizeof(struct message_t));
 				msg_out->opcode = OC_SIZE;
 				msg_out->c_type = CT_RESULT;
 				msg_out->content.result = 0;
 
 				msg_resposta = network_send_receive(server, msg_out);
-				printf("TABLE CLIENT :: SIZE--> AFTER RESPONSE\n");
 				print_msg(msg_out);
 				free_message(msg_out);
 
@@ -109,7 +107,6 @@ int main(int argc, char **argv) {
 				}
 				//CASE GET
 			} else if (strcmp(token, "get") == 0) {
-				printf("TABLE CLIENT :: GET\n");
 				token = strtok(NULL, " ");
 				if (token == NULL) {
 					printf("Uso: get <chave>\n");
@@ -119,10 +116,6 @@ int main(int argc, char **argv) {
 					msg_out->opcode = OC_GET;
 					msg_out->c_type = CT_KEY;
 					msg_out->content.key = strdup(token);
-					printf("TABLE CLIENT :: GET KEY == %s\n", token);
-					printf("TABLE CLIENT :: GET KEY == %s\n",
-							msg_out->content.key);
-					printf("a enviar mensagem, oo_code:%d\n", msg_out->opcode);
 
 					msg_resposta = network_send_receive(server, msg_out);
 					printf("mensagem enviada\n");
@@ -165,8 +158,7 @@ int main(int argc, char **argv) {
 					msg_out->opcode = OC_DEL;
 					msg_out->c_type = CT_KEY;
 					msg_out->content.key = strdup(token);
-					printf("TABLE CLIENT :: DEL KEY == %s\n",
-							msg_out->content.key);
+
 					msg_resposta = network_send_receive(server, msg_out);
 					print_msg(msg_out);
 					free_message(msg_out);
