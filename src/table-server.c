@@ -56,10 +56,12 @@ struct message_t *process_message(struct message_t *msg_pedido,
 
 	/* Verificar parâmetros de entrada */
 	if (msg_pedido == NULL || tabela == NULL) {
+		free_message(msg_resposta);
 		return NULL;
 	}
 	/* Verificar opcode e c_type na mensagem de pedido */
 	if (msg_pedido->opcode < 0 || msg_pedido->c_type < 0) {
+		free_message(msg_resposta);
 		return NULL;
 	}
 	/* Aplicar operação na tabela */
