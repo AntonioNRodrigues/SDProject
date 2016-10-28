@@ -125,6 +125,7 @@ struct message_t *network_send_receive(struct server_t *server,
 
 	/* Verificar se o envio teve sucesso */
 	if (result != _INT) {
+		close(server->sock_file_descriptor);
 		return NULL;
 	}
 
@@ -133,6 +134,7 @@ struct message_t *network_send_receive(struct server_t *server,
 	printf("NETWORK_SEND_RECEIVE-->MESSAGE_SIZE:: %d\n", message_size);
 	/* Verificar se o envio teve sucesso */
 	if (result != message_size) {
+		close(server->sock_file_descriptor);
 		return NULL;
 	}
 
@@ -152,7 +154,7 @@ struct message_t *network_send_receive(struct server_t *server,
 	result = read_all(server->sock_file_descriptor, (char *) &size_returned_msg,
 			_INT);
 	if (result != _INT) {
-		//free
+		close(server->sock_file_descriptor);
 		return NULL;
 	}
 	printf("NETWORK_SEND_RECEIVE-->READ ALL MESSAGE_SIZE:: %d\n",

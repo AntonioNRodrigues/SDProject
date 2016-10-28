@@ -204,8 +204,6 @@ int network_receive_send(int sockfd, struct table_t *table) {
 		return -1;
 	}
 
-	
-	
 	message_size = ntohl(msg_size);
 	/* Alocar memória para receber o número de bytes da
 	 mensagem de pedido. */
@@ -215,12 +213,14 @@ int network_receive_send(int sockfd, struct table_t *table) {
 	result = read_all(sockfd, message_pedido, message_size);
 	/* Verificar se a receção teve sucesso */
 	if (result != message_size) {
+		free(msg_pedido);
 		return -1;
 	}
 	/* Desserializar a mensagem do pedido */
 	msg_pedido = buffer_to_message(message_pedido, message_size);
 	/* Verificar se a desserialização teve sucesso */
 	if (msg_pedido == NULL) {
+		free(msg_pedido);
 		return -1;
 	}
 	/* Processar a mensagem */
@@ -230,6 +230,8 @@ int network_receive_send(int sockfd, struct table_t *table) {
 
 	/* Verificar se a serialização teve sucesso */
 	if (message_size < 0) {
+		free(msg_resposta);
+		free(msg_pedido);
 		return -1;
 	}
 
@@ -250,25 +252,15 @@ int network_receive_send(int sockfd, struct table_t *table) {
 
 	/* Verificar se o envio teve sucesso */
 	if (result < 0) {
+		free(msg_pedido);
+		free(msg_resposta);
 		return -1;
 	}
 	/* Libertar memória */
-
+	free(msg_pedido);
+	free(msg_resposta);
 	return 1;
 }
-
-/*void printTable(struct table_t* table){
- int x, y;
- for(x = 0; x < table->quantity_entry; x++){
- printf("lista %d:\n", x);
- struct node_t* aux = table->buckets[x]->head;
- while(aux != NULL){
- printf("\t KEY: %s  DATASIZE: %d  DATA: %s \n", aux->entry->key, aux->entry->value->datasize, (char *)aux->entry->value->data);
- aux = aux->next;
- }
- }
-
- }*/
 
 int main(int argc, char **argv) {
 	int listening_socket, connsock, result;
