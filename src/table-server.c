@@ -13,7 +13,6 @@
 /* Função para preparar uma socket de receção de pedidos de ligação.
  */
 int make_server_socket(short port) {
-	printf("MAKE SERVER CONNECTION\n");
 	int socket_fd;
 	struct sockaddr_in server;
 
@@ -47,22 +46,18 @@ int make_server_socket(short port) {
  */
 struct message_t *process_message(struct message_t *msg_pedido,
 		struct table_t *tabela) {
-	printf("PROCESS_MESSAGE --> BEGIN\n");
 	char *temp_key;
 	struct message_t *msg_resposta = (struct message_t *) malloc(
 			sizeof(struct message_t));
 	if (msg_resposta == NULL) {
-		printf("PROCESS_MESSAGE --> msg-resposta is NULL\n");
 		return NULL;
 	}
 	int result;
 
 	/* Verificar parâmetros de entrada */
 	if (msg_pedido == NULL || tabela == NULL) {
-		printf("PROCESS_MESSAGE --> msg_pedido || tabels is NULL\n");
 		return NULL;
 	}
-	printf("PROCESS_MESSAGE --> PARAM CHECK\n");
 	/* Verificar opcode e c_type na mensagem de pedido */
 	if (msg_pedido->opcode < 0 || msg_pedido->c_type < 0) {
 		return NULL;
@@ -70,12 +65,10 @@ struct message_t *process_message(struct message_t *msg_pedido,
 	/* Aplicar operação na tabela */
 
 	/* Preparar mensagem de resposta */
-	printf("PROCESS_MESSAGE --> OPCODE = %d\n", msg_pedido->opcode);
 	switch (msg_pedido->opcode) {
 	case OC_SIZE:
 		result = table_size(tabela);
 		//the table is empty
-		printf("PROCESS_MESSAGE --> SIZE TABELA::::%d\n", result);
 		if (result < 0) {
 			msg_resposta->c_type = CT_RESULT;
 			msg_resposta->opcode = OC_RT_ERROR;
@@ -87,10 +80,8 @@ struct message_t *process_message(struct message_t *msg_pedido,
 		}
 		break;
 	case OC_PUT:
-		printf("PROCESS_MESSAGE:::::OC_PUT\n");
 		result = table_put(tabela, msg_pedido->content.entry->key,
 				msg_pedido->content.entry->value);
-		printf("PROCESS_MESSAGE --> PUT TABELA::::%d\n", result);
 		//table_put failed
 		if (result == -1) {
 			msg_resposta->c_type = CT_RESULT;
@@ -115,7 +106,6 @@ struct message_t *process_message(struct message_t *msg_pedido,
 		}
 		//key is ! --> GET ALL KEYS
 		if (strcmp("!", temp_key) == 0) {
-			printf("TABLE GET ALLLLLLL KEYS\n");
 			if (tabela->quantity_entry == 0) {
 				msg_resposta->c_type = CT_RESULT;
 				msg_resposta->opcode = OC_RT_ERROR;
@@ -124,7 +114,6 @@ struct message_t *process_message(struct message_t *msg_pedido,
 				msg_resposta->c_type = CT_KEYS;
 				msg_resposta->opcode = OC_GET + 1;
 				msg_resposta->content.keys = table_get_keys(tabela);
-				printf("TABLE KEYS = %d", msg_resposta->opcode);
 			}
 		} else {
 			struct data_t *temp_data = table_get(tabela, temp_key);
@@ -158,9 +147,7 @@ struct message_t *process_message(struct message_t *msg_pedido,
 		break;
 
 	case OC_DEL:
-		printf("PROCESS_MESSAGE ::::: OC_DEL\n");
 		result = table_del(tabela, msg_pedido->content.key);
-		printf("PROCESS_MESSAGE ::::: OC_DEL::RESULT = %d\n", result);
 		//table_del failed
 		if (result == -1) {
 			msg_resposta->c_type = CT_RESULT;
@@ -175,6 +162,9 @@ struct message_t *process_message(struct message_t *msg_pedido,
 	default:
 		break;
 	}
+	print_msg(msg_pedido);
+	print_msg(msg_resposta);
+	free_message(msg_pedido);
 	return msg_resposta;
 }
 
@@ -283,7 +273,6 @@ int main(int argc, char **argv) {
 	}
 
 	if ((listening_socket = make_server_socket(atoi(argv[1]))) < 0) {
-		printf("LISTENING\n");
 		return -1;
 
 	}
@@ -299,7 +288,7 @@ int main(int argc, char **argv) {
 			&size_client)) != -1) {
 
 		printf(" * Client is connected!\n");
-		printf(" ================================= \n");
+		printf(" =========================================================\n");
 		while (listening_socket != 0) {
 			int aux1 = network_receive_send(connsock, table);
 			if(aux1 == -1){
@@ -307,14 +296,9 @@ int main(int argc, char **argv) {
 				close(connsock);
 				break;
 			}
-			//correu tudo bem
-			//erro
-			//client fechou sai do ciclo close connection
 
-			printf(" ================================= \n");
+		printf(" =======================================================\n");
 		}
-
-		//printTable(table);
 
 		close(connsock);
 		printf("Connection closed.\n Waiting for new connection.\n");

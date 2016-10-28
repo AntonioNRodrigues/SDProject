@@ -34,43 +34,28 @@ int message_to_buffer(struct message_t *msg, char **msg_buf) {
 
 		if (msg->c_type == CT_RESULT) {
 			buffer_size += (_SHORT * 2) + _INT;
-			printf(
-					"MESSAGE::MESSAGE_TO_BUFFER::: C_TYPE==CT-RESULT-->BUFFERSIZE = %d\n",
-					buffer_size);
+
 		} else if (msg->c_type == CT_VALUE) {
 			buffer_size += (_SHORT * 2 + _INT + msg->content.data->datasize);
-			printf(
-					"MESSAGE::MESSAGE_TO_BUFFER::: C_TYPE==CT_VALUE-->BUFFERSIZE = %d\n",
-					buffer_size);
 		} else if (msg->c_type == CT_KEYS) {
 
 			i = 0;
 			//temp_keys = msg->content.keys;
 			while (msg->content.keys[i] != NULL) {
 				buffer_size += (strlen(msg->content.keys[i]));
-				printf("key::: %s----> \n", msg->content.keys[i]);
 				int len = strlen(msg->content.keys[i]);
-				printf("size::: %d\n", len);
 				i++;
 			}
 			nkeys = i;
-			printf(
-					"MESSAGE::MESSAGE_TO_BUFFER::: C_TYPE==CT_KEYS-->NUM_KEYS = %d\n",
-					nkeys);
+
 			buffer_size += (_SHORT * 2) + (_SHORT * nkeys) + _INT;
-			printf(
-					"MESSAGE::MESSAGE_TO_BUFFER::: C_TYPE==CT_KEYS-->BUFFERSIZE = %d\n",
-					buffer_size);
 
 		} else if (msg->c_type == CT_KEY) {
 			buffer_size += _SHORT * 3 + (strlen(msg->content.key));
-			printf(
-					"MESSAGE::MESSAGE_TO_BUFFER::: C_TYPE==CT_KEY-->BUFFERSIZE = %d\n",
-					buffer_size);
+
 		} else if (msg->c_type == CT_ENTRY) {
 			buffer_size += (_SHORT * 3 + strlen(msg->content.entry->key) + _INT
 					+ msg->content.entry->value->datasize);
-			printf("BS: %d\n", buffer_size);
 		}
 
 		/* Alocar quantidade de memória determinada antes
@@ -281,12 +266,13 @@ struct message_t *buffer_to_message(char *msg_buf, int msg_size) {
 /**
  * valid opcode && c_type returns 0, invalid returns -1
  */
-					
+
 int valid(short opcode, short c_type) {
 	return ((opcode == OC_DEL || opcode == OC_SIZE || opcode == OC_PUT
 			|| opcode == OC_UPDATE || opcode == OC_GET || opcode == OC_RT_ERROR
-			|| opcode == OC_DEL + 1 || opcode == OC_SIZE + 1 || opcode == OC_PUT + 1
-			|| opcode == OC_UPDATE + 1 || opcode == OC_GET + 1)
+			|| opcode == OC_DEL + 1 || opcode == OC_SIZE + 1
+			|| opcode == OC_PUT + 1 || opcode == OC_UPDATE + 1
+			|| opcode == OC_GET + 1)
 			&& (c_type == CT_ENTRY || c_type == CT_KEY || c_type == CT_KEYS
 					|| c_type == CT_RESULT || c_type == CT_VALUE)) ? 0 : -1;
 
@@ -294,28 +280,33 @@ int valid(short opcode, short c_type) {
 
 void print_msg(struct message_t *msg) {
 	int i;
-	
+
 	printf("----- MESSAGE -----\n");
 	printf("opcode: %d, c_type: %d\n", msg->opcode, msg->c_type);
-	switch(msg->c_type) {
-		case CT_ENTRY:{
-			printf("key: %s\n", msg->content.entry->key);
-			printf("datasize: %d\n", msg->content.entry->value->datasize);
-		}break;
-		case CT_KEY:{
-			printf("key: %s\n", msg->content.key);
-		}break;
-		case CT_KEYS:{
-			for(i = 0; msg->content.keys[i] != NULL; i++) {
-				printf("key[%d]: %s\n", i, msg->content.keys[i]);
-			}
-		}break;
-		case CT_VALUE:{
-			printf("datasize: %d\n", msg->content.data->datasize);
-		}break;
-		case CT_RESULT:{
-			printf("result: %d\n", msg->content.result);
-		};
+	switch (msg->c_type) {
+	case CT_ENTRY: {
+		printf("key: %s\n", msg->content.entry->key);
+		printf("datasize: %d\n", msg->content.entry->value->datasize);
+	}
+		break;
+	case CT_KEY: {
+		printf("key: %s\n", msg->content.key);
+	}
+		break;
+	case CT_KEYS: {
+		for (i = 0; msg->content.keys[i] != NULL; i++) {
+			printf("key[%d]: %s\n", i, msg->content.keys[i]);
+		}
+	}
+		break;
+	case CT_VALUE: {
+		printf("datasize: %d\n", msg->content.data->datasize);
+	}
+		break;
+	case CT_RESULT: {
+		printf("result: %d\n", msg->content.result);
+	}
+		;
 	}
 	printf("-------------------\n");
 }
