@@ -49,7 +49,8 @@ int main(int argc, char **argv) {
 	/* Usar network_connect para estabelcer ligação ao servidor */
 	printf("A tentar estabelecer ligacao\n\n");
 	server = network_connect(argv[1]);
-	if (server==NULL) return -1;
+	if (server == NULL)
+		return -1;
 	printf("ligacao estabelecida\n\n");
 	/* Fazer ciclo até que o utilizador resolva fazer "quit" */
 	while (strcmp(input, "quit") != 0) {
@@ -82,21 +83,29 @@ int main(int argc, char **argv) {
 			 Usar network_send_receive para enviar msg_out para
 			 o server e receber msg_resposta.
 			 */
+			//CASE SIZE
 			else if (strcmp(token, "size") == 0) {
 				printf("TABLE CLIENT :: SIZE");
 				msg_out = (struct message_t *) malloc(sizeof(struct message_t));
 				msg_out->opcode = OC_SIZE;
+				msg_out->c_type = CT_RESULT;
+				msg_out->content.result = 0;
 
 				msg_resposta = network_send_receive(server, msg_out);
 				printf("TABLE CLIENT :: SIZE--> AFTER RESPONSE\n");
 				free_message(msg_out);
-				if (msg_resposta != NULL) {
-				printf("resultado: %d\n", msg_resposta->content.result);
-				free_message(msg_resposta);
-				} else {
-					printf("Nao houve resposta\n");
-				}
 
+				if (msg_resposta == NULL) {
+					printf("Nao houve resposta\n");
+				} else {
+					if (msg_resposta->opcode == OC_RT_ERROR) {
+						printf("Houve um erro\n");
+					} else {
+						printf("resultado: %d\n", msg_resposta->content.result);
+					}
+					free_message(msg_resposta);
+				}
+				//CASE GET
 			} else if (strcmp(token, "get") == 0) {
 				printf("TABLE CLIENT :: GET\n");
 				token = strtok(NULL, " ");
@@ -109,7 +118,8 @@ int main(int argc, char **argv) {
 					msg_out->c_type = CT_KEY;
 					msg_out->content.key = strdup(token);
 					printf("TABLE CLIENT :: GET KEY == %s\n", token);
-					printf("TABLE CLIENT :: GET KEY == %s\n", msg_out->content.key);
+					printf("TABLE CLIENT :: GET KEY == %s\n",
+							msg_out->content.key);
 					printf("a enviar mensagem, oo_code:%d\n", msg_out->opcode);
 
 					msg_resposta = network_send_receive(server, msg_out);
@@ -117,26 +127,29 @@ int main(int argc, char **argv) {
 					free_message(msg_out);
 					if (msg_resposta == NULL) {
 						printf("Nao houve resposta\n");
-					}
-
-					printf("mensagem recebido com:%d\n", msg_resposta->opcode);
-					if (msg_resposta->opcode == OC_RT_ERROR){
-						printf("Chave nao existe\n");
-						free_message(msg_resposta);
 					} else {
-						if (msg_resposta->c_type == CT_VALUE) {
-							printf("Valor: %s\n", msg_resposta->content.data->data);
+						printf("mensagem recebido com:%d\n",
+								msg_resposta->opcode);
+						if (msg_resposta->opcode == OC_RT_ERROR) {
+							printf("Chave nao existe ou outro erro\n");
 						} else {
-							printf("Chaves:\n");
-							int i = 0;
-							while (msg_resposta->content.keys[i] != NULL) {
-								printf("|Key = %s|\n", msg_resposta->content.keys[i]);
-								i++;
+							if (msg_resposta->c_type == CT_VALUE) {
+								printf("Valor: %s\n",
+										msg_resposta->content.data->data);
+							} else {
+								printf("Chaves:\n");
+								int i = 0;
+								while (msg_resposta->content.keys[i] != NULL) {
+									printf("Key = %s\n",
+											msg_resposta->content.keys[i]);
+									i++;
+								}
 							}
 						}
 						free_message(msg_resposta);
 					}
 				}
+				//CASE DEL
 			} else if (strcmp(token, "del") == 0) {
 
 				token = strtok(NULL, " ");
@@ -148,22 +161,24 @@ int main(int argc, char **argv) {
 					msg_out->opcode = OC_DEL;
 					msg_out->c_type = CT_KEY;
 					msg_out->content.key = strdup(token);
-					printf("TABLE CLIENT :: DEL KEY == %s\n", msg_out->content.key);
+					printf("TABLE CLIENT :: DEL KEY == %s\n",
+							msg_out->content.key);
 					msg_resposta = network_send_receive(server, msg_out);
-
 					free_message(msg_out);
 					if (msg_resposta == NULL) {
 						printf("Nao houve resposta\n");
-					} else if (msg_resposta->opcode == OC_RT_ERROR){
-						printf("Chave nao existe\n");
-						free_message(msg_resposta);
-					}else {
-						printf("resultado: %d\n", msg_resposta->content.result);
+					} else {
+						if (msg_resposta->opcode == OC_RT_ERROR) {
+							printf("Chave nao existe ou outro erro\n");
+						} else {
+							printf("resultado: %d\n",
+									msg_resposta->content.result);
+						}
 						free_message(msg_resposta);
 					}
 				}
 			}
-
+			//CASE PUT
 			else if (strcmp(token, "put") == 0) {
 
 				token = strtok(NULL, " ");
@@ -186,28 +201,35 @@ int main(int argc, char **argv) {
 						}
 						struct data_t *data;
 
-						data = data_create2(strlen(datastr) + 1, datastr);
+						data = data_create2(strlen(datastr) + 1,
+								strdup(datastr));
 
 						msg_out = (struct message_t *) malloc(
 								sizeof(struct message_t));
 						msg_out->opcode = OC_PUT;
 						msg_out->c_type = CT_ENTRY;
-						msg_out->content.entry = entry_create(key, data);
+						msg_out->content.entry = entry_create(strdup(key),
+								data_dup(data));
 						data_destroy(data);
-						printf("a enviar mensagem\n");
+						printf("a enviar mensagem opcode %d\n",
+								msg_out->opcode);
 						msg_resposta = network_send_receive(server, msg_out);
 						printf("mensagem enviada\n");
 						free_message(msg_out);
-						if (msg_resposta != NULL) {
-							printf("resultado: %d\n",
-									msg_resposta->content.result);
-							free_message(msg_resposta);
-						} else {
+						if (msg_resposta == NULL) {
 							printf("Nao houve resposta\n");
+						} else {
+							if (msg_resposta->opcode == OC_RT_ERROR) {
+								printf("Chave nao existe ou outro erro\n");
+							} else {
+								printf("resultado: %d\n",
+										msg_resposta->content.result);
+							}
+							free_message(msg_resposta);
 						}
 					}
 				}
-
+				//CASE UPDATE
 			} else if (strcmp(token, "update") == 0) {
 
 				token = strtok(NULL, " ");
@@ -226,7 +248,6 @@ int main(int argc, char **argv) {
 						while (token != NULL) {
 							strcat(datastr, " ");
 							strcat(datastr, token);
-
 							token = strtok(NULL, " ");
 						}
 						struct data_t *data;
@@ -242,12 +263,16 @@ int main(int argc, char **argv) {
 
 						msg_resposta = network_send_receive(server, msg_out);
 						free_message(msg_out);
-						if (msg_resposta != NULL) {
+						if (msg_resposta == NULL) {
+							printf("Nao houve resposta\n");
+						} else {
+							if (msg_resposta->opcode == OC_RT_ERROR){
+								printf("Chave nao existe ou outro erro\n");
+							} else {
 							printf("resultado: %d\n",
 									msg_resposta->content.result);
+							}
 							free_message(msg_resposta);
-						} else {
-							printf("Nao houve resposta\n");
 						}
 					}
 				}

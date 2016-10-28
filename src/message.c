@@ -71,12 +71,8 @@ int message_to_buffer(struct message_t *msg, char **msg_buf) {
 			buffer_size += (_SHORT * 3 + strlen(msg->content.entry->key) + _INT
 					+ msg->content.entry->value->datasize);
 			printf("BS: %d\n", buffer_size);
-		} else if (msg->opcode == OC_SIZE) {
-			buffer_size += (_SHORT);
-			printf(
-					"MESSAGE::MESSAGE_TO_BUFFER::: OPCODE == OC_SIZE -->BUFFERSIZE = %d\n",
-					buffer_size);
 		}
+
 		/* Alocar quantidade de memória determinada antes
 		 *msg_buf = ....
 		 */
@@ -94,11 +90,10 @@ int message_to_buffer(struct message_t *msg, char **msg_buf) {
 		memcpy(ptr, &short_value, _SHORT);
 		ptr += _SHORT;
 
-		if (msg->opcode != OC_SIZE) {
-			short_value = htons(msg->c_type);
-			memcpy(ptr, &short_value, _SHORT);
-			ptr += _SHORT;
-		}
+		short_value = htons(msg->c_type);
+		memcpy(ptr, &short_value, _SHORT);
+		ptr += _SHORT;
+
 		/* Consoante o conteúdo da mensagem, continuar a serialização da mesma */
 
 		switch (msg->c_type) {
@@ -182,20 +177,29 @@ struct message_t *buffer_to_message(char *msg_buf, int msg_size) {
 	msg->opcode = ntohs(short_aux);
 	msg_buf += _SHORT;
 
-	if (msg->opcode != OC_SIZE) {
-		memcpy(&short_aux, msg_buf, _SHORT);
-		msg->c_type = ntohs(short_aux);
-		msg_buf += _SHORT;
+	if (msg->opcode == NULL) {
+		printf("OPCODE NULL\n");
+	}
+
+	memcpy(&short_aux, msg_buf, _SHORT);
+	msg->c_type = ntohs(short_aux);
+	msg_buf += _SHORT;
+
+	if (msg->c_type == NULL) {
+		printf("CTYPE NULL\n");
 	}
 
 	/* O opcode e c_type são válidos? */
-	//if ((valid(msg->opcode, msg->c_type)) != 0)
-	//return NULL;
+	if ((valid(msg->opcode, msg->c_type)) != 0)
+		return NULL;
 	/* Consoante o c_type, continuar a recuperação da mensagem original */
 	switch (msg->c_type) {
 	case CT_RESULT:
 		memcpy(&int_aux, msg_buf, _INT);
 		msg->content.result = ntohl(int_aux);
+		if (msg->content.result == NULL) {
+			printf("RESULT NULL\n");
+		}
 		break;
 	case CT_KEY:
 
@@ -207,6 +211,9 @@ struct message_t *buffer_to_message(char *msg_buf, int msg_size) {
 		msg->content.key = (char *) malloc(size_key + 1);
 		memcpy(msg->content.key, msg_buf, size_key);
 		msg->content.key[size_key] = '\0';
+		if (msg->content.key == NULL) {
+			printf("KEY NULL\n");
+		}
 		break;
 	case CT_VALUE:
 		//DATASIZE
@@ -221,6 +228,9 @@ struct message_t *buffer_to_message(char *msg_buf, int msg_size) {
 			return NULL;
 		}
 		memcpy(msg->content.data->data, msg_buf, data_size);
+		if (msg->content.data == NULL) {
+			printf("VALUE NULL\n");
+		}
 		break;
 	case CT_ENTRY:
 		//KEYSIZE
@@ -256,6 +266,9 @@ struct message_t *buffer_to_message(char *msg_buf, int msg_size) {
 		memcpy(msg->content.entry->value->data, msg_buf, data_size);
 		free(aux_key);
 		data_destroy(temp_data);
+		if (msg->content.entry == NULL) {
+			printf("ENTRY NULL\n");
+		}
 		break;
 
 	case CT_KEYS:
@@ -278,6 +291,9 @@ struct message_t *buffer_to_message(char *msg_buf, int msg_size) {
 			i++;
 		}
 		msg->content.keys[i] = NULL;
+		if (msg->content.keys == NULL) {
+			printf("KEYS NULL\n");
+		}
 		break;
 
 	default:
@@ -290,7 +306,7 @@ struct message_t *buffer_to_message(char *msg_buf, int msg_size) {
  */
 int valid(short opcode, short c_type) {
 	return ((opcode == OC_DEL || opcode == OC_SIZE || opcode == OC_PUT
-			|| opcode == OC_UPDATE || opcode == OC_GET)
+			|| opcode == OC_UPDATE || opcode == OC_GET || opcode == OC_RT_ERROR)
 			&& (c_type == CT_ENTRY || c_type == CT_KEY || c_type == CT_KEYS
 					|| c_type == CT_RESULT || c_type == CT_VALUE)) ? 0 : -1;
 
