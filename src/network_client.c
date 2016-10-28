@@ -95,7 +95,6 @@ struct server_t *network_connect(const char *address_port) {
 
 struct message_t *network_send_receive(struct server_t *server,
 		struct message_t *msg) {
-	printf("NETWORK_SEND_RECEIVE-->BEGIN\n");
 	char *message_out;
 	char *message_in;
 	int message_size, msg_size, result;
@@ -108,7 +107,6 @@ struct message_t *network_send_receive(struct server_t *server,
 
 	/* Serializar a mensagem recebida */
 	message_size = message_to_buffer(msg, &message_out);
-	printf("NETWORK_SEND_RECEIVE-->MESSAGE_SIZE:: %d\n", message_size);
 	/* Verificar se a serialização teve sucesso */
 	if (message_size <= 0) {
 		return NULL;
@@ -118,10 +116,8 @@ struct message_t *network_send_receive(struct server_t *server,
 	 logo de seguida
 	 */
 	msg_size = htonl(message_size);
-	printf("NETWORK_SEND_RECEIVE-->htonl MSG_SIZE:: %d\n", msg_size);
 
 	result = write_all(server->sock_file_descriptor, (char *) &msg_size, _INT);
-	printf("NETWORK_SEND_RECEIVE-->MESSAGE_SIZE:: %d\n", result);
 
 	/* Verificar se o envio teve sucesso */
 	if (result != _INT) {
@@ -131,7 +127,6 @@ struct message_t *network_send_receive(struct server_t *server,
 
 	/* Enviar a mensagem que foi previamente serializada */
 	result = write_all(server->sock_file_descriptor, message_out, message_size);
-	printf("NETWORK_SEND_RECEIVE-->MESSAGE_SIZE:: %d\n", message_size);
 	/* Verificar se o envio teve sucesso */
 	if (result != message_size) {
 		close(server->sock_file_descriptor);
@@ -157,27 +152,22 @@ struct message_t *network_send_receive(struct server_t *server,
 		close(server->sock_file_descriptor);
 		return NULL;
 	}
-	printf("NETWORK_SEND_RECEIVE-->READ ALL MESSAGE_SIZE:: %d\n",
-			size_returned_msg);
 
 	int msg_returned = ntohl(size_returned_msg);
 	message_in = (char *) malloc(msg_returned);
-	printf("NETWORK_SEND_RECEIVE-->MSG-RETURNED :: %d\n", msg_returned);
+
 	result = read_all(server->sock_file_descriptor, message_in, msg_returned);
-	printf("NETWORK_SEND_RECEIVE-->READ ALL MESSAGE :: %d\n", result);
+
 	/* Desserializar a mensagem de resposta */
 	msg_resposta = buffer_to_message(message_in, msg_returned);
-	printf("NETWORK_SEND_RECEIVE-->READ ALL MESSAGE_RESPONSE::\n ");
 
 	/* Verificar se a desserialização teve sucesso */
 	if (msg_resposta == NULL) {
-		printf("---NULL -----\n");
 		return NULL;
 	}
 
 	/* Libertar memória */
 	//-------------------------TO DO-------------------------------->
-	printf("NETWORK_SEND_RECEIVE-->END\n");
 	return msg_resposta;
 }
 
