@@ -91,9 +91,10 @@ int main(int argc, char **argv) {
 				msg_out->content.result = 0;
 
 				msg_resposta = network_send_receive(server, msg_out);
+				printf("Mensagem Enviada\n\n");
 				print_msg(msg_out);
 				free_message(msg_out);
-
+				printf("Mensagem Recebida\n\n");
 				if (msg_resposta == NULL) {
 					printf("Nao houve resposta\n");
 				} else {
@@ -118,14 +119,13 @@ int main(int argc, char **argv) {
 					msg_out->content.key = strdup(token);
 
 					msg_resposta = network_send_receive(server, msg_out);
-					printf("mensagem enviada\n");
+					printf("Mensagem Enviada\n\n");
 					print_msg(msg_out);
 					free_message(msg_out);
+					printf("Mensagem Recebida\n\n");
 					if (msg_resposta == NULL) {
 						printf("Nao houve resposta\n");
 					} else {
-						printf("mensagem recebido com:%d\n",
-								msg_resposta->opcode);
 						if (msg_resposta->opcode == OC_RT_ERROR) {
 							printf("Tabela vazia ou outro erro\n");
 						} else {
@@ -160,8 +160,10 @@ int main(int argc, char **argv) {
 					msg_out->content.key = strdup(token);
 
 					msg_resposta = network_send_receive(server, msg_out);
+					printf("Mensagem Enviada\n\n");
 					print_msg(msg_out);
 					free_message(msg_out);
+					printf("Mensagem Recebida\n\n");
 					if (msg_resposta == NULL) {
 						printf("Nao houve resposta\n");
 					} else {
@@ -209,12 +211,12 @@ int main(int argc, char **argv) {
 						msg_out->content.entry = entry_create(key,
 								data);
 						data_destroy(data);
-						printf("a enviar mensagem opcode %d\n",
-								msg_out->opcode);
+
 						msg_resposta = network_send_receive(server, msg_out);
-						printf("mensagem enviada\n");
+						printf("Mensagem Enviada\n\n");
 						print_msg(msg_out);
 						free_message(msg_out);
+						printf("Mensagem Recebida\n\n");
 						if (msg_resposta == NULL) {
 							printf("Nao houve resposta\n");
 						} else {
@@ -262,8 +264,10 @@ int main(int argc, char **argv) {
 						data_destroy(data);
 
 						msg_resposta = network_send_receive(server, msg_out);
+						printf("Mensagem Enviada\n\n");
 						print_msg(msg_out);
 						free_message(msg_out);
+						printf("Mensagem Recebida\n\n");
 						if (msg_resposta == NULL) {
 							printf("Nao houve resposta\n");
 						} else {

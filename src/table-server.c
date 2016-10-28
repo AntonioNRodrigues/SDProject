@@ -164,7 +164,7 @@ struct message_t *process_message(struct message_t *msg_pedido,
 	}
 	print_msg(msg_pedido);
 	print_msg(msg_resposta);
-	free_message(msg_pedido);
+	//free_message(msg_pedido);
 	return msg_resposta;
 }
 
@@ -190,7 +190,7 @@ int network_receive_send(int sockfd, struct table_t *table) {
 
 	result = read_all(sockfd, (char *) &msg_size, _INT);
 	/* Verificar se a receção teve sucesso */
-	if(result == 0){
+	if (result == 0) {
 		return -1;
 	}
 
@@ -275,22 +275,19 @@ int main(int argc, char **argv) {
 		return -1;
 	}
 
-	//printTable(table);
 	printf("A espera de cliente\n");
 	while ((connsock = accept(listening_socket, (struct sockaddr *) &client,
 			&size_client)) != -1) {
 
-		printf(" * Client esta ligado!\n");
-		printf(" =========================================================\n");
+		printf(" * Client esta ligado!\n\n");
+
 		while (listening_socket != 0) {
 			int aux1 = network_receive_send(connsock, table);
-			if(aux1 == -1){
+			if (aux1 == -1) {
 				printf("Cliente fez quit\n");
 				close(connsock);
 				break;
 			}
-
-		printf(" =======================================================\n");
 		}
 
 		close(connsock);
