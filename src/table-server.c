@@ -200,9 +200,12 @@ int network_receive_send(int sockfd, struct table_t *table) {
 
 	result = read_all(sockfd, (char *) &msg_size, _INT);
 	/* Verificar se a receção teve sucesso */
-	if (msg_size < 0) {
+	if(result == 0){
 		return -1;
 	}
+
+	
+	
 	message_size = ntohl(msg_size);
 	/* Alocar memória para receber o número de bytes da
 	 mensagem de pedido. */
@@ -298,8 +301,12 @@ int main(int argc, char **argv) {
 		printf(" * Client is connected!\n");
 		printf(" ================================= \n");
 		while (listening_socket != 0) {
-			network_receive_send(connsock, table);
-
+			int aux1 = network_receive_send(connsock, table);
+			if(aux1 == -1){
+				printf("Cliente fez quit\n");
+				close(connsock);
+				break;
+			}
 			//correu tudo bem
 			//erro
 			//client fechou sai do ciclo close connection

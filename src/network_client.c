@@ -26,7 +26,6 @@ int read_all(int sock_fd, char *buffer, int length) {
 			return -1;
 		}
 		if (nbytes_read == 0) {
-			printf("%s \n", "Read failed");
 			return 0;
 		}
 
