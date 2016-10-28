@@ -181,18 +181,14 @@ struct message_t *buffer_to_message(char *msg_buf, int msg_size) {
 	msg->c_type = ntohs(short_aux);
 	msg_buf += _SHORT;
 
-
 	/* O opcode e c_type são válidos? */
-	//if ((valid(msg->opcode, msg->c_type)) != 0)
-		//return NULL;
+	if ((valid(msg->opcode, msg->c_type)) != 0)
+		return NULL;
 	/* Consoante o c_type, continuar a recuperação da mensagem original */
 	switch (msg->c_type) {
 	case CT_RESULT:
 		memcpy(&int_aux, msg_buf, _INT);
 		msg->content.result = ntohl(int_aux);
-		if (msg->content.result < 0) {
-			printf("RESULT %d\n", msg->content.result);
-		}
 		break;
 	case CT_KEY:
 
@@ -204,9 +200,6 @@ struct message_t *buffer_to_message(char *msg_buf, int msg_size) {
 		msg->content.key = (char *) malloc(size_key + 1);
 		memcpy(msg->content.key, msg_buf, size_key);
 		msg->content.key[size_key] = '\0';
-		if (msg->content.key == NULL) {
-			printf("KEY NULL\n");
-		}
 		break;
 	case CT_VALUE:
 		//DATASIZE
@@ -221,9 +214,6 @@ struct message_t *buffer_to_message(char *msg_buf, int msg_size) {
 			return NULL;
 		}
 		memcpy(msg->content.data->data, msg_buf, data_size);
-		if (msg->content.data == NULL) {
-			printf("VALUE NULL\n");
-		}
 		break;
 	case CT_ENTRY:
 		//KEYSIZE
@@ -259,9 +249,6 @@ struct message_t *buffer_to_message(char *msg_buf, int msg_size) {
 		memcpy(msg->content.entry->value->data, msg_buf, data_size);
 		free(aux_key);
 		data_destroy(temp_data);
-		if (msg->content.entry == NULL) {
-			printf("ENTRY NULL\n");
-		}
 		break;
 
 	case CT_KEYS:
@@ -284,9 +271,6 @@ struct message_t *buffer_to_message(char *msg_buf, int msg_size) {
 			i++;
 		}
 		msg->content.keys[i] = NULL;
-		if (msg->content.keys == NULL) {
-			printf("KEYS NULL\n");
-		}
 		break;
 
 	default:
@@ -297,9 +281,12 @@ struct message_t *buffer_to_message(char *msg_buf, int msg_size) {
 /**
  * valid opcode && c_type returns 0, invalid returns -1
  */
+					
 int valid(short opcode, short c_type) {
 	return ((opcode == OC_DEL || opcode == OC_SIZE || opcode == OC_PUT
-			|| opcode == OC_UPDATE || opcode == OC_GET || opcode == OC_RT_ERROR)
+			|| opcode == OC_UPDATE || opcode == OC_GET || opcode == OC_RT_ERROR
+			|| opcode == OC_DEL + 1 || opcode == OC_SIZE + 1 || opcode == OC_PUT + 1
+			|| opcode == OC_UPDATE + 1 || opcode == OC_GET + 1)
 			&& (c_type == CT_ENTRY || c_type == CT_KEY || c_type == CT_KEYS
 					|| c_type == CT_RESULT || c_type == CT_VALUE)) ? 0 : -1;
 
