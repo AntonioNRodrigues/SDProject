@@ -13,7 +13,7 @@ T_LIST_OBJ = $(OBJ)/data.o $(OBJ)/entry.o $(OBJ)/list.o $(OBJ)/test_list.o
 T_TABLE_OBJ = $(OBJ)/data.o $(OBJ)/entry.o $(OBJ)/list.o $(OBJ)/table.o $(OBJ)/test_table.o
 T_MESSAGE_OBJ = $(OBJ)/data.o $(OBJ)/entry.o $(OBJ)/list.o $(OBJ)/table.o $(OBJ)/message.o $(OBJ)/test_message.o
 CLIENT_OBJ = $(OBJ)/data.o $(OBJ)/entry.o $(OBJ)/list.o $(OBJ)/table.o $(OBJ)/message.o $(OBJ)/network_client.o $(OBJ)/table-client.o
-SERVER_OBJ = $(OBJ)/data.o $(OBJ)/entry.o $(OBJ)/list.o $(OBJ)/table.o $(OBJ)/message.o  $(OBJ)/network_client.o $(OBJ)/table-server.o
+SERVER_OBJ = $(OBJ)/data.o $(OBJ)/entry.o $(OBJ)/list.o $(OBJ)/table.o $(OBJ)/message.o $(OBJ)/network_client.o $(OBJ)/table-server.o
 
 all: clean test_data test_entry test_list test_table test_message table-server table-client
 
@@ -84,22 +84,26 @@ zip_work:
 	zip -r $(GG) $(OBJ) $(INC)/*.h $(SRC)/*.c *.md makefile	
 		
 valgrindData:
-	valgrind -v --leak-check=full --track-origins=yes --log-file=valgrindData.log ./test_data
+	valgrind -v --leak-check=full --track-origins=yes --log-file=valgrind_Data.log ./test_data
 
 valgrindEntry:
-	valgrind -v --leak-check=full --track-origins=yes --log-file=valgrindEntry.log ./test_entry
+	valgrind -v --leak-check=full --track-origins=yes --log-file=valgrind_Entry.log ./test_entry
 
 valgrindList:
-	valgrind -v --leak-check=full --track-origins=yes --log-file=valgrindList.log ./test_list
+	valgrind -v --leak-check=full --track-origins=yes --log-file=valgrind_List.log ./test_list
 
 valgrindTable:
-	valgrind -v --leak-check=full --track-origins=yes --log-file=valgrindTable.log ./test_table
+	valgrind -v --leak-check=full --track-origins=yes --log-file=valgrind_Table.log ./test_table
 
 valgrindMessage:
-	valgrind -v --leak-check=full --track-origins=yes --log-file=valgrindMessage.log ./test_message
+	valgrind -v --leak-check=full --track-origins=yes --log-file=valgrind_Message.log ./test_message
+	
+#Only works one at the time!!!!!
+#Ex: To test the server: do make valgrindServer (server runing in valgrind Mode) and start the client in normal mode.
+valgrindServer:
+	valgrind -v --leak-check=full --track-origins=yes --log-file=valgrind_Server.log ./table-server 55555 10
 
-#valgrindTableClient:
-#	valgrind -v --leak-check=full --track-origins=yes --log-file=valgrindTableClient.log ./test_table_client
-
-#valgrindNetworkClient:
-#	valgrind -v --leak-check=full --track-origins=yes --log-file=valgrindNetworkClient.log ./test_network_client	
+#Ex: To test the client: start the server in normal mode and do make valgrindClient (client runing in valgrind Mode).
+# To test in 2 machines change the ip adress that is current in the localhost.
+valgrindClient:
+	valgrind -v --leak-check=full --track-origins=yes --log-file=valgrind_Client.log ./table-client 127.0.0.1:55555
