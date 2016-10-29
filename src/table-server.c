@@ -31,7 +31,6 @@ int make_server_socket(short port) {
 		return -1;
 	}
 
-	//---------------------------> atencao ao Zero do parametro do listen
 	if (listen(socket_fd, 0) < 0) {
 		perror("Erro ao executar listen");
 		close(socket_fd);
@@ -200,7 +199,7 @@ int network_receive_send(int sockfd, struct table_t *table) {
 	/* Alocar memória para receber o número de bytes da
 	 mensagem de pedido. */
 	message_pedido = (char *) malloc(message_size);
-	if(message_pedido == NULL){
+	if (message_pedido == NULL) {
 		return -1;
 	}
 
@@ -238,6 +237,8 @@ int network_receive_send(int sockfd, struct table_t *table) {
 
 	/* Verificar se o envio teve sucesso */
 	if (result < 0) {
+		free_message(msg_resposta);
+		free_message(msg_pedido);
 		return -1;
 	}
 
@@ -279,7 +280,9 @@ int main(int argc, char **argv) {
 		result = close(listening_socket);
 		return -1;
 	}
-
+	printf("***********************************\n");
+	printf("*           SERVER                *\n");
+	printf("***********************************\n\n");
 	printf("A espera de cliente\n");
 	while ((connsock = accept(listening_socket, (struct sockaddr *) &client,
 			&size_client)) != -1) {

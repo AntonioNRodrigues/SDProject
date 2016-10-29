@@ -86,7 +86,7 @@ int testKey() {
 	msg->opcode = OC_PUT;
 	msg->c_type = CT_KEY;
 	msg->content.key = strdup("abcdef");
-	size = message_to_buffer(msg, &msg_str);
+	size = message_to_buffer(msg,&msg_str);
 
 	opcode = htons(msg->opcode);
 	c_type = htons(msg->c_type);
@@ -216,11 +216,10 @@ int testEntry() {
 			   msg->content.entry->value->datasize == strlen(datastr) + 1 &&
 			   strcmp(msg->content.entry->value->data, datastr) == 0;
 
-	printf("\n->%s--->%s\n", msg->content.entry->value->data, datastr);
 	free(msg_str);
 	free(datastr);
 
-	print_message(msg);
+	//print_message(msg);
 	
 	free_message(msg);
 

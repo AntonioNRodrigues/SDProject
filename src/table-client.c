@@ -53,6 +53,11 @@ int main(int argc, char **argv) {
 		return -1;
 	printf("ligacao estabelecida\n\n");
 	/* Fazer ciclo até que o utilizador resolva fazer "quit" */
+
+	printf("***********************************\n");
+	printf("*            CLIENT               *\n");
+	printf("***********************************\n\n");
+
 	while (strcmp(input, "quit") != 0) {
 
 		printf(">>> "); // Mostrar a prompt para inserção de comando
