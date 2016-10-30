@@ -17,7 +17,7 @@ Sistemas Distribuidos 2016/2017
   <li><b>make teste_data</b> build the test for the data</li>
   <li><b>make teste_entry</b> build the test for the entry</li>
   <li><b>make table_list</b> build the test for the list</li>
-
+</ul>
 <h4>2.ºFase<h4>
 <h5>Build Project</h5>
 <ul>
