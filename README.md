@@ -15,8 +15,8 @@ Sistemas Distribuidos 2016/2017
 <h6>2.ºFase<h6>
 
 <ul>
-<li>Run Server:: ./table-server <TCP port> <size table></li>
-<li>Run Client:: ./table-client <ip of server>:<port from server></li>
+<li>Run Server:: ./table-server <<TCP port>> <<size table>></li>
+<li>Run Client:: ./table-client <<ip of server>>:<<port from server>></li>
 </ul>
 
 
