@@ -1,4 +1,11 @@
 /*
+ * Grupo 33
+ * Miguel Vale n.39279
+ * António Rodrigues n.º40853
+ * Ricardo Veloso n.º44842
+ */
+
+/*
  Programa que implementa um servidor de uma tabela hash com chainning.
  Uso: table-server <porta TCP> <dimensão da tabela>
  Exemplo de uso: ./table_server 54321 10

@@ -1,4 +1,11 @@
 /*
+ * Grupo 33
+ * Miguel Vale n.39279
+ * António Rodrigues n.º40853
+ * Ricardo Veloso n.º44842
+ */
+
+/*
  Programa cliente para manipular tabela de hash remota.
  Os comandos introduzido no programa não deverão exceder
  80 carateres.
