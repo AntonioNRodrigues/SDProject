@@ -262,7 +262,7 @@ int main(int argc, char **argv) {
 	struct table_t *table;
 
 	if (argc != 3) {
-		printf("Uso: ./server <porta TCP> <dimensão da tabela>\n");
+		printf("Uso: ./table-server <porta TCP> <dimensão da tabela>\n");
 		printf("Exemplo de uso: ./table-server 54321 10\n");
 		return -1;
 	}
