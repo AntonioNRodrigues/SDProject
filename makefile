@@ -78,7 +78,7 @@ $(OBJ)/test_message.o: test_message.c $(INC)/message.h
 	$(CC) $(FLAGS) -c test_message.c -o $(OBJ)/test_message.o
 
 clean:
-	rm -fr $(OBJ)/*.o test_data test_entry test_list test_table test_message table-client table-server
+	rm -fr $(OBJ)/*.o *.log test_data test_entry test_list test_table test_message table-client table-server
 	
 zip_work:
 	zip -r $(GG) $(OBJ) $(INC)/*.h $(SRC)/*.c *.md makefile	

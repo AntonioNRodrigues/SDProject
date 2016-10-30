@@ -10,6 +10,15 @@
 #include "message-private.h"
 #include "network_client-private.h"
 
+/**
+ * function to build the error message returned by the sever
+ */
+struct message_t * build_error_msg(struct message_t *msg_error) {
+	msg_error->c_type = CT_RESULT;
+	msg_error->opcode = OC_RT_ERROR;
+	msg_error->content.result = -1;
+	return msg_error;
+}
 /* Função para preparar uma socket de receção de pedidos de ligação.
  */
 int make_server_socket(short port) {
@@ -71,9 +80,7 @@ struct message_t *process_message(struct message_t *msg_pedido,
 		result = table_size(tabela);
 		//the table is empty
 		if (result < 0) {
-			msg_resposta->c_type = CT_RESULT;
-			msg_resposta->opcode = OC_RT_ERROR;
-			msg_resposta->content.result = -1;
+			msg_resposta = build_error_msg(msg_resposta);
 		} else {
 			msg_resposta->c_type = CT_RESULT;
 			msg_resposta->opcode = OC_SIZE + 1;
@@ -85,9 +92,7 @@ struct message_t *process_message(struct message_t *msg_pedido,
 				msg_pedido->content.entry->value);
 		//table_put failed
 		if (result == -1) {
-			msg_resposta->c_type = CT_RESULT;
-			msg_resposta->opcode = OC_RT_ERROR;
-			msg_resposta->content.result = -1;
+			msg_resposta = build_error_msg(msg_resposta);
 
 		} else {
 			msg_resposta->c_type = CT_RESULT;
@@ -101,16 +106,12 @@ struct message_t *process_message(struct message_t *msg_pedido,
 
 		// temp_key is NULL
 		if (temp_key == NULL) {
-			msg_resposta->c_type = CT_RESULT;
-			msg_resposta->opcode = OC_RT_ERROR;
-			msg_resposta->content.result = -1;
+			msg_resposta = build_error_msg(msg_resposta);
 		}
 		//key is ! --> GET ALL KEYS
 		if (strcmp("!", temp_key) == 0) {
 			if (tabela->quantity_entry == 0) {
-				msg_resposta->c_type = CT_RESULT;
-				msg_resposta->opcode = OC_RT_ERROR;
-				msg_resposta->content.result = -1;
+				msg_resposta = build_error_msg(msg_resposta);
 			} else {
 				msg_resposta->c_type = CT_KEYS;
 				msg_resposta->opcode = OC_GET + 1;
@@ -126,9 +127,7 @@ struct message_t *process_message(struct message_t *msg_pedido,
 				data_destroy(temp_data);
 				//key does not exist
 			} else {
-				msg_resposta->c_type = CT_RESULT;
-				msg_resposta->opcode = OC_RT_ERROR;
-				msg_resposta->content.result = -1;
+				msg_resposta = build_error_msg(msg_resposta);
 			}
 		}
 		break;
@@ -137,9 +136,7 @@ struct message_t *process_message(struct message_t *msg_pedido,
 				msg_pedido->content.entry->value);
 		//table_update failed
 		if (result == -1) {
-			msg_resposta->c_type = CT_RESULT;
-			msg_resposta->opcode = OC_RT_ERROR;
-			msg_resposta->content.result = result;
+			msg_resposta = build_error_msg(msg_resposta);
 		} else {
 			msg_resposta->c_type = CT_RESULT;
 			msg_resposta->opcode = OC_UPDATE + 1;
@@ -267,7 +264,7 @@ int main(int argc, char **argv) {
 	struct table_t *table;
 
 	if (argc != 3) {
-		printf("Uso: ./server <porta TCP> <dimensão da tabela>\n");
+		printf("Uso: ./table-server <porta TCP> <dimensão da tabela>\n");
 		printf("Exemplo de uso: ./table-server 54321 10\n");
 		return -1;
 	}
