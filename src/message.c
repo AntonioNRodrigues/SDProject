@@ -277,7 +277,9 @@ int valid(short opcode, short c_type) {
 					|| c_type == CT_RESULT || c_type == CT_VALUE)) ? 0 : -1;
 
 }
-
+/*
+ * Prints the message in a readable format.
+ */
 void print_msg(struct message_t *msg) {
 	int i;
 

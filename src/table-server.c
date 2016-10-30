@@ -164,7 +164,9 @@ struct message_t *process_message(struct message_t *msg_pedido,
 	default:
 		break;
 	}
+	printf("Mensagem Recebida\n\n");
 	print_msg(msg_pedido);
+	printf("Mensagem Enviada\n\n");
 	print_msg(msg_resposta);
 	//free_message(msg_pedido);
 	return msg_resposta;

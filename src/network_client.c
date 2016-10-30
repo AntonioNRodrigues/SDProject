@@ -167,6 +167,7 @@ struct message_t *network_send_receive(struct server_t *server,
 	}
 
 	/* Libertar memória */
+	free(message_in);
 	//-------------------------TO DO-------------------------------->
 	return msg_resposta;
 }

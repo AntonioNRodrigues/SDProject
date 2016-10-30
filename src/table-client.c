@@ -9,7 +9,10 @@
 
 #include "network_client-private.h"
 
-int testInput(int argc, char ** argv) {
+/*
+ * Checks if command line arguments are a valid
+ */
+int testArgs(int argc, char ** argv) {
 	if (argc != 2) {
 		printf("Uso: table-client <ip servidor>:<porta servidor>\n");
 		printf("Exemplo de uso: ./table_client 10.101.148.144:54321\n");
@@ -18,7 +21,6 @@ int testInput(int argc, char ** argv) {
 	int n, i;
 	char *token;
 	token = strtok(strdup(argv[1]), ".:");
-
 	n = atoi(token);
 	for (i = 0; i < 4; i++) {
 
@@ -43,10 +45,10 @@ int main(int argc, char **argv) {
 	struct message_t *msg_out, *msg_resposta;
 	char *token;
 	/* Testar os argumentos de entrada */
-	if (testInput(argc, argv) < 0) {
+	if (testArgs(argc, argv) < 0) {
 		return -1;
 	}
-	/* Usar network_connect para estabelcer ligação ao servidor */
+	/* Usar network_connect para estabelecer ligação ao servidor */
 	printf("A tentar estabelecer ligacao\n\n");
 	server = network_connect(argv[1]);
 	if (server == NULL)
@@ -58,12 +60,13 @@ int main(int argc, char **argv) {
 		printf(">>> "); // Mostrar a prompt para inserção de comando
 
 		/* Receber o comando introduzido pelo utilizador
-		 Sugestão: usar fgets de stdio.h
-		 Quando pressionamos enter para finalizar a entrada no
-		 comando fgets, o carater \n é incluido antes do \0.
-		 Convém retirar o \n substituindo-o por \0.
 		 */
 		fgets(input, sizeof(input), stdin);
+
+		/*
+		 * Just in case no actual input is received
+		 * the input prompt is shown again
+		 */
 		if (input[0] != '\n') {
 			input[strlen(input) - 1] = '\0';
 
@@ -71,20 +74,15 @@ int main(int argc, char **argv) {
 			 não há mais nada a fazer a não ser terminar decentemente.
 			 */
 			token = strtok(input, " ");
+			//CASE QUIT
 			if (strcmp(token, "quit") == 0) {
-				printf("Saiu\n");
-			}
-			/* Caso contrário:
+				printf("A terminar\n");
 
-			 Verificar qual o comando;
+				/* Verificar qual o comando; */
 
-			 Preparar msg_out;
+				//CASE SIZE
+			} else if (strcmp(token, "size") == 0) {
 
-			 Usar network_send_receive para enviar msg_out para
-			 o server e receber msg_resposta.
-			 */
-			//CASE SIZE
-			else if (strcmp(token, "size") == 0) {
 				msg_out = (struct message_t *) malloc(sizeof(struct message_t));
 				msg_out->opcode = OC_SIZE;
 				msg_out->c_type = CT_RESULT;
@@ -102,12 +100,15 @@ int main(int argc, char **argv) {
 					if (msg_resposta->opcode == OC_RT_ERROR) {
 						printf("Houve um erro\n");
 					} else {
-						printf("resultado: %d\n", msg_resposta->content.result);
+						printf("Resultado: %d\n\n",
+								msg_resposta->content.result);
 					}
 					free_message(msg_resposta);
 				}
+
 				//CASE GET
 			} else if (strcmp(token, "get") == 0) {
+
 				token = strtok(NULL, " ");
 				if (token == NULL) {
 					printf("Uso: get <chave>\n");
@@ -126,23 +127,24 @@ int main(int argc, char **argv) {
 					if (msg_resposta == NULL) {
 						printf("Nao houve resposta\n");
 					} else {
+						print_msg(msg_resposta);
 						if (msg_resposta->opcode == OC_RT_ERROR) {
-							printf("Tabela vazia ou outro erro\n");
+							printf("Chave nao exista ou outro erro\n");
 						} else {
 							if (msg_resposta->c_type == CT_VALUE) {
-								printf("Valor: %s\n",
+								printf("Valor: %s\n\n",
 										msg_resposta->content.data->data);
 							} else {
-								printf("Chaves:\n");
+								printf("=========Chaves=========\n");
 								int i = 0;
 								while (msg_resposta->content.keys[i] != NULL) {
-									printf("Key = %s\n",
+									printf("%s\n",
 											msg_resposta->content.keys[i]);
 									i++;
 								}
+								printf("========================\n\n");
 							}
 						}
-						print_msg(msg_resposta);
 						free_message(msg_resposta);
 					}
 				}
@@ -167,29 +169,28 @@ int main(int argc, char **argv) {
 					if (msg_resposta == NULL) {
 						printf("Nao houve resposta\n");
 					} else {
+						print_msg(msg_resposta);
 						if (msg_resposta->opcode == OC_RT_ERROR) {
 							printf("Chave nao existe ou outro erro\n");
 						} else {
-							printf("resultado: %d\n",
+							printf("Resultado: %d\n\n",
 									msg_resposta->content.result);
 						}
-						print_msg(msg_resposta);
 						free_message(msg_resposta);
 					}
 				}
-			}
-			//CASE PUT
-			else if (strcmp(token, "put") == 0) {
+				//CASE PUT
+			} else if (strcmp(token, "put") == 0) {
 
 				token = strtok(NULL, " ");
 				if (token == NULL) {
-					printf("Uso: put <chave> <data>\n");
+					printf("Uso: put <chave> <dados>\n");
 				} else {
 					char key[sizeof(input)];
 					strcpy(key, token);
 					token = strtok(NULL, " ");
 					if (token == NULL) {
-						printf("Uso: put <chave> <data>\n");
+						printf("Uso: put <chave> <dados>\n");
 					} else {
 						char datastr[sizeof(input)];
 						strcpy(datastr, token);
@@ -201,15 +202,13 @@ int main(int argc, char **argv) {
 						}
 						struct data_t *data;
 
-						data = data_create2(strlen(datastr) + 1,
-								datastr);
+						data = data_create2(strlen(datastr) + 1, datastr);
 
 						msg_out = (struct message_t *) malloc(
 								sizeof(struct message_t));
 						msg_out->opcode = OC_PUT;
 						msg_out->c_type = CT_ENTRY;
-						msg_out->content.entry = entry_create(key,
-								data);
+						msg_out->content.entry = entry_create(key, data);
 						data_destroy(data);
 
 						msg_resposta = network_send_receive(server, msg_out);
@@ -220,13 +219,13 @@ int main(int argc, char **argv) {
 						if (msg_resposta == NULL) {
 							printf("Nao houve resposta\n");
 						} else {
+							print_msg(msg_resposta);
 							if (msg_resposta->opcode == OC_RT_ERROR) {
 								printf("Chave ja existe ou outro erro\n");
 							} else {
-								printf("resultado: %d\n",
+								printf("Resultado: %d\n\n",
 										msg_resposta->content.result);
 							}
-							print_msg(msg_resposta);
 							free_message(msg_resposta);
 						}
 					}
@@ -236,13 +235,13 @@ int main(int argc, char **argv) {
 
 				token = strtok(NULL, " ");
 				if (token == NULL) {
-					printf("Uso: update <chave> <data>\n");
+					printf("Uso: update <chave> <dados>\n");
 				} else {
 					char key[sizeof(input)];
 					strcpy(key, token);
 					token = strtok(NULL, " ");
 					if (token == NULL) {
-						printf("Uso: update <chave> <data>\n");
+						printf("Uso: update <chave> <dados>\n");
 					} else {
 						char datastr[sizeof(input)];
 						strcpy(datastr, token);
@@ -271,19 +270,19 @@ int main(int argc, char **argv) {
 						if (msg_resposta == NULL) {
 							printf("Nao houve resposta\n");
 						} else {
-							if (msg_resposta->opcode == OC_RT_ERROR){
+							print_msg(msg_resposta);
+							if (msg_resposta->opcode == OC_RT_ERROR) {
 								printf("Chave nao existe ou outro erro\n");
 							} else {
-							printf("resultado: %d\n",
-									msg_resposta->content.result);
+								printf("Resultado: %d\n\n",
+										msg_resposta->content.result);
 							}
-							print_msg(msg_resposta);
 							free_message(msg_resposta);
 						}
 					}
 				}
 			} else {
-				printf("comando invalido\n");
+				printf("Comando invalido\n");
 			}
 		}
 	}
