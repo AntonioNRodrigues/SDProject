@@ -68,6 +68,7 @@ struct server_t *network_connect(const char *address_port) {
 	//Cria a socket
 	if ((server->sock_file_descriptor = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
 		perror("Erro ao criar socket");
+		free(server);
 		return NULL;
 	}
 
@@ -78,6 +79,7 @@ struct server_t *network_connect(const char *address_port) {
 	if (inet_pton(AF_INET, token1, &server->server.sin_addr) < 1) {
 		printf("Erro ao converter IP\n");
 		close(server->sock_file_descriptor);
+		free(server);
 		return NULL;
 	}
 	/* Estabelece a ligação */
@@ -85,9 +87,9 @@ struct server_t *network_connect(const char *address_port) {
 
 	if (connect(server->sock_file_descriptor,
 			(struct sockaddr *) &server->server, sizeof(server->server)) < 0) {
-		free(server); // nao chega------
 		perror("Erro ao conectar-se ao servidor");
 		close(server->sock_file_descriptor);
+		free(server);
 		return NULL;
 	}
 	return server;
@@ -116,7 +118,6 @@ struct message_t *network_send_receive(struct server_t *server,
 	 logo de seguida
 	 */
 	msg_size = htonl(message_size);
-
 	result = write_all(server->sock_file_descriptor, (char *) &msg_size, _INT);
 
 	/* Verificar se o envio teve sucesso */
@@ -147,7 +148,7 @@ struct message_t *network_send_receive(struct server_t *server,
 	 */
 	int size_returned_msg;
 	result = read_all(server->sock_file_descriptor, (char *) &size_returned_msg,
-			_INT);
+	_INT);
 	if (result != _INT) {
 		close(server->sock_file_descriptor);
 		return NULL;
@@ -163,23 +164,25 @@ struct message_t *network_send_receive(struct server_t *server,
 
 	/* Verificar se a desserialização teve sucesso */
 	if (msg_resposta == NULL) {
+		free(message_in);
+		free(message_out);
 		return NULL;
 	}
 
 	/* Libertar memória */
 	free(message_in);
-	//-------------------------TO DO-------------------------------->
+	free(message_out);
 	return msg_resposta;
 }
 
 int network_close(struct server_t *server) {
 	/* Verificar parâmetros de entrada */
 	if (server == NULL)
-		return -1; //--------------------->DEVE RETORNAR O QUE?---------------1
+		return -1;
+
 	/* Terminar ligação ao servidor */
 	int result = close(server->sock_file_descriptor);
-	if (result < 0)
-		return -1;
+
 	free(server);
 	return result;
 }

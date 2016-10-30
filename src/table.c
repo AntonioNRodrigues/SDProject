@@ -137,7 +137,7 @@ int table_update(struct table_t *table, char * key, struct data_t *value) {
 	//destroy the old value
 	data_destroy(entry_to_update->value);
 	//update the value
-	entry_to_update->value = data_dup(new_data);
+	entry_to_update->value = new_data;
 
 	return 0;
 }
@@ -170,8 +170,10 @@ int table_del(struct table_t *table, char *key) {
 
 	//index of the entry
 	int index_entry = key_hash(key, table->size);
+
 	//operation success 0 or error -1
 	int ret_value = list_remove(table->buckets[index_entry], key);
+
 	//update the number of entries in case of success
 	if (ret_value == 0) {
 		table->quantity_entry -= 1;
@@ -212,7 +214,6 @@ char **table_get_keys(struct table_t *table) {
 			int index_temp = 0;
 			// iterate over the list until the NULL
 			while (temp[index_temp] != NULL) {
-
 				table_keys[index_total] = strdup(temp[index_temp]);
 				//the strdup failed
 				if (table_keys[index_total] == NULL) {
