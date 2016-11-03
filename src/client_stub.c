@@ -22,7 +22,7 @@ struct rtable_t *rtable_bind(const char *address_port) {
 }
 
 int rtable_unbind(struct rtable_t *rtable) {
-
+	return (network_close(rtable->server) == 0) ? 0 : -1;
 }
 
 int rtable_put(struct rtable_t *rtable, char *key, struct data_t *value) {
