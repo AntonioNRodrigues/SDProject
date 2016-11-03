@@ -22,7 +22,18 @@ struct rtable_t *rtable_bind(const char *address_port) {
 }
 
 int rtable_unbind(struct rtable_t *rtable) {
-	return (network_close(rtable->server) == 0) ? 0 : -1;
+	if (rtable == NULL) {
+		return -1;
+	}
+	int result = network_close(rtable->server);
+	if (result == 0)
+		printf("The connection has been closed without errors");
+
+	if (result == -1)
+		printf("The connection has been closed with errors");
+
+	free(rtable);
+	return result;
 }
 
 int rtable_put(struct rtable_t *rtable, char *key, struct data_t *value) {
