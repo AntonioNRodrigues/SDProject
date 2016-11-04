@@ -280,7 +280,7 @@ int main(int argc, char **argv) {
 		return -1;
 
 	}
-
+	//-----------------DUVIDA-------------------------->
 	if ((table = table_create(atoi(argv[2]))) == NULL) {
 		printf("table\n");
 		result = close(listening_socket);
