@@ -15,6 +15,7 @@
  */
 
 #include "network_client-private.h"
+#include "client_stub-private.h"
 
 /*
  * Checks if command line arguments are a valid
@@ -47,7 +48,7 @@ int testArgs(int argc, char ** argv) {
 }
 
 int main(int argc, char **argv) {
-	struct server_t *server;
+	struct rtable_t *remote_table;
 	char input[81];
 	struct message_t *msg_out, *msg_resposta;
 	char *token;
@@ -57,9 +58,12 @@ int main(int argc, char **argv) {
 	}
 	/* Usar network_connect para estabelecer ligação ao servidor */
 	printf("A tentar estabelecer ligacao\n\n");
-	server = network_connect(argv[1]);
-	if (server == NULL)
+	remote_table = rtable_bind(argv[1]);
+	//server = network_connect(argv[1]);
+	if (remote_table->server == NULL) {
+		printf("remote sever null");
 		return -1;
+	}
 	printf("ligacao estabelecida\n\n");
 	/* Fazer ciclo até que o utilizador resolva fazer "quit" */
 
@@ -95,28 +99,7 @@ int main(int argc, char **argv) {
 				//CASE SIZE
 			} else if (strcmp(token, "size") == 0) {
 
-				msg_out = (struct message_t *) malloc(sizeof(struct message_t));
-				msg_out->opcode = OC_SIZE;
-				msg_out->c_type = CT_RESULT;
-				msg_out->content.result = 0;
-
-				msg_resposta = network_send_receive(server, msg_out);
-				printf("Mensagem Enviada\n\n");
-				print_msg(msg_out);
-				free_message(msg_out);
-				printf("Mensagem Recebida\n\n");
-				if (msg_resposta == NULL) {
-					printf("Nao houve resposta\n");
-				} else {
-					print_msg(msg_resposta);
-					if (msg_resposta->opcode == OC_RT_ERROR) {
-						printf("Houve um erro\n");
-					} else {
-						printf("Resultado: %d\n\n",
-								msg_resposta->content.result);
-					}
-					free_message(msg_resposta);
-				}
+				rtable_size(remote_table);
 
 				//CASE GET
 			} else if (strcmp(token, "get") == 0) {
@@ -124,72 +107,21 @@ int main(int argc, char **argv) {
 				token = strtok(NULL, " ");
 				if (token == NULL) {
 					printf("Uso: get <chave>\n");
+				}
+				if (strcmp(token, "!") == 0) {
+					rtable_get_keys(remote_table);
 				} else {
-					msg_out = (struct message_t *) malloc(
-							sizeof(struct message_t));
-					msg_out->opcode = OC_GET;
-					msg_out->c_type = CT_KEY;
-					msg_out->content.key = strdup(token);
-
-					msg_resposta = network_send_receive(server, msg_out);
-					printf("Mensagem Enviada\n\n");
-					print_msg(msg_out);
-					free_message(msg_out);
-					printf("Mensagem Recebida\n\n");
-					if (msg_resposta == NULL) {
-						printf("Nao houve resposta\n");
-					} else {
-						print_msg(msg_resposta);
-						if (msg_resposta->opcode == OC_RT_ERROR) {
-							printf("Chave nao exista ou outro erro\n");
-						} else {
-							if (msg_resposta->c_type == CT_VALUE) {
-								printf("Valor: %s\n\n",
-										msg_resposta->content.data->data);
-							} else {
-								printf("=========Chaves=========\n");
-								int i = 0;
-								while (msg_resposta->content.keys[i] != NULL) {
-									printf("%s\n",
-											msg_resposta->content.keys[i]);
-									i++;
-								}
-								printf("========================\n\n");
-							}
-						}
-						free_message(msg_resposta);
-					}
+					rtable_get(remote_table, token);
 				}
 				//CASE DEL
+
 			} else if (strcmp(token, "del") == 0) {
 
 				token = strtok(NULL, " ");
 				if (token == NULL) {
 					printf("Uso: del <chave>\n");
 				} else {
-					msg_out = (struct message_t *) malloc(
-							sizeof(struct message_t));
-					msg_out->opcode = OC_DEL;
-					msg_out->c_type = CT_KEY;
-					msg_out->content.key = strdup(token);
-
-					msg_resposta = network_send_receive(server, msg_out);
-					printf("Mensagem Enviada\n\n");
-					print_msg(msg_out);
-					free_message(msg_out);
-					printf("Mensagem Recebida\n\n");
-					if (msg_resposta == NULL) {
-						printf("Nao houve resposta\n");
-					} else {
-						print_msg(msg_resposta);
-						if (msg_resposta->opcode == OC_RT_ERROR) {
-							printf("Chave nao existe ou outro erro\n");
-						} else {
-							printf("Resultado: %d\n\n",
-									msg_resposta->content.result);
-						}
-						free_message(msg_resposta);
-					}
+					rtable_del(remote_table, token);
 				}
 				//CASE PUT
 			} else if (strcmp(token, "put") == 0) {
@@ -223,7 +155,8 @@ int main(int argc, char **argv) {
 						msg_out->content.entry = entry_create(key, data);
 						data_destroy(data);
 
-						msg_resposta = network_send_receive(server, msg_out);
+						msg_resposta = network_send_receive(
+								remote_table->server, msg_out);
 						printf("Mensagem Enviada\n\n");
 						print_msg(msg_out);
 						free_message(msg_out);
@@ -274,7 +207,8 @@ int main(int argc, char **argv) {
 						msg_out->content.entry = entry_create(key, data);
 						data_destroy(data);
 
-						msg_resposta = network_send_receive(server, msg_out);
+						msg_resposta = network_send_receive(
+								remote_table->server, msg_out);
 						printf("Mensagem Enviada\n\n");
 						print_msg(msg_out);
 						free_message(msg_out);
@@ -298,6 +232,6 @@ int main(int argc, char **argv) {
 			}
 		}
 	}
-	return network_close(server);
+	return rtable_unbind(remote_table);
 }
 
