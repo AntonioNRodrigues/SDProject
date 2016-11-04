@@ -3,10 +3,6 @@
 
 #include "data.h"
 
-/* Remote table. A definir pelo grupo em client_stub-private.h 
- */
-struct rtable_t; 
-
 /* Função para estabelecer uma associação entre o cliente e uma tabela
  * remota num servidor.
  * address_port é uma string no formato <hostname>:<port>.
@@ -28,18 +24,18 @@ int rtable_put(struct rtable_t *rtable, char *key, struct data_t *value);
 /* Função para substituir na tabela remota, o valor associado à chave key.
  * Devolve 0 (OK) ou -1 em caso de erros.
  */
-int rable_update(struct rtable_t *rtable, char *key, struct data_t *value);
+int rtable_update(struct rtable_t *rtable, char *key, struct data_t *value);
 
 /* Função para obter da tabela remota o valor associado à chave key.
  * Devolve NULL em caso de erro.
  */
-struct data_t *rtable_get(struct rtable_t *table, char *key);
+struct data_t *rtable_get(struct rtable_t *rtable, char *key);
 
 /* Função para remover um par chave valor da tabela remota, especificado 
  * pela chave key.
  * Devolve: 0 (OK) ou -1 em caso de erros.
  */
-int rtable_del(struct rtable_t *table, char *key);
+int rtable_del(struct rtable_t *rtable, char *key);
 
 /* Devolve número de pares chave/valor na tabela remota.
  */
