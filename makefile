@@ -13,7 +13,7 @@ T_LIST_OBJ = $(OBJ)/data.o $(OBJ)/entry.o $(OBJ)/list.o $(OBJ)/test_list.o
 T_TABLE_OBJ = $(OBJ)/data.o $(OBJ)/entry.o $(OBJ)/list.o $(OBJ)/table.o $(OBJ)/test_table.o
 T_MESSAGE_OBJ = $(OBJ)/data.o $(OBJ)/entry.o $(OBJ)/list.o $(OBJ)/table.o $(OBJ)/message.o $(OBJ)/test_message.o
 CLIENT_OBJ = $(OBJ)/data.o $(OBJ)/entry.o $(OBJ)/list.o $(OBJ)/table.o $(OBJ)/message.o $(OBJ)/network_client.o $(OBJ)/client_stub.o $(OBJ)/table-client.o
-SERVER_OBJ = $(OBJ)/data.o $(OBJ)/entry.o $(OBJ)/list.o $(OBJ)/table.o $(OBJ)/message.o $(OBJ)/network_client.o $(OBJ)/table-server.o
+SERVER_OBJ = $(OBJ)/data.o $(OBJ)/entry.o $(OBJ)/list.o $(OBJ)/table.o $(OBJ)/message.o $(OBJ)/network_client.o $(OBJ)/table_skel.o $(OBJ)/table-server.o
 
 all: clean test_data test_entry test_list test_table test_message table-server table-client
 
@@ -61,6 +61,9 @@ $(OBJ)/network_client.o: $(SRC)/network_client.c $(INC)/inet.h $(INC)/network_cl
 
 $(OBJ)/client_stub.o: $(SRC)/client_stub.c $(INC)/client_stub.h $(INC)/client_stub-private.h
 	$(CC) $(FLAGS) -c $(SRC)/client_stub.c -o $(OBJ)/client_stub.o
+
+$(OBJ)/table_skel.o: $(SRC)/table_skel.c $(INC)/table_skel.h $(INC)/table_skel-private.h
+	$(CC) $(FLAGS) -c $(SRC)/table_skel.c -o $(OBJ)/table_skel.o
 
 $(OBJ)/table-server.o: $(SRC)/table-server.c $(INC)/inet.h $(INC)/network_client-private.h $(INC)/table.h
 	$(CC) $(FLAGS) -c $(SRC)/table-server.c -o $(OBJ)/table-server.o
