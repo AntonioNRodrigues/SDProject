@@ -40,7 +40,31 @@ int rtable_put(struct rtable_t *rtable, char *key, struct data_t *value) {
 	if (rtable == NULL || key == NULL || value == NULL) {
 		return -1;
 	}
+	struct message_t *msg_out = (struct message_t *) malloc(
+			sizeof(struct message_t));
+	msg_out->opcode = OC_PUT;
+	msg_out->c_type = CT_ENTRY;
+	msg_out->content.entry = entry_create(key, value);
 
+	struct message_t * msg_resposta = network_send_receive(rtable->server,
+			msg_out);
+	printf("Mensagem Enviada\n\n");
+	print_msg(msg_out);
+	free_message(msg_out);
+	printf("Mensagem Recebida\n\n");
+	if (msg_resposta == NULL) {
+		printf("Nao houve resposta\n");
+	} else {
+		print_msg(msg_resposta);
+		if (msg_resposta->opcode == OC_RT_ERROR) {
+			printf("Chave ja existe ou outro erro\n");
+		} else {
+			printf("Resultado: %d\n\n",
+					msg_resposta->content.result);
+		}
+		free_message(msg_resposta);
+	}
+	
 
 	return 0;
 }
@@ -48,6 +72,32 @@ int rtable_put(struct rtable_t *rtable, char *key, struct data_t *value) {
 int rtable_update(struct rtable_t *rtable, char *key, struct data_t *value) {
 	if (rtable == NULL || key == NULL || value == NULL) {
 		return -1;
+	}
+	
+	struct message_t * msg_out = (struct message_t *) malloc(
+			sizeof(struct message_t));
+	msg_out->opcode = OC_UPDATE;
+	msg_out->c_type = CT_ENTRY;
+	msg_out->content.entry = entry_create(key, value);
+	
+
+	struct message_t * msg_resposta = network_send_receive(rtable->server,
+			msg_out);
+	printf("Mensagem Enviada\n\n");
+	print_msg(msg_out);
+	free_message(msg_out);
+	printf("Mensagem Recebida\n\n");
+	if (msg_resposta == NULL) {
+		printf("Nao houve resposta\n");
+	} else {
+		print_msg(msg_resposta);
+		if (msg_resposta->opcode == OC_RT_ERROR) {
+			printf("Chave nao existe ou outro erro\n");
+		} else {
+			printf("Resultado: %d\n\n",
+					msg_resposta->content.result);
+		}
+		free_message(msg_resposta);
 	}
 	return 0;
 }
