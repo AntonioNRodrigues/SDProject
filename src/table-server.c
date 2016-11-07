@@ -11,7 +11,8 @@
  Exemplo de uso: ./table_server 54321 10
  */
 #include <error.h>
-
+#include <sys/types.h>
+#include <sys/socket.h>
 #include "inet.h"
 #include "table-private.h"
 #include "message-private.h"
@@ -30,6 +31,7 @@ struct message_t * build_error_msg(struct message_t *msg_error) {
  */
 int make_server_socket(short port) {
 	int socket_fd;
+	int reuse_address, reuse_port = 1;
 	struct sockaddr_in server;
 
 	if ((socket_fd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
@@ -40,6 +42,18 @@ int make_server_socket(short port) {
 	server.sin_family = AF_INET;
 	server.sin_port = htons(port);
 	server.sin_addr.s_addr = htonl(INADDR_ANY);
+
+	//make the socket reusable
+	//REUSEADDR
+	if (setsockopt(socket_fd, SOL_SOCKET, SO_REUSEADDR, (int *) &reuse_address,
+			sizeof(reuse_address)) < 0) {
+		perror("Error reusing the socket :: REUSEADDR");
+	}
+	//REUSEPORT
+	if (setsockopt(socket_fd, SOL_SOCKET, SO_REUSEPORT, (int *) &reuse_port,
+			sizeof(reuse_port)) < 0) {
+		perror("Error reusing the socket :: REUSEPORT");
+	}
 
 	if (bind(socket_fd, (struct sockaddr *) &server, sizeof(server)) < 0) {
 		perror("Erro ao fazer bind");
