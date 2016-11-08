@@ -3,4 +3,7 @@
 
 #include "table-private.h"
 #include "table_skel.h"
+
+struct message_t * build_error_msg(struct message_t *msg_error);
+
 #endif
