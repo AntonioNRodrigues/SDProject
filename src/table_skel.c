@@ -2,12 +2,10 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
-#include "table.h"
+
 #include "table-private.h"
-#include "message.h"
 #include "message-private.h"
 #include "network_client-private.h"
-
 #include "table_skel-private.h"
 
 struct table_t *tabela;
@@ -24,19 +22,18 @@ int table_skel_init(int n_lists) {
 }
 int table_skel_destroy() {
 	table_destroy(tabela);
-
 	return tabela == NULL ? 0 : -1;
 }
 
 /**
  * function to build the error message returned by the sever
  */
-/*struct message_t * build_error_msg(struct message_t *msg_error) {
+struct message_t * build_error_msg(struct message_t *msg_error) {
 	msg_error->c_type = CT_RESULT;
 	msg_error->opcode = OC_RT_ERROR;
 	msg_error->content.result = -1;
 	return msg_error;
-}*/
+}
 
 struct message_t *invoke(struct message_t *msg_in) {
 	char *temp_key;
