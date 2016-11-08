@@ -10,9 +10,19 @@
  Uso: table-server <porta TCP> <dimensão da tabela>
  Exemplo de uso: ./table_server 54321 10
  */
+
+//TO BE MOVED TO THE TABLE SKEL PRIVATE
+//number of file descriptor
+#define NFDS 10
+#define TIMEOUT 50
+
 #include <error.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+
+#include <poll.h>
+#include <fcntl.h>
+
 #include "inet.h"
 #include "table-private.h"
 #include "message-private.h"
@@ -279,51 +289,93 @@ int network_receive_send(int sockfd, struct table_t *table) {
 }
 
 int main(int argc, char **argv) {
-	int listening_socket, connsock, result;
 	struct sockaddr_in client;
 	socklen_t size_client;
+	// struct of file descripters
+	struct pollfd connections[NFDS];
+	int listening_socket, result;
+	int number_clients = 1;
 	struct table_t *table;
 
+	//test argc
 	if (argc != 3) {
 		printf("Uso: ./table-server <porta TCP> <dimensão da tabela>\n");
 		printf("Exemplo de uso: ./table-server 54321 10\n");
 		return -1;
 	}
 
+	//listening socket up
 	if ((listening_socket = make_server_socket(atoi(argv[1]))) < 0) {
 		return -1;
-
 	}
-	//-----------------DUVIDA-------------------------->
+	//init table --> to be changed to table_skell_init
 	if ((table = table_create(atoi(argv[2]))) == NULL) {
 		printf("table\n");
 		result = close(listening_socket);
 		return -1;
 	}
+
 	printf("***********************************\n");
-	printf("*           SERVER                *\n");
+	printf("*   SERVER WITH POLL              *\n");
 	printf("***********************************\n\n");
 	printf("A espera de cliente\n");
-	while ((connsock = accept(listening_socket, (struct sockaddr *) &client,
-			&size_client)) != -1) {
 
-		printf(" * Client esta ligado!\n\n");
-
-		while (listening_socket != 0) {
-			int aux1 = network_receive_send(connsock, table);
-			if (aux1 == -1) {
-				printf("Cliente fez quit\n");
-				close(connsock);
-				break;
-			}
-		}
-		close(connsock);
-		printf("Connection closed.\n Waiting for new connection.\n");
-		/* Ciclo feito com sucesso ? Houve erro?
-		 Cliente desligou? */
+	//init each positions of connections[i].fd with -1
+	for (int i = 1; i < NFDS; i++) {
+		connections[i].fd = -1;
 	}
+	//first position of connetions is the listening_socket
+	connections[0].fd = listening_socket;
+	connections[0].events = POLLIN; // POLLIN ==> data to be read and in this case a new connections received
+	int fatal_error = 1;
+	int ret = -1;
 
-	close(listening_socket);
+
+	while (fatal_error == 1) {
+		while ((ret = poll(connections, NFDS, TIMEOUT) >= 0))
+
+		if (ret > 0) {
+			printf("ret > 0");
+			// listenning socket has a new connection
+			if ((connections[0].revents & POLLIN) && (number_clients < NFDS)) {
+				printf("client has connected to server\n");
+				if ((connections[number_clients].fd = accept(connections[0].fd,
+						(struct sockaddr *) &client, &size_client)) > 0) {
+					connections[number_clients].events = POLLIN;
+					number_clients++;
+					printf("client %d has connected to server\n",
+							number_clients);
+				}
+
+			}
+			int j = 0;
+			for (j = 1; j < NFDS; j++)
+
+				//if socket has data to read
+				if (connections[j].revents & POLLIN) {
+					if (network_receive_send(connections[j].fd, table) < 0) {
+						close(connections[j].fd);
+						number_clients--;
+						printf("closed connection %d", number_clients);
+
+					}
+					else {
+						network_receive_send(connections[j].fd, table);
+					}
+				}
+
+		}
+		//timeout with out events
+		if (ret == 0) {
+			printf("ret == 0");
+			close(connections[0].fd);
+			return 0;
+		}
+	}
+	//table_skel_destroy();
+	for (int l = 1; l < NFDS; l++) {
+		close(connections[l].fd);
+	}
 	return 0;
 }
 
