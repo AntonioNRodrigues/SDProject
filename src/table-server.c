@@ -340,7 +340,7 @@ int main(int argc, char **argv) {
 	int ret;
 
 	while ((ret = poll(connections, NFDS, TIMEOUT) >= 0)) {
-
+		printf("%d", ret);
 		if (ret > 0) {
 
 			// listenning socket has a new connection
@@ -359,12 +359,13 @@ int main(int argc, char **argv) {
 				}
 				ret--;
 			}
-
+			printf("-- %d\n", ret);
 			for (int j = 1; j < NFDS && ret > 0; j++) {
 
 				//if socket has data to read
 				if (connections[j].revents & POLLIN) {
 					/*if (network_receive_send(connections[j].fd, table) < 0) {
+						printf("client quit");
 						close(connections[j].fd);
 						number_clients--;
 						connections[j].fd = -1;
@@ -373,7 +374,7 @@ int main(int argc, char **argv) {
 						network_receive_send(connections[j].fd, table);
 					/*}*/
 				}
-				if(connections[j].revents == POLLHUP){
+				if(connections[j].revents == POLLHUP || connections[j].revents == POLLERR){
 					close(connections[j].fd);
 					connections[j].fd = -1;
 					number_clients--;
