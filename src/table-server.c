@@ -287,6 +287,16 @@ int network_receive_send(int sockfd, struct table_t *table) {
 	free_message(msg_resposta);
 	return 1;
 }
+int find_free_connection(struct pollfd *conn) {
+	int free_index = -1;
+	for (int k = 1; k < NFDS; k++) {
+		if (conn[k].fd == -1) {
+			free_index = k;
+			break;
+		}
+	}
+	return free_index;
+}
 
 int main(int argc, char **argv) {
 	struct sockaddr_in client;
@@ -327,50 +337,51 @@ int main(int argc, char **argv) {
 	//first position of connetions is the listening_socket
 	connections[0].fd = listening_socket;
 	connections[0].events = POLLIN; // POLLIN ==> data to be read and in this case a new connections received
-	int fatal_error = 1;
-	int ret = -1;
+	int ret;
 
-
-	while (fatal_error == 1) {
-		while ((ret = poll(connections, NFDS, TIMEOUT) >= 0))
+	while ((ret = poll(connections, NFDS, TIMEOUT) >= 0)) {
 
 		if (ret > 0) {
-			printf("ret > 0");
+
 			// listenning socket has a new connection
 			if ((connections[0].revents & POLLIN) && (number_clients < NFDS)) {
-				printf("client has connected to server\n");
-				if ((connections[number_clients].fd = accept(connections[0].fd,
-						(struct sockaddr *) &client, &size_client)) > 0) {
-					connections[number_clients].events = POLLIN;
-					number_clients++;
-					printf("client %d has connected to server\n",
-							number_clients);
-				}
 
+				int free_index = find_free_connection(connections);
+
+				//-1 there is no space in the array --> do not accept socket
+				if (free_index != -1 ) {
+					if ((connections[free_index].fd = accept(connections[0].fd,
+							(struct sockaddr *) &client, &size_client)) > 0) {
+						connections[free_index].events = POLLIN;
+						number_clients++;
+					}
+
+				}
+				ret--;
 			}
-			int j = 0;
-			for (j = 1; j < NFDS; j++)
+
+			for (int j = 1; j < NFDS && ret > 0; j++) {
 
 				//if socket has data to read
 				if (connections[j].revents & POLLIN) {
-					if (network_receive_send(connections[j].fd, table) < 0) {
+					/*if (network_receive_send(connections[j].fd, table) < 0) {
 						close(connections[j].fd);
 						number_clients--;
+						connections[j].fd = -1;
 						printf("closed connection %d", number_clients);
-
-					}
-					else {
+					} else {*/
 						network_receive_send(connections[j].fd, table);
-					}
+					/*}*/
+				}
+				if(connections[j].revents == POLLHUP){
+					close(connections[j].fd);
+					connections[j].fd = -1;
+					number_clients--;
 				}
 
+			}
 		}
-		//timeout with out events
-		if (ret == 0) {
-			printf("ret == 0");
-			close(connections[0].fd);
-			return 0;
-		}
+
 	}
 	//table_skel_destroy();
 	for (int l = 1; l < NFDS; l++) {
