@@ -9,7 +9,7 @@ Sistemas Distribuidos 2016/2017
 <li>Ricardo Veloso n.º44842  </li>
 </ul>
 
-<h4>1.ºFase<h4>
+<h4>1.ºPhase<h4>
 <h5>Build Project</h5>
 <ul>
 <li><b>make</b> build all project</li>
@@ -18,7 +18,7 @@ Sistemas Distribuidos 2016/2017
   <li><b>make teste_entry</b> build the test for the entry</li>
   <li><b>make table_list</b> build the test for the list</li>
 </ul>
-<h4>2.ºFase<h4>
+<h4>2.ºPhase<h4>
 <h5>Build Project</h5>
 <ul>
 <li><b>make</b> build all project</li>
@@ -35,7 +35,7 @@ Sistemas Distribuidos 2016/2017
 <li><b>Run Client</b> ./table-client ip_server:port_server</li>
 </ul>
 
-<h4>3.ºFase<h4>
+<h4>3.ºPhase<h4>
 <p>In this version the server accepts multiple clients</p>
 <h5>Build Project</h5>
 <ul>
