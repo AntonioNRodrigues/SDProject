@@ -13,7 +13,7 @@
 
 //TO BE MOVED TO THE TABLE SKEL PRIVATE
 //number of file descriptor
-#define NFDS 10
+#define MAXCLIENTS 5
 #define TIMEOUT 50
 
 #include <error.h>
@@ -29,12 +29,12 @@
 #include "network_client-private.h"
 #include "table_skel-private.h"
 
-
 /* Função para preparar uma socket de receção de pedidos de ligação.
  */
 int make_server_socket(short port) {
 	int socket_fd;
-	int reuse_address, reuse_port = 1;
+	int reuse_address = 1;
+	int reuse_port = 1;
 	struct sockaddr_in server;
 
 	if ((socket_fd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
@@ -47,6 +47,7 @@ int make_server_socket(short port) {
 	server.sin_addr.s_addr = htonl(INADDR_ANY);
 
 	//make the socket reusable
+	//only this does not work-----------------------????
 	//REUSEADDR
 	if (setsockopt(socket_fd, SOL_SOCKET, SO_REUSEADDR, (int *) &reuse_address,
 			sizeof(reuse_address)) < 0) {
@@ -72,13 +73,13 @@ int make_server_socket(short port) {
 	return socket_fd;
 }
 
-
 /* Função "inversa" da função network_send_receive usada no table-client.
  Neste caso a função implementa um ciclo receive/send:
 
  Recebe um pedido;
  Aplica o pedido na tabela;
  Envia a resposta.
+ this message returns 1 (OK) and -1 (NOK)
  */
 int network_receive_send(int sockfd) {
 	char *message_resposta, *message_pedido;
@@ -161,9 +162,15 @@ int network_receive_send(int sockfd) {
 	free_message(msg_resposta);
 	return 1;
 }
+/**
+ * function that iterates over the connections[] and finds the first
+ * available position. Each fd in the array is marked with -1 if is empty
+ */
 int find_free_connection(struct pollfd *conn) {
 	int free_index = -1;
-	for (int k = 1; k < NFDS; k++) {
+	int k = 1;
+	for (k = 1; k < MAXCLIENTS; k++) {
+		printf("FIND FREE CONNECTION:: %d, ON INDICE=%d\n", conn[k].fd, k);
 		if (conn[k].fd == -1) {
 			free_index = k;
 			break;
@@ -175,9 +182,10 @@ int find_free_connection(struct pollfd *conn) {
 int main(int argc, char **argv) {
 	struct sockaddr_in client;
 	socklen_t size_client;
+
 	// struct of file descripters
-	struct pollfd connections[NFDS];
-	int listening_socket, result;
+	struct pollfd connections[MAXCLIENTS];
+	int listening_socket;
 	int number_clients = 1;
 
 	//test argc
@@ -192,19 +200,21 @@ int main(int argc, char **argv) {
 		return -1;
 	}
 	//table_skel_init
+	//init the table as a global variable in the table_skel
 	if (table_skel_init(atoi(argv[2])) == -1) {
 		printf("table\n");
-		result = close(listening_socket);
+		close(listening_socket);
 		return -1;
 	}
 
 	printf("***********************************\n");
-	printf("*   SERVER WITH POLL              *\n");
+	printf("*  SERVER WITH MULTIPLE CLIENTS   *\n");
 	printf("***********************************\n\n");
 	printf("A espera de cliente\n");
 
 	//init each positions of connections[i].fd with -1
-	for (int i = 1; i < NFDS; i++) {
+	int i = 1;
+	for (i = 1; i < MAXCLIENTS; i++) {
 		connections[i].fd = -1;
 	}
 	//first position of connetions is the listening_socket
@@ -212,12 +222,12 @@ int main(int argc, char **argv) {
 	connections[0].events = POLLIN; // POLLIN ==> data to be read and in this case a new connections received
 	int ret;
 
-	while ((ret = poll(connections, NFDS, TIMEOUT) >= 0)) {
-		printf("%d", ret);
+	while ((ret = poll(connections, MAXCLIENTS, TIMEOUT)) >= 0) {
 		if (ret > 0) {
 
 			// listenning socket has a new connection
-			if ((connections[0].revents & POLLIN) && (number_clients < NFDS)) {
+			if ((connections[0].revents & POLLIN)
+					&& (number_clients < MAXCLIENTS)) {
 
 				int free_index = find_free_connection(connections);
 
@@ -227,39 +237,47 @@ int main(int argc, char **argv) {
 							(struct sockaddr *) &client, &size_client)) > 0) {
 						connections[free_index].events = POLLIN;
 						number_clients++;
+						printf("NUMBER CLIENTS %d\n", number_clients);
+					} else {
+						printf("there was some error with the accept");
 					}
 
 				}
 				ret--;
 			}
-			printf("-- %d\n", ret);
-			for (int j = 1; j < NFDS && ret > 0; j++) {
+			int j = 1;
+			for (j = 1; j < MAXCLIENTS && ret > 0; j++) {
+				printf("j==%d", j);
 
 				//if socket has data to read
 				if (connections[j].revents & POLLIN) {
-					/*if (network_receive_send(connections[j].fd, table) < 0) {
-					 printf("client quit");
-					 close(connections[j].fd);
-					 number_clients--;
-					 connections[j].fd = -1;
-					 printf("closed connection %d", number_clients);
-					 } else {*/
-					network_receive_send(connections[j].fd);
-					/*}*/
+					printf("DETECTED POLLIN\n");
+					printf("network_receive_send:: connection[%d].%d \n", j,
+							connections[j].fd);
+					if (network_receive_send(connections[j].fd) < 0) {
+						printf("network_receive_send <= 0\n");
+						close(connections[j].fd);
+						number_clients--;
+						connections[j].fd = -1;
+						printf("closed connection %d", number_clients);
+
+					}
 				}
-				if (connections[j].revents == POLLHUP
-						|| connections[j].revents == POLLERR) {
+				// NAO SERVE PARA NADA NUNCA ENTRA CA
+				if ((connections[j].revents == POLLHUP)
+						|| (connections[j].revents == POLLERR)) {
+					printf("DETECTED POLLIN || POLLERR\n");
 					close(connections[j].fd);
 					connections[j].fd = -1;
 					number_clients--;
+					printf("closed connection %d \n", number_clients);
 				}
-
 			}
 		}
-
 	}
-	//table_skel_destroy();
-	for (int l = 1; l < NFDS; l++) {
+	table_skel_destroy();
+	int l = 1;
+	for (l = 1; l < MAXCLIENTS; l++) {
 		close(connections[l].fd);
 	}
 	return 0;
