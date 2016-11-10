@@ -13,8 +13,9 @@
 
 //TO BE MOVED TO THE TABLE SKEL PRIVATE
 //number of file descriptor
-#define MAXCLIENTS 5
+#define MAX_SOCKETS 5
 #define TIMEOUT 50
+#define LISTENING_SOCKET 0
 
 #include <error.h>
 #include <sys/types.h>
@@ -33,8 +34,7 @@
  */
 int make_server_socket(short port) {
 	int socket_fd;
-	int reuse_address = 1;
-	int reuse_port = 1;
+	int reuse_address = 1, reuse_port = 1;
 	struct sockaddr_in server;
 
 	if ((socket_fd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
@@ -47,7 +47,6 @@ int make_server_socket(short port) {
 	server.sin_addr.s_addr = htonl(INADDR_ANY);
 
 	//make the socket reusable
-	//only this does not work-----------------------????
 	//REUSEADDR
 	if (setsockopt(socket_fd, SOL_SOCKET, SO_REUSEADDR, (int *) &reuse_address,
 			sizeof(reuse_address)) < 0) {
@@ -169,8 +168,8 @@ int network_receive_send(int sockfd) {
 int find_free_connection(struct pollfd *conn) {
 	int free_index = -1;
 	int k = 1;
-	for (k = 1; k < MAXCLIENTS; k++) {
-		printf("FIND FREE CONNECTION:: %d, ON INDICE=%d\n", conn[k].fd, k);
+	for (k = 1; k < MAX_SOCKETS; k++) {
+		printf("FIND FREE CONNECTION:: %d, ON INDICE = %d\n", conn[k].fd, k);
 		if (conn[k].fd == -1) {
 			free_index = k;
 			break;
@@ -182,10 +181,9 @@ int find_free_connection(struct pollfd *conn) {
 int main(int argc, char **argv) {
 	struct sockaddr_in client;
 	socklen_t size_client;
-
 	// struct of file descripters
-	struct pollfd connections[MAXCLIENTS];
-	int listening_socket;
+	struct pollfd connections[MAX_SOCKETS];
+	int listening_socket, result, i = 1, j = 1, l = 1;
 	int number_clients = 1;
 
 	//test argc
@@ -208,32 +206,32 @@ int main(int argc, char **argv) {
 	}
 
 	printf("***********************************\n");
-	printf("*  SERVER WITH MULTIPLE CLIENTS   *\n");
+	printf("*  SERVER SUPPORTS %d CLIENTS      *\n", MAX_SOCKETS - 1);
 	printf("***********************************\n\n");
-	printf("A espera de cliente\n");
+	printf("Waiting for clients\n");
 
 	//init each positions of connections[i].fd with -1
-	int i = 1;
-	for (i = 1; i < MAXCLIENTS; i++) {
+	for (i = 1; i < MAX_SOCKETS; i++) {
 		connections[i].fd = -1;
 	}
 	//first position of connetions is the listening_socket
-	connections[0].fd = listening_socket;
-	connections[0].events = POLLIN; // POLLIN ==> data to be read and in this case a new connections received
-	int ret;
+	connections[LISTENING_SOCKET].fd = listening_socket;
+	// POLLIN ==> data to be read and in this case a new connections received
+	connections[LISTENING_SOCKET].events = POLLIN;
 
-	while ((ret = poll(connections, MAXCLIENTS, TIMEOUT)) >= 0) {
-		if (ret > 0) {
+	while ((result = poll(connections, MAX_SOCKETS, TIMEOUT)) >= 0) {
+		if (result > 0) {
 
 			// listenning socket has a new connection
-			if ((connections[0].revents & POLLIN)
-					&& (number_clients < MAXCLIENTS)) {
+			if ((connections[LISTENING_SOCKET].revents & POLLIN)
+					&& (number_clients < MAX_SOCKETS)) {
 
 				int free_index = find_free_connection(connections);
 
 				//-1 there is no space in the array --> do not accept socket
 				if (free_index != -1) {
-					if ((connections[free_index].fd = accept(connections[0].fd,
+					if ((connections[free_index].fd = accept(
+							connections[LISTENING_SOCKET].fd,
 							(struct sockaddr *) &client, &size_client)) > 0) {
 						connections[free_index].events = POLLIN;
 						number_clients++;
@@ -243,10 +241,9 @@ int main(int argc, char **argv) {
 					}
 
 				}
-				ret--;
+				result--;
 			}
-			int j = 1;
-			for (j = 1; j < MAXCLIENTS && ret > 0; j++) {
+			for (j = 1; j < MAX_SOCKETS && result > 0; j++) {
 				printf("j==%d", j);
 
 				//if socket has data to read
@@ -255,11 +252,10 @@ int main(int argc, char **argv) {
 					printf("network_receive_send:: connection[%d].%d \n", j,
 							connections[j].fd);
 					if (network_receive_send(connections[j].fd) < 0) {
-						printf("network_receive_send <= 0\n");
+						printf("network_receive_send < 0\n");
 						close(connections[j].fd);
 						number_clients--;
 						connections[j].fd = -1;
-						printf("closed connection %d", number_clients);
 
 					}
 				}
@@ -270,14 +266,12 @@ int main(int argc, char **argv) {
 					close(connections[j].fd);
 					connections[j].fd = -1;
 					number_clients--;
-					printf("closed connection %d \n", number_clients);
 				}
 			}
 		}
 	}
 	table_skel_destroy();
-	int l = 1;
-	for (l = 1; l < MAXCLIENTS; l++) {
+	for (l = 1; l < MAX_SOCKETS; l++) {
 		close(connections[l].fd);
 	}
 	return 0;
