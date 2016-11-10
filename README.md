@@ -35,8 +35,8 @@ Sistemas Distribuidos 2016/2017
 <li><b>Run Client</b> ./table-client ip_server:port_server</li>
 </ul>
 
-//TODO........................
 <h4>3.ºFase<h4>
+<p>In this version the server accepts multiple clients</p>
 <h5>Build Project</h5>
 <ul>
 <li><b>make</b> build all project</li>
@@ -44,7 +44,7 @@ Sistemas Distribuidos 2016/2017
 <li><b>make table-server</b> build the server</li>
   
 </ul>
-<h5>Run the client and the server</h5>
+<h5>Run the clients and the server</h5>
 <ul>
 <li><b>Run Server</b> ./table-server tcp_port size_table</li>
 <li><b>Run Client</b> ./table-client ip_server:port_server</li>
