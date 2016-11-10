@@ -50,7 +50,6 @@ int testArgs(int argc, char ** argv) {
 int main(int argc, char **argv) {
 	struct rtable_t *remote_table;
 	char input[81];
-	struct message_t *msg_out, *msg_resposta;
 	char *token;
 	/* Testar os argumentos de entrada */
 	if (testArgs(argc, argv) < 0) {
@@ -59,9 +58,10 @@ int main(int argc, char **argv) {
 	/* Usar network_connect para estabelecer ligação ao servidor */
 	printf("A tentar estabelecer ligacao\n\n");
 	remote_table = rtable_bind(argv[1]);
-	//server = network_connect(argv[1]);
+
 	if (remote_table->server == NULL) {
-		printf("remote sever null");
+		free(remote_table);
+		printf("Remote server is down\n");
 		return -1;
 	}
 	printf("ligacao estabelecida\n\n");
@@ -147,9 +147,9 @@ int main(int argc, char **argv) {
 						struct data_t *data;
 
 						data = data_create2(strlen(datastr) + 1, datastr);
-						
+
 						rtable_put(remote_table, key, data);
-						
+
 						data_destroy(data);
 					}
 				}
@@ -177,9 +177,9 @@ int main(int argc, char **argv) {
 						struct data_t *data;
 
 						data = data_create2(strlen(datastr) + 1, datastr);
-						
+
 						rtable_update(remote_table, key, data);
-						
+
 						data_destroy(data);
 					}
 				}

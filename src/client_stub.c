@@ -13,7 +13,8 @@ struct rtable_t *rtable_bind(const char *address_port) {
 		return NULL;
 	}
 	remote_table->server = network_connect(address_port);
-	if (remote_table->server == NULL) {
+
+	if (remote_table == NULL) {
 		free(remote_table);
 		return NULL;
 	}
