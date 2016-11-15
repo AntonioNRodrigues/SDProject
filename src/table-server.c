@@ -180,7 +180,7 @@ int find_free_connection(struct pollfd *conn) {
 
 int main(int argc, char **argv) {
 	struct sockaddr_in client;
-	socklen_t size_client;
+	socklen_t size_client = sizeof (struct sockaddr_in);
 	// struct of file descripters
 	struct pollfd connections[MAX_SOCKETS];
 	int listening_socket, result, i = 1, j = 1, l = 1;
