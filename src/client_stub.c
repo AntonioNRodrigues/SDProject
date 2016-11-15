@@ -283,7 +283,7 @@ char **rtable_get_keys(struct rtable_t *rtable) {
 	free_message(msg_out);
 	printf("Mensagem Recebida\n\n");
 	if (msg_resposta == NULL) {
-		printf("Nao houve resposta\n");
+		printf("Nao houve resposta\n ");
 		return NULL;
 	} else {
 		print_msg(msg_resposta);
@@ -310,7 +310,8 @@ void rtable_free_keys(char **keys) {
 }
 
 int retry(struct rtable_t *remote_table) {
-	printf("The server failed to respond, trying again in %d miliseconds\n",
+
+	printf("The server failed to respond, trying again in %d ms\n",
 	RETRY_TIME);
 	poll(0, 0, RETRY_TIME);
 	remote_table = rtable_bind(address);
