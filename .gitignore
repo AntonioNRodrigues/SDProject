@@ -36,3 +36,10 @@
 /testList
 /.valgrindEntry.log.swp
 /.valgrindList.log.swp
+/table-client
+/table-server
+/test_data
+/test_entry
+/test_list
+/test_message
+/test_table
