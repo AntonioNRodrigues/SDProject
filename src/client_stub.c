@@ -37,7 +37,7 @@ int rtable_unbind(struct rtable_t *rtable) {
 }
 
 int rtable_put(struct rtable_t *rtable, char *key, struct data_t *value) {
-
+	int result = -10;
 	if (rtable == NULL || key == NULL || value == NULL) {
 		return -1;
 	}
@@ -49,6 +49,12 @@ int rtable_put(struct rtable_t *rtable, char *key, struct data_t *value) {
 
 	struct message_t * msg_resposta = network_send_receive(rtable->server,
 			msg_out);
+	//try sending the message one more time
+	if (msg_resposta == NULL) {
+		retry();
+		msg_resposta = network_send_receive(rtable->server, msg_out);
+	}
+
 	printf("Mensagem Enviada\n\n");
 	print_msg(msg_out);
 	free_message(msg_out);
@@ -60,12 +66,10 @@ int rtable_put(struct rtable_t *rtable, char *key, struct data_t *value) {
 		if (msg_resposta->opcode == OC_RT_ERROR) {
 			printf("Chave ja existe ou outro erro\n");
 		} else {
-			printf("Resultado: %d\n\n",
-					msg_resposta->content.result);
+			printf("Resultado: %d\n\n", msg_resposta->content.result);
 		}
 		free_message(msg_resposta);
 	}
-	
 
 	return 0;
 }
@@ -74,16 +78,22 @@ int rtable_update(struct rtable_t *rtable, char *key, struct data_t *value) {
 	if (rtable == NULL || key == NULL || value == NULL) {
 		return -1;
 	}
-	
+
 	struct message_t * msg_out = (struct message_t *) malloc(
 			sizeof(struct message_t));
 	msg_out->opcode = OC_UPDATE;
 	msg_out->c_type = CT_ENTRY;
 	msg_out->content.entry = entry_create(key, value);
-	
 
 	struct message_t * msg_resposta = network_send_receive(rtable->server,
 			msg_out);
+
+	//try sending the message one more time
+	if (msg_resposta == NULL) {
+		retry();
+		msg_resposta = network_send_receive(rtable->server, msg_out);
+	}
+
 	printf("Mensagem Enviada\n\n");
 	print_msg(msg_out);
 	free_message(msg_out);
@@ -95,8 +105,7 @@ int rtable_update(struct rtable_t *rtable, char *key, struct data_t *value) {
 		if (msg_resposta->opcode == OC_RT_ERROR) {
 			printf("Chave nao existe ou outro erro\n");
 		} else {
-			printf("Resultado: %d\n\n",
-					msg_resposta->content.result);
+			printf("Resultado: %d\n\n", msg_resposta->content.result);
 		}
 		free_message(msg_resposta);
 	}
@@ -115,6 +124,13 @@ struct data_t *rtable_get(struct rtable_t *rtable, char *key) {
 
 	struct message_t * msg_resposta = network_send_receive(rtable->server,
 			msg_out);
+
+	//try sending the message one more time
+	if (msg_resposta == NULL) {
+		retry();
+		msg_resposta = network_send_receive(rtable->server, msg_out);
+	}
+
 	printf("Mensagem Enviada\n\n");
 	print_msg(msg_out);
 	free_message(msg_out);
@@ -123,7 +139,7 @@ struct data_t *rtable_get(struct rtable_t *rtable, char *key) {
 		printf("Nao houve resposta\n");
 		return NULL;
 	} else {
-	print_msg(msg_resposta);
+		print_msg(msg_resposta);
 		if (msg_resposta->opcode == OC_RT_ERROR) {
 			printf("Chave nao exista ou outro erro\n");
 			return NULL;
@@ -153,6 +169,13 @@ int rtable_del(struct rtable_t *rtable, char *key) {
 
 	struct message_t *msg_resposta = network_send_receive(rtable->server,
 			msg_out);
+
+	//try sending the message one more time
+	if (msg_resposta == NULL) {
+		retry();
+		msg_resposta = network_send_receive(rtable->server, msg_out);
+	}
+
 	printf("Mensagem Enviada\n\n");
 	print_msg(msg_out);
 	free_message(msg_out);
@@ -190,6 +213,13 @@ int rtable_size(struct rtable_t *rtable) {
 
 	struct message_t *msg_resposta = network_send_receive(rtable->server,
 			msg_out);
+
+	//try sending the message one more time
+	if (msg_resposta == NULL) {
+		retry();
+		msg_resposta = network_send_receive(rtable->server, msg_out);
+	}
+
 	print_msg(msg_out);
 	free_message(msg_out);
 	printf("Mensagem Recebida\n\n");
@@ -221,6 +251,13 @@ char **rtable_get_keys(struct rtable_t *rtable) {
 
 	struct message_t * msg_resposta = network_send_receive(rtable->server,
 			msg_out);
+
+	//try sending the message one more time
+	if (msg_resposta == NULL) {
+		retry();
+		msg_resposta = network_send_receive(rtable->server, msg_out);
+	}
+
 	printf("Mensagem Enviada\n\n");
 	print_msg(msg_out);
 	free_message(msg_out);
@@ -247,7 +284,12 @@ char **rtable_get_keys(struct rtable_t *rtable) {
 }
 
 void rtable_free_keys(char **keys) {
-	if(keys != NULL){
+	if (keys != NULL) {
 		table_free_keys(keys);
 	}
+}
+void retry() {
+	printf("The server failed to responded, trying again in %d miliseconds",
+	TIMEOUT_RETRY);
+	poll(0, 0, TIMEOUT_RETRY);
 }
