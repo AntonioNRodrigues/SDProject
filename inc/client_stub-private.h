@@ -2,7 +2,7 @@
 #define _CLIENT_STUB_PRIVATE_H
 
 //the time out to retry sending the message if the server fails to responds.
-#define TIMEOUT_RETRY 5000
+#define RETRY_TIME 5000
 
 #include "client_stub.h"
 
@@ -14,6 +14,6 @@ struct rtable_t {
 /**
  * function to define a retry after a TIMEOUT_RETRY of miliseconds
  */
-void retry();
+int retry(struct rtable_t *);
 
 #endif

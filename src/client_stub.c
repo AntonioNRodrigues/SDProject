@@ -3,10 +3,17 @@
 #include "client_stub-private.h"
 #include "network_client-private.h"
 
+const char *address;
+
 struct rtable_t *rtable_bind(const char *address_port) {
 	if (address_port == NULL) {
 		return NULL;
 	}
+	address = strdup(address_port);
+	if (address == NULL) {
+		return NULL;
+	}
+
 	struct rtable_t *remote_table = (struct rtable_t *) malloc(
 			sizeof(struct rtable_t));
 	if (remote_table == NULL) {
@@ -37,7 +44,7 @@ int rtable_unbind(struct rtable_t *rtable) {
 }
 
 int rtable_put(struct rtable_t *rtable, char *key, struct data_t *value) {
-	int result = -10;
+
 	if (rtable == NULL || key == NULL || value == NULL) {
 		return -1;
 	}
@@ -49,10 +56,13 @@ int rtable_put(struct rtable_t *rtable, char *key, struct data_t *value) {
 
 	struct message_t * msg_resposta = network_send_receive(rtable->server,
 			msg_out);
+
 	//try sending the message one more time
 	if (msg_resposta == NULL) {
-		retry();
-		msg_resposta = network_send_receive(rtable->server, msg_out);
+		if (retry(rtable) != -1)
+			msg_resposta = network_send_receive(rtable->server, msg_out);
+		else
+			printf("the server didnt response");
 	}
 
 	printf("Mensagem Enviada\n\n");
@@ -90,8 +100,10 @@ int rtable_update(struct rtable_t *rtable, char *key, struct data_t *value) {
 
 	//try sending the message one more time
 	if (msg_resposta == NULL) {
-		retry();
-		msg_resposta = network_send_receive(rtable->server, msg_out);
+		if (retry(rtable) != -1)
+			msg_resposta = network_send_receive(rtable->server, msg_out);
+		else
+			printf("the server didnt response");
 	}
 
 	printf("Mensagem Enviada\n\n");
@@ -127,8 +139,10 @@ struct data_t *rtable_get(struct rtable_t *rtable, char *key) {
 
 	//try sending the message one more time
 	if (msg_resposta == NULL) {
-		retry();
-		msg_resposta = network_send_receive(rtable->server, msg_out);
+		if (retry(rtable) != -1)
+			msg_resposta = network_send_receive(rtable->server, msg_out);
+		else
+			printf("the server didnt response");
 	}
 
 	printf("Mensagem Enviada\n\n");
@@ -172,8 +186,10 @@ int rtable_del(struct rtable_t *rtable, char *key) {
 
 	//try sending the message one more time
 	if (msg_resposta == NULL) {
-		retry();
-		msg_resposta = network_send_receive(rtable->server, msg_out);
+		if (retry(rtable) != -1)
+			msg_resposta = network_send_receive(rtable->server, msg_out);
+		else
+			printf("the server didnt response");
 	}
 
 	printf("Mensagem Enviada\n\n");
@@ -216,8 +232,10 @@ int rtable_size(struct rtable_t *rtable) {
 
 	//try sending the message one more time
 	if (msg_resposta == NULL) {
-		retry();
-		msg_resposta = network_send_receive(rtable->server, msg_out);
+		if (retry(rtable) != -1)
+			msg_resposta = network_send_receive(rtable->server, msg_out);
+		else
+			printf("the server didnt response");
 	}
 
 	print_msg(msg_out);
@@ -254,8 +272,10 @@ char **rtable_get_keys(struct rtable_t *rtable) {
 
 	//try sending the message one more time
 	if (msg_resposta == NULL) {
-		retry();
-		msg_resposta = network_send_receive(rtable->server, msg_out);
+		if (retry(rtable) != -1)
+			msg_resposta = network_send_receive(rtable->server, msg_out);
+		else
+			printf("the server didnt response");
 	}
 
 	printf("Mensagem Enviada\n\n");
@@ -288,8 +308,16 @@ void rtable_free_keys(char **keys) {
 		table_free_keys(keys);
 	}
 }
-void retry() {
-	printf("The server failed to responded, trying again in %d miliseconds",
-	TIMEOUT_RETRY);
-	poll(0, 0, TIMEOUT_RETRY);
+
+int retry(struct rtable_t *remote_table) {
+	printf("The server failed to respond, trying again in %d miliseconds\n",
+	RETRY_TIME);
+	poll(0, 0, RETRY_TIME);
+	remote_table = rtable_bind(address);
+
+	if (remote_table == NULL) {
+		return -1;
+	}
+
+	return 1;
 }
