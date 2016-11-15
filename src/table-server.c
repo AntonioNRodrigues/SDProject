@@ -15,7 +15,7 @@
 //number of file descriptor
 #define MAX_SOCKETS 5
 #define TIMEOUT 50
-#define LISTENING_SOCKET 0
+#define LISTENING_SOCKET_POS 0
 
 #include <error.h>
 #include <sys/types.h>
@@ -85,6 +85,7 @@ int network_receive_send(int sockfd) {
 	int message_size, msg_size, result;
 	struct message_t *msg_pedido, *msg_resposta;
 
+
 	/* Verificar parâmetros de entrada */
 	if (sockfd == -1) {
 		return -1;
@@ -92,7 +93,6 @@ int network_receive_send(int sockfd) {
 
 	/* Com a função read_all, receber num inteiro o tamanho da 
 	 mensagem de pedido que será recebida de seguida.*/
-
 	result = read_all(sockfd, (char *) &msg_size, _INT);
 	/* Verificar se a receção teve sucesso */
 	if (result == 0) {
@@ -169,7 +169,7 @@ int find_free_connection(struct pollfd *conn) {
 	int free_index = -1;
 	int k = 1;
 	for (k = 1; k < MAX_SOCKETS; k++) {
-		printf("FIND FREE CONNECTION:: %d, ON INDICE = %d\n", conn[k].fd, k);
+		printf("FIND FREE CONNECTION ON INDICE = %d\n", k);
 		if (conn[k].fd == -1) {
 			free_index = k;
 			break;
@@ -215,15 +215,15 @@ int main(int argc, char **argv) {
 		connections[i].fd = -1;
 	}
 	//first position of connetions is the listening_socket
-	connections[LISTENING_SOCKET].fd = listening_socket;
+	connections[LISTENING_SOCKET_POS].fd = listening_socket;
 	// POLLIN ==> data to be read and in this case a new connections received
-	connections[LISTENING_SOCKET].events = POLLIN;
+	connections[LISTENING_SOCKET_POS].events = POLLIN;
 
 	while ((result = poll(connections, MAX_SOCKETS, TIMEOUT)) >= 0) {
 		if (result > 0) {
 
 			// listenning socket has a new connection
-			if ((connections[LISTENING_SOCKET].revents & POLLIN)
+			if ((connections[LISTENING_SOCKET_POS].revents & POLLIN)
 					&& (number_clients < MAX_SOCKETS)) {
 
 				int free_index = find_free_connection(connections);
@@ -231,7 +231,7 @@ int main(int argc, char **argv) {
 				//-1 there is no space in the array --> do not accept socket
 				if (free_index != -1) {
 					if ((connections[free_index].fd = accept(
-							connections[LISTENING_SOCKET].fd,
+							connections[LISTENING_SOCKET_POS].fd,
 							(struct sockaddr *) &client, &size_client)) > 0) {
 						connections[free_index].events = POLLIN;
 						number_clients++;
@@ -244,7 +244,6 @@ int main(int argc, char **argv) {
 				result--;
 			}
 			for (j = 1; j < MAX_SOCKETS && result > 0; j++) {
-				printf("j==%d", j);
 
 				//if socket has data to read
 				if (connections[j].revents & POLLIN) {
@@ -256,7 +255,9 @@ int main(int argc, char **argv) {
 						close(connections[j].fd);
 						number_clients--;
 						connections[j].fd = -1;
-
+						printf(
+								"network_receive_send < 0:: connection[%d].%d \n",
+								j, connections[j].fd);
 					}
 				}
 				// NAO SERVE PARA NADA NUNCA ENTRA CA
