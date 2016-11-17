@@ -108,7 +108,7 @@ int main(int argc, char **argv) {
 				if (token == NULL) {
 					printf("Uso: get <chave>\n");
 				}
-				if (strcmp(token, "!") == 0) {
+				else if (strcmp(token, "!") == 0) {
 					rtable_get_keys(remote_table);
 				} else {
 					rtable_get(remote_table, token);
