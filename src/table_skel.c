@@ -21,7 +21,6 @@ int table_skel_init(int n_lists) {
 	return 0;
 }
 int table_skel_destroy() {
-	printf("TABLE SKEL DESTROY::");
 	table_destroy(tabela);
 	return tabela == NULL ? 0 : -1;
 }
