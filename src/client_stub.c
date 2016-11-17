@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <string.h>
+#include <poll.h>
 #include "client_stub-private.h"
 #include "network_client-private.h"
 
@@ -27,6 +28,22 @@ struct rtable_t *rtable_bind(const char *address_port) {
 	}
 	return remote_table;
 }
+
+/*struct rtable_t *rtable_rebind(struct rtable_t *remote_table) {
+ if (remote_table == NULL) {
+ return NULL;
+ }
+ if (remote_table->server == NULL) {
+ return NULL;
+ }
+ remote_table->server = network_reconnect(remote_table->server);
+
+ if (remote_table->server == NULL) {
+ return NULL;
+ }
+
+ return remote_table;
+ }*/
 
 int rtable_unbind(struct rtable_t *rtable) {
 	if (rtable == NULL) {
@@ -151,20 +168,22 @@ struct data_t *rtable_get(struct rtable_t *rtable, char *key) {
 	printf("Mensagem Recebida\n\n");
 	if (msg_resposta == NULL) {
 		printf("Nao houve resposta\n");
+		free_message(msg_resposta);
 		return NULL;
 	} else {
 		print_msg(msg_resposta);
 		if (msg_resposta->opcode == OC_RT_ERROR) {
 			printf("Chave nao exista ou outro erro\n");
+			free_message(msg_resposta);
 			return NULL;
 		}
 		if (msg_resposta->c_type == CT_VALUE) {
-			printf("Valor: %s\n\n", msg_resposta->content.data->data);
+			printf("Value: %s\n\n", msg_resposta->content.data->data);
 		}
-		//HAS TO BE CHANGED-------------------------------->
-		//free_message(msg_resposta);
 	}
-	return msg_resposta->content.data->data;
+	struct data_t * temp = data_dup(msg_resposta->content.data->data);
+	free_message(msg_resposta);
+	return temp;
 
 }
 int rtable_del(struct rtable_t *rtable, char *key) {
@@ -313,12 +332,15 @@ int retry(struct rtable_t *remote_table) {
 
 	printf("The server failed to respond, trying again in %d ms\n",
 	RETRY_TIME);
+	//time out in miliseconds
 	poll(0, 0, RETRY_TIME);
 	remote_table = rtable_bind(address);
-
+//	remote_table = rtable_rebind(remote_table);
 	if (remote_table == NULL) {
+		rtable_unbind(remote_table);
 		return -1;
 	}
 
 	return 1;
 }
+
