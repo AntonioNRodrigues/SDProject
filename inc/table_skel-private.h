@@ -1,3 +1,10 @@
+/*
+ * Grupo 33
+ * Miguel Vale n.39279
+ * António Rodrigues n.º40853
+ * Ricardo Veloso n.º44842
+ */
+
 #ifndef _TABLE_SKEL_PRIVATE_H
 #define _TABLE_SKEL_PRTIVATE_H
 

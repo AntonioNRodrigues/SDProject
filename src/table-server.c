@@ -11,8 +11,6 @@
  Exemplo de uso: ./table_server 54321 10
  */
 
-//TO BE MOVED TO THE TABLE SKEL PRIVATE
-//number of file descriptor
 #include <error.h>
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -21,8 +19,6 @@
 #include <fcntl.h>
 
 #include "inet.h"
-#include "table-private.h"
-#include "message-private.h"
 #include "network_client-private.h"
 #include "table_skel-private.h"
 
@@ -246,7 +242,6 @@ int main(int argc, char **argv) {
 						connections[j].fd = -1;
 						printf("A client has disconnect from the server\n");
 						printf("The server has %d clients\n", number_clients);
-
 					}
 				}
 			}

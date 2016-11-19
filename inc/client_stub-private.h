@@ -1,3 +1,10 @@
+/*
+ * Grupo 33
+ * Miguel Vale n.39279
+ * António Rodrigues n.º40853
+ * Ricardo Veloso n.º44842
+ */
+
 #ifndef _CLIENT_STUB_PRIVATE_H
 #define _CLIENT_STUB_PRIVATE_H
 
@@ -12,8 +19,8 @@ struct rtable_t {
 	struct server_t *server;
 };
 /**
- * function to define a retry after a TIMEOUT_RETRY of miliseconds
+ * function to define a retry after a RETRY_TIME of miliseconds
  */
-int retry(struct rtable_t *);
+int retry(struct rtable_t *remote_table);
 
 #endif

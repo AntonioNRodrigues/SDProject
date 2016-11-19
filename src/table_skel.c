@@ -1,3 +1,10 @@
+/*
+ * Grupo 33
+ * Miguel Vale n.39279
+ * António Rodrigues n.º40853
+ * Ricardo Veloso n.º44842
+ */
+
 #include <error.h>
 #include <stdlib.h>
 #include <string.h>
@@ -130,9 +137,7 @@ struct message_t *invoke(struct message_t *msg_in) {
 		result = table_del(tabela, msg_in->content.key);
 		//table_del failed
 		if (result == -1) {
-			msg_resposta->c_type = CT_RESULT;
-			msg_resposta->opcode = OC_RT_ERROR;
-			msg_resposta->content.result = result;
+			msg_resposta = build_error_msg(msg_resposta);
 		} else {
 			msg_resposta->opcode = OC_DEL + 1;
 			msg_resposta->c_type = CT_RESULT;
