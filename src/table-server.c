@@ -194,7 +194,7 @@ int main(int argc, char **argv) {
 	}
 
 	printf("***********************************\n");
-	printf("*  SERVER SUPPORTS %d CLIENTS      *\n", MAX_SOCKETS - 1);
+	printf("*  SERVER --SUPPORTS %d CLIENTS    *\n", MAX_SOCKETS - 1);
 	printf("***********************************\n\n");
 	printf("Waiting for clients\n");
 
@@ -223,9 +223,9 @@ int main(int argc, char **argv) {
 							(struct sockaddr *) &client, &size_client)) > 0) {
 						connections[free_index].events = POLLIN;
 						number_clients++;
-						printf("Clients connected %d\n", number_clients);
+						printf("Clients connected %d\n\n", number_clients);
 					} else {
-						printf("there was some error with the accept");
+						printf("there was some error with the accept\n");
 					}
 
 				}

@@ -61,6 +61,9 @@ struct message_t *invoke(struct message_t *msg_in) {
 		free_message(msg_resposta);
 		return NULL;
 	}
+	printf("----Message Received----\n");
+	print_msg(msg_in);
+
 	/* Aplicar operação na tabela */
 
 	/* Preparar mensagem de resposta */
@@ -110,10 +113,16 @@ struct message_t *invoke(struct message_t *msg_in) {
 			struct data_t *temp_data = table_get(tabela, temp_key);
 			//the key is present
 			if (temp_data != NULL) {
-				msg_resposta->c_type = CT_VALUE;
-				msg_resposta->opcode = OC_GET + 1;
-				msg_resposta->content.data = data_dup(temp_data);
-				data_destroy(temp_data);
+				if (temp_data->datasize == 0 && temp_data->data == NULL) {
+					msg_resposta->c_type = CT_VALUE;
+					msg_resposta->opcode = OC_GET + 1;
+					msg_resposta->content.data = temp_data;
+				} else {
+					msg_resposta->c_type = CT_VALUE;
+					msg_resposta->opcode = OC_GET + 1;
+					msg_resposta->content.data = data_dup(temp_data);
+					data_destroy(temp_data);
+				}
 				//key does not exist
 			} else {
 				msg_resposta = build_error_msg(msg_resposta);
@@ -147,5 +156,8 @@ struct message_t *invoke(struct message_t *msg_in) {
 	default:
 		break;
 	}
+
+	printf("----Message Sended------\n");
+	print_msg(msg_resposta);
 	return msg_resposta;
 }

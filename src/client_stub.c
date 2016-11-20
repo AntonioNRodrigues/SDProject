@@ -90,18 +90,18 @@ int rtable_put(struct rtable_t *rtable, char *key, struct data_t *value) {
 			printf("the server didnt response");
 	}
 
-	printf("Mensagem Enviada\n\n");
+	printf("----Message Sended------\n");
 	print_msg(msg_out);
 	free_message(msg_out);
-	printf("Mensagem Recebida\n\n");
+	printf("----Message Received----\n");
 	if (msg_resposta == NULL) {
-		printf("Nao houve resposta\n");
+		printf("There was no answer\n ");
 	} else {
 		print_msg(msg_resposta);
 		if (msg_resposta->opcode == OC_RT_ERROR) {
-			printf("Chave ja existe ou outro erro\n");
+			printf("key does not exist or error\n");
 		} else {
-			printf("Resultado: %d\n\n", msg_resposta->content.result);
+			printf("Result: %d\n\n", msg_resposta->content.result);
 		}
 		free_message(msg_resposta);
 	}
@@ -131,18 +131,18 @@ int rtable_update(struct rtable_t *rtable, char *key, struct data_t *value) {
 			printf("the server didnt response");
 	}
 
-	printf("Mensagem Enviada\n\n");
+	printf("----Message Sended------\n");
 	print_msg(msg_out);
 	free_message(msg_out);
-	printf("Mensagem Recebida\n\n");
+	printf("----Message Received----\n");
 	if (msg_resposta == NULL) {
-		printf("Nao houve resposta\n");
+		printf("There was no answer\n ");
 	} else {
 		print_msg(msg_resposta);
 		if (msg_resposta->opcode == OC_RT_ERROR) {
-			printf("Chave nao existe ou outro erro\n");
+			printf("key does not exist or error\n");
 		} else {
-			printf("Resultado: %d\n\n", msg_resposta->content.result);
+			printf("Result: %d\n\n", msg_resposta->content.result);
 		}
 		free_message(msg_resposta);
 	}
@@ -170,27 +170,27 @@ struct data_t *rtable_get(struct rtable_t *rtable, char *key) {
 			printf("the server didnt response");
 	}
 
-	printf("Mensagem Enviada\n\n");
+	printf("----Message Sended------\n");
 	print_msg(msg_out);
 	free_message(msg_out);
-	printf("Mensagem Recebida\n\n");
+	printf("----Message Received----\n");
 	if (msg_resposta == NULL) {
-		printf("Nao houve resposta\n");
+		printf("There was no answer\n ");
 		free_message(msg_resposta);
 		return NULL;
 	} else {
 		print_msg(msg_resposta);
 		if (msg_resposta->opcode == OC_RT_ERROR) {
-			printf("Chave nao exista ou outro erro\n");
+			printf("key does not exist or error\n");
 			free_message(msg_resposta);
 			return NULL;
 		}
 		if (msg_resposta->c_type == CT_VALUE) {
-			printf("Value: %s\n\n", msg_resposta->content.data->data);
+			printf("Key: %s, Value: %s\n\n", key, msg_resposta->content.data->data);
 		}
 	}
-	struct data_t * temp = data_dup(msg_resposta->content.data->data);
-	free_message(msg_resposta);
+	struct data_t * temp = msg_resposta->content.data->data;
+	//free_message(msg_resposta);
 	return temp;
 
 }
@@ -219,20 +219,20 @@ int rtable_del(struct rtable_t *rtable, char *key) {
 			printf("the server didnt response");
 	}
 
-	printf("Mensagem Enviada\n\n");
+	printf("----Message Sended------\n");
 	print_msg(msg_out);
 	free_message(msg_out);
-	printf("Mensagem Recebida\n\n");
+	printf("----Message Received----\n");
 	if (msg_resposta == NULL) {
-		printf("Nao houve resposta\n");
+		printf("There was no answer\n ");
 		ret = -1;
 	} else {
 		print_msg(msg_resposta);
 		if (msg_resposta->opcode == OC_RT_ERROR) {
-			printf("Chave nao existe ou outro erro\n");
+			printf("key does not exist or error\n");
 			ret = -1;
 		} else {
-			printf("Resultado: %d\n\n", msg_resposta->content.result);
+			printf("Result: %d\n\n", msg_resposta->content.result);
 			ret = 0;
 		}
 		free_message(msg_resposta);
@@ -264,20 +264,20 @@ int rtable_size(struct rtable_t *rtable) {
 		else
 			printf("the server didnt response");
 	}
-
+	printf("----Message Sended------\n");
 	print_msg(msg_out);
 	free_message(msg_out);
-	printf("Mensagem Recebida\n\n");
+	printf("----Message Received----\n");
 	if (msg_resposta == NULL) {
-		printf("Nao houve resposta\n");
+		printf("There was no answer\n ");
 		ret = -1;
 	} else {
 		print_msg(msg_resposta);
 		if (msg_resposta->opcode == OC_RT_ERROR) {
-			printf("Houve um erro\n");
+			printf("Error\n");
 			ret = -1;
 		} else {
-			printf("Resultado: %d\n\n", msg_resposta->content.result);
+			printf("Result: %d\n\n", msg_resposta->content.result);
 			ret = 0;
 		}
 		free_message(msg_resposta);
@@ -305,25 +305,26 @@ char **rtable_get_keys(struct rtable_t *rtable) {
 			printf("the server didnt response");
 	}
 
-	printf("Mensagem Enviada\n\n");
+	printf("----Message Sended------\n");
 	print_msg(msg_out);
 	free_message(msg_out);
-	printf("Mensagem Recebida\n\n");
+	printf("----Message Received----\n");
 	if (msg_resposta == NULL) {
-		printf("Nao houve resposta\n ");
+		printf("There was no answer\n ");
 		return NULL;
 	} else {
 		print_msg(msg_resposta);
 		if (msg_resposta->opcode == OC_RT_ERROR) {
-			printf("Chave nao exista ou outro erro\n");
+			printf("key does not exist or error\n");
 			return NULL;
 		}
 		if (msg_resposta->c_type == CT_KEYS) {
 			int i = 0;
 			while (msg_resposta->content.keys[i] != NULL) {
-				printf("key: %s\n\n", msg_resposta->content.keys[i]);
+				printf("key[%d]:%s, ", i,msg_resposta->content.keys[i]);
 				i++;
 			}
+			printf("\n");
 		}
 	}
 	return msg_resposta->content.keys;

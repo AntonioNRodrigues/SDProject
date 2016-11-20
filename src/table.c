@@ -158,6 +158,7 @@ struct data_t *table_get(struct table_t *table, char * key) {
 	//get the entry
 	struct entry_t *entry = list_get(table->buckets[index_entry], key);
 
+	//there is no entry with this key in the table
 	if (entry == NULL) {
 		return NULL;
 	}
