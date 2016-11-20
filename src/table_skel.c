@@ -162,7 +162,7 @@ struct message_t *invoke(struct message_t *msg_in) {
 		break;
 	}
 
-	printf("----Message Sended------\n");
+	printf("----Message Sent------\n");
 	print_msg(msg_resposta);
 	return msg_resposta;
 }

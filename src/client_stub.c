@@ -108,10 +108,10 @@ int rtable_put(struct rtable_t *rtable, char *key, struct data_t *value) {
 		if (retry(rtable) != -1)
 			msg_resposta = network_send_receive(rtable->server, msg_out);
 		else
-			printf("the server didnt response");
+			printf("the server didnt respond");
 	}
 
-	printf("----Message Sended------\n");
+	printf("----Message Sent------\n");
 	print_msg(msg_out);
 	printf("----Message Received----\n");
 	if (msg_resposta == NULL) {
@@ -163,10 +163,10 @@ int rtable_update(struct rtable_t *rtable, char *key, struct data_t *value) {
 		if (retry(rtable) != -1)
 			msg_resposta = network_send_receive(rtable->server, msg_out);
 		else
-			printf("the server didnt response");
+			printf("the server didnt respond");
 	}
 
-	printf("----Message Sended------\n");
+	printf("----Message Sent------\n");
 	print_msg(msg_out);
 	free_message(msg_out);
 	printf("----Message Received----\n");
@@ -202,10 +202,10 @@ struct data_t *rtable_get(struct rtable_t *rtable, char *key) {
 		if (retry(rtable) != -1)
 			msg_resposta = network_send_receive(rtable->server, msg_out);
 		else
-			printf("the server didnt response");
+			printf("the server didnt respond");
 	}
 
-	printf("----Message Sended------\n");
+	printf("----Message Sent------\n");
 	print_msg(msg_out);
 	free_message(msg_out);
 	printf("----Message Received----\n");
@@ -252,10 +252,10 @@ int rtable_del(struct rtable_t *rtable, char *key) {
 		if (retry(rtable) != -1)
 			msg_resposta = network_send_receive(rtable->server, msg_out);
 		else
-			printf("the server didnt response");
+			printf("the server didnt respond");
 	}
 
-	printf("----Message Sended------\n");
+	printf("----Message Sent------\n");
 	print_msg(msg_out);
 	free_message(msg_out);
 	printf("----Message Received----\n");
@@ -298,9 +298,9 @@ int rtable_size(struct rtable_t *rtable) {
 		if (retry(rtable) != -1)
 			msg_resposta = network_send_receive(rtable->server, msg_out);
 		else
-			printf("the server didnt response");
+			printf("the server didnt respond");
 	}
-	printf("----Message Sended------\n");
+	printf("----Message Sent------\n");
 	print_msg(msg_out);
 	free_message(msg_out);
 	printf("----Message Received----\n");
@@ -338,10 +338,10 @@ char **rtable_get_keys(struct rtable_t *rtable) {
 		if (retry(rtable) != -1)
 			msg_resposta = network_send_receive(rtable->server, msg_out);
 		else
-			printf("the server didnt response");
+			printf("the server didnt respond");
 	}
 
-	printf("----Message Sended------\n");
+	printf("----Message Sent------\n");
 	print_msg(msg_out);
 	free_message(msg_out);
 	printf("----Message Received----\n");
