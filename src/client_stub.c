@@ -120,7 +120,7 @@ int rtable_put(struct rtable_t *rtable, char *key, struct data_t *value) {
 	} else {
 		print_msg(msg_resposta);
 		if (msg_resposta->opcode == OC_RT_ERROR) {
-			printf("key does not exist or error\n");
+			printf("key already exists or error\n");
 		} else {
 			printf("Result: %d\n\n", msg_resposta->content.result);
 		}
@@ -276,7 +276,7 @@ int rtable_size(struct rtable_t *rtable) {
 	msg_out->c_type = CT_RESULT;
 	msg_out->content.result = 0;
 
-	struct message_t *msg_resposta = NULL;
+	struct message_t *msg_resposta = network_send_receive(rtable->server, msg_out);
 
 	//try sending the message one more time
 	if (msg_resposta == NULL) {
