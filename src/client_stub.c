@@ -5,7 +5,6 @@
  * Ricardo Veloso n.º44842
  */
 
-
 #include <stdlib.h>
 #include <string.h>
 #include <poll.h>
@@ -37,21 +36,43 @@ struct rtable_t *rtable_bind(const char *address_port) {
 	return remote_table;
 }
 
-/*struct rtable_t *rtable_rebind(struct rtable_t *remote_table) {
- if (remote_table == NULL) {
- return NULL;
- }
- if (remote_table->server == NULL) {
- return NULL;
- }
- remote_table->server = network_reconnect(remote_table->server);
+struct rtable_t *rtable_rebind(struct rtable_t *remote_table) {
+	if (remote_table == NULL) {
+		return NULL;
+	}
+	// if server inside remote_table is down try to connect
+	if (remote_table->server == NULL) {
+		remote_table->server = network_connect(address);
+		if (remote_table->server == NULL) {
+			return NULL;
+		}
+		return remote_table;
+	} else {
+		//use the server inside the remote_table to reconnect
+		remote_table->server = network_reconnect(remote_table->server);
+	}
+	// it was not possible to reconnect
+	if (remote_table->server == NULL) {
+		return NULL;
+	}
 
- if (remote_table->server == NULL) {
- return NULL;
- }
+	return remote_table;
+}
 
- return remote_table;
- }*/
+int retry(struct rtable_t *remote_table) {
+
+	printf("The server failed to respond, trying again in %d ms\n",
+	RETRY_TIME);
+	/*time out in miliseconds*/
+	poll(0, 0, RETRY_TIME);
+	remote_table = rtable_rebind(remote_table);
+	if (remote_table == NULL) {
+		rtable_unbind(remote_table);
+		return -1;
+	}
+
+	return 1;
+}
 
 int rtable_unbind(struct rtable_t *rtable) {
 	if (rtable == NULL) {
@@ -162,7 +183,7 @@ struct data_t *rtable_get(struct rtable_t *rtable, char *key) {
 	struct message_t * msg_resposta = network_send_receive(rtable->server,
 			msg_out);
 
-	//try sending the message one more time
+//try sending the message one more time
 	if (msg_resposta == NULL) {
 		if (retry(rtable) != -1)
 			msg_resposta = network_send_receive(rtable->server, msg_out);
@@ -186,11 +207,12 @@ struct data_t *rtable_get(struct rtable_t *rtable, char *key) {
 			return NULL;
 		}
 		if (msg_resposta->c_type == CT_VALUE) {
-			printf("Key: %s, Value: %s\n\n", key, msg_resposta->content.data->data);
+			printf("Key: %s, Value: %s\n\n", key,
+					msg_resposta->content.data->data);
 		}
 	}
 	struct data_t * temp = msg_resposta->content.data->data;
-	//free_message(msg_resposta);
+//free_message(msg_resposta);
 	return temp;
 
 }
@@ -254,8 +276,7 @@ int rtable_size(struct rtable_t *rtable) {
 	msg_out->c_type = CT_RESULT;
 	msg_out->content.result = 0;
 
-	struct message_t *msg_resposta = network_send_receive(rtable->server,
-			msg_out);
+	struct message_t *msg_resposta = NULL;
 
 	//try sending the message one more time
 	if (msg_resposta == NULL) {
@@ -321,7 +342,7 @@ char **rtable_get_keys(struct rtable_t *rtable) {
 		if (msg_resposta->c_type == CT_KEYS) {
 			int i = 0;
 			while (msg_resposta->content.keys[i] != NULL) {
-				printf("key[%d]:%s, ", i,msg_resposta->content.keys[i]);
+				printf("key[%d]:%s ", i, msg_resposta->content.keys[i]);
 				i++;
 			}
 			printf("\n");
@@ -335,21 +356,5 @@ void rtable_free_keys(char **keys) {
 	if (keys != NULL) {
 		table_free_keys(keys);
 	}
-}
-
-int retry(struct rtable_t *remote_table) {
-
-	printf("The server failed to respond, trying again in %d ms\n",
-	RETRY_TIME);
-	//time out in miliseconds
-	poll(0, 0, RETRY_TIME);
-	remote_table = rtable_bind(address);
-//	remote_table = rtable_rebind(remote_table);
-	if (remote_table == NULL) {
-		rtable_unbind(remote_table);
-		return -1;
-	}
-
-	return 1;
 }
 
