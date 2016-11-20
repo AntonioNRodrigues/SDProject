@@ -22,5 +22,9 @@ struct rtable_t {
  * function to define a retry after a RETRY_TIME of miliseconds
  */
 int retry(struct rtable_t *remote_table);
+/*
+ * function to reestablish the connection
+ */
+struct rtable_t *rtable_rebind(struct rtable_t *remote_table);
 
 #endif

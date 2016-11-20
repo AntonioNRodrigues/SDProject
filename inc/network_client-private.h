@@ -26,4 +26,10 @@ int write_all(int sock, char *buf, int len);
 */
 int read_all(int sock, char *buf, int len);
 
+/**
+ * function that reconnects to the server. Uses the information presented in the
+ * param server to fill a new_server an closes the server in the param.
+ */
+struct server_t *network_reconnect(struct server_t* server);
+
 #endif

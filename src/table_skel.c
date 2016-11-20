@@ -85,7 +85,6 @@ struct message_t *invoke(struct message_t *msg_in) {
 		//table_put failed
 		if (result == -1) {
 			msg_resposta = build_error_msg(msg_resposta);
-
 		} else {
 			msg_resposta->c_type = CT_RESULT;
 			msg_resposta->opcode = OC_PUT + 1;

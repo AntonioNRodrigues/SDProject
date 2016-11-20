@@ -194,7 +194,7 @@ int main(int argc, char **argv) {
 	}
 
 	printf("***********************************\n");
-	printf("*  SERVER --SUPPORTS %d CLIENTS    *\n", MAX_SOCKETS - 1);
+	printf("*  SERVER --  SUPPORTS %d CLIENTS  *\n", MAX_SOCKETS - 1);
 	printf("***********************************\n\n");
 	printf("Waiting for clients\n");
 
