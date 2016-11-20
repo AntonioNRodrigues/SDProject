@@ -85,7 +85,9 @@ void table_destroy(struct table_t *table) {
 		free(table);
 	}
 }
-
+/**
+ * (-1) Error (-10) key already exists (0) OK
+ */
 int table_put(struct table_t *table, char * key, struct data_t *value) {
 	if (table == NULL || key == NULL || value == NULL) {
 		return -1;
@@ -102,7 +104,7 @@ int table_put(struct table_t *table, char * key, struct data_t *value) {
 	//the table already has the key so from this point can't be updated
 	if (table_get(table, key) != NULL) {
 		entry_destroy(new_entry);
-		return -1;
+		return -10;
 	}
 
 	/* Inserir entry na tabela */

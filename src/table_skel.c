@@ -85,6 +85,12 @@ struct message_t *invoke(struct message_t *msg_in) {
 		//table_put failed
 		if (result == -1) {
 			msg_resposta = build_error_msg(msg_resposta);
+		//table_put of a key that is in the system
+		} else if (result == -10) {
+			msg_resposta->c_type = CT_RESULT;
+			msg_resposta->opcode = OC_PUT + 1;
+			msg_resposta->content.result = -10;
+		//table put success
 		} else {
 			msg_resposta->c_type = CT_RESULT;
 			msg_resposta->opcode = OC_PUT + 1;

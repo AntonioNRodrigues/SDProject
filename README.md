@@ -40,6 +40,7 @@ Sistemas Distribuidos 2016/2017
 <h5>Build Project</h5>
 <ul>
 <li><b>make</b> build all project</li>
+<p><b>Obs:</b> This only works if all the files of test [test_data.c, test_entry.c, test_list.c, test_message.c, test_table.c] are present.</p>
 <li><b>make table-client</b> build the client</li>
 <li><b>make table-server</b> build the server</li>
   

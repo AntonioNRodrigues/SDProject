@@ -113,19 +113,33 @@ int rtable_put(struct rtable_t *rtable, char *key, struct data_t *value) {
 
 	printf("----Message Sended------\n");
 	print_msg(msg_out);
-	free_message(msg_out);
 	printf("----Message Received----\n");
 	if (msg_resposta == NULL) {
 		printf("There was no answer\n ");
 	} else {
 		print_msg(msg_resposta);
 		if (msg_resposta->opcode == OC_RT_ERROR) {
-			printf("key already exists or error\n");
+			printf("Error\n");
+			//trying again in 5000 ms
+			printf("The system is going to retry in %d ms\n\n", RETRY_TIME);
+			poll(0, 0, RETRY_TIME);
+			msg_resposta = network_send_receive(rtable->server, msg_out);
+
+			if(msg_resposta->opcode == OC_RT_ERROR){
+				printf("Error\n");
+			}
+		}
+		if ((msg_resposta->c_type == CT_RESULT)
+				&& (msg_resposta->content.result == -10)) {
+			printf("Key Already in the table \n");
+
 		} else {
 			printf("Result: %d\n\n", msg_resposta->content.result);
 		}
+
 		free_message(msg_resposta);
 	}
+	free_message(msg_out);
 
 	return 0;
 }
@@ -183,7 +197,7 @@ struct data_t *rtable_get(struct rtable_t *rtable, char *key) {
 	struct message_t * msg_resposta = network_send_receive(rtable->server,
 			msg_out);
 
-//try sending the message one more time
+	//try sending the message one more time
 	if (msg_resposta == NULL) {
 		if (retry(rtable) != -1)
 			msg_resposta = network_send_receive(rtable->server, msg_out);
@@ -276,7 +290,8 @@ int rtable_size(struct rtable_t *rtable) {
 	msg_out->c_type = CT_RESULT;
 	msg_out->content.result = 0;
 
-	struct message_t *msg_resposta = network_send_receive(rtable->server, msg_out);
+	struct message_t *msg_resposta = network_send_receive(rtable->server,
+			msg_out);
 
 	//try sending the message one more time
 	if (msg_resposta == NULL) {
