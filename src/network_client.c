@@ -42,48 +42,13 @@ int read_all(int sock_fd, char *buffer, int length) {
 	return nbytes_read;
 
 }
-/*struct server_t *network_reconnect(struct server_t* server) {
-	if (server == NULL) {
-		return NULL;
-	}
 
-	struct server_t *new_server = (struct server_t *) malloc(
-			sizeof(struct server_t));
-	if (new_server == NULL) {
-		return NULL;
-	}
-
-	if ((new_server->sock_file_descriptor = socket(AF_INET, SOCK_STREAM, 0))
-			< 0) {
-		perror("Erro ao criar socket");
-		free(new_server);
-		return NULL;
-	}
-	new_server->server.sin_family = AF_INET;
-	new_server->server.sin_port = server->server.sin_port;
-	new_server->server.sin_addr = server->server.sin_addr;
-
-	// Se a ligação não foi estabelecida, retornar NULL
-
-	if (connect(new_server->sock_file_descriptor,
-			(struct sockaddr *) &new_server->server, sizeof(new_server->server)) < 0) {
-		perror("Erro ao conectar-se ao servidor");
-		close(new_server->sock_file_descriptor);
-		free(new_server);
-		return NULL;
-	}
-	return new_server;
-
-
-}
-*/
 struct server_t *network_connect(const char *address_port) {
 
 	/* Verificar parâmetro da função e alocação de memória */
 	if (address_port == NULL) {
 		return NULL;
 	}
-
 	struct server_t *server = (struct server_t *) malloc(
 			sizeof(struct server_t));
 	if (server == NULL) {
@@ -135,7 +100,48 @@ struct server_t *network_connect(const char *address_port) {
 	}
 	return server;
 }
+struct server_t *network_reconnect(struct server_t* server) {
+	if (server == NULL) {
+		return NULL;
+	}
 
+	struct server_t *new_server = (struct server_t *) malloc(
+			sizeof(struct server_t));
+	if (new_server == NULL) {
+		return NULL;
+	}
+
+	if ((new_server->sock_file_descriptor = socket(AF_INET, SOCK_STREAM, 0))
+			< 0) {
+		perror("Error creating the socket");
+		free(new_server);
+		return NULL;
+	}
+	new_server->server.sin_family = AF_INET;
+	new_server->server.sin_port = server->server.sin_port;
+	new_server->server.sin_addr = server->server.sin_addr;
+
+	if (connect(new_server->sock_file_descriptor,
+			(struct sockaddr *) &new_server->server, sizeof(new_server->server))
+			< 0) {
+		perror("Error connecting to server");
+		close(new_server->sock_file_descriptor);
+		free(new_server);
+		return NULL;
+	}
+	//
+	if (network_close(server) == 0) {
+		printf(
+				"The reconnect has been made properly.\n"
+						" The old struct server has been closed and a new one has been init\n");
+	} else {
+		printf("The reconnect has not been made properly.\n"
+				" The old struct server has been closed with errors\n");
+	}
+
+	return new_server;
+
+}
 struct message_t *network_send_receive(struct server_t *server,
 		struct message_t *msg) {
 	char *message_out;
