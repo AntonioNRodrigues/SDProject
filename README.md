@@ -51,4 +51,21 @@ Sistemas Distribuidos 2016/2017
 <li><b>Run Client</b> ./table-client ip_server:port_server</li>
 </ul>
 
+<h4>4.ºPhase<h4>
+<p>.....</p>
+<h5>Build Project</h5>
+<ul>
+<li><b>make</b> build all project</li>
+<p><b>Obs:</b> This only works if all the files of test [test_data.c, test_entry.c, test_list.c, test_message.c, test_table.c] are present.</p>
+<li><b>make table-client</b> build the client</li>
+<li><b>make table-server</b> build the server</li>
+  
+</ul>
+<h5>Run the clients and the server</h5>
+<ul>
+<li><b>Run Server</b> ./table-server tcp_port size_table</li>
+<li><b>Run Client</b> ./table-client ip_server_primary:port_server_primary ip_server_backup:port_server_backup</li>
+</ul>
+
+
 
