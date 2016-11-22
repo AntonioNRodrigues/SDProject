@@ -158,14 +158,21 @@ int network_receive_send(int sockfd) {
  */
 int find_free_connection(struct pollfd *conn) {
 	int free_index = -1;
-	int k = 1;
-	for (k = 1; k < MAX_SOCKETS; k++) {
+	int k = 0;
+	for (k = N_POS_NOT_FREE; k < MAX_SOCKETS; k++) {
 		if (conn[k].fd == -1) {
 			free_index = k;
 			break;
 		}
 	}
 	return free_index;
+}
+void print_info(int sockfd) {
+	printf("*********************\n");
+	printf("      SEC || PRI        \n");
+	printf("                         \n");
+	printf("      table get keys     \n");
+	printf("*********************\n");
 }
 
 int main(int argc, char **argv) {
@@ -194,7 +201,7 @@ int main(int argc, char **argv) {
 	}
 
 	printf("***********************************\n");
-	printf("*  SERVER --  SUPPORTS %d CLIENTS  *\n", MAX_SOCKETS - 1);
+	printf("*  SERVER --  SUPPORTS %d CLIENTS  *\n", MAX_SOCKETS - 2);
 	printf("***********************************\n\n");
 	printf("Waiting for clients\n");
 
@@ -207,12 +214,15 @@ int main(int argc, char **argv) {
 	// POLLIN ==> data to be read and in this case a new connections received
 	connections[LISTENING_SOCKET_POS].events = POLLIN;
 
+	connections[STDIN_POS].fd = fileno(stdin);
+	connections[STDIN_POS].events = POLLIN;
+
 	while ((result = poll(connections, MAX_SOCKETS, TIMEOUT)) >= 0) {
 		if (result > 0) {
 
 			// listenning socket has a new connection
 			if ((connections[LISTENING_SOCKET_POS].revents & POLLIN)
-					&& ((number_clients-1) < MAX_SOCKETS)) {
+					&& ((number_clients - N_POS_NOT_FREE) < MAX_SOCKETS)) {
 
 				int free_index = find_free_connection(connections);
 
@@ -232,7 +242,18 @@ int main(int argc, char **argv) {
 
 				result--;
 			}
-			for (j = 1; j < MAX_SOCKETS && result > 0; j++) {
+			if (connections[STDIN_POS].revents & POLLIN) {
+				char input[81];
+				fgets(input, sizeof(input), stdin);
+				input[strlen(input) - 1] = '\0';
+
+				(strcmp(input, "print") == 0) ?
+						print_info(stdin) : printf("Command Invalid\n");
+
+				result--;
+
+			}
+			for (j = N_POS_NOT_FREE; j < MAX_SOCKETS && result > 0; j++) {
 
 				//if socket has data to read
 				if (connections[j].revents & POLLIN) {
@@ -248,7 +269,7 @@ int main(int argc, char **argv) {
 		}
 	}
 	table_skel_destroy();
-	for (l = 1; l < MAX_SOCKETS; l++) {
+	for (l = N_POS_NOT_FREE; l < MAX_SOCKETS; l++) {
 		close(connections[l].fd);
 	}
 	return 0;
