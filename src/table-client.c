@@ -21,29 +21,41 @@
  * Checks if command line arguments are a valid
  */
 int testArgs(int argc, char ** argv) {
-	if (argc != 2) {
-		printf("Uso: table-client <ip servidor>:<porta servidor>\n");
-		printf("Exemplo de uso: ./table_client 10.101.148.144:54321\n");
+	if (argc != 3) {
+		printf(
+				"use: table-client <ip server primary>:<port primary> <ip server secundary>:<port secundary>\n");
+		printf(
+				"use exemple: ./table_client 10.101.148.144:54321 10.101.148.144:54322\n");
 		return -1;
 	}
-	int n, i;
-	char *token;
-	token = strtok(strdup(argv[1]), ".:");
-	n = atoi(token);
-	for (i = 0; i < 4; i++) {
+	int v = 0;
+	for (v = 0; v < 2; v++) {
 
-		if (n < 0 || n > 255) {
-			printf("O endereço de IP nao e valido\n");
+		int n, i;
+		char *token;
+		token = strtok(strdup(argv[1]), ".:");
+
+		n = atoi(token);
+		for (i = 0; i < 4; i++) {
+
+			if (n < 0 || n > 255) {
+				printf("O endereço de IP nao e valido\n");
+				return -1;
+			}
+			token = strtok(NULL, ".:");
+			n = atoi(token);
+
+		}
+
+		if (n < 0 || n > 65535) {
+			printf("the port is not valid\n");
+			printf(
+					"Exemplo de uso: ./table_client 10.101.148.144:54321 10.101.148.144:54322\n");
 			return -1;
 		}
-		token = strtok(NULL, ".:");
-		n = atoi(token);
+
 	}
-	if (n < 0 || n > 65535) {
-		printf("A porta nao e valida\n");
-		printf("Exemplo de uso: ./table_client 10.101.148.144:54321\n");
-		return -1;
-	}
+
 	return 0;
 }
 
@@ -107,8 +119,7 @@ int main(int argc, char **argv) {
 				token = strtok(NULL, " ");
 				if (token == NULL) {
 					printf("Uso: get <chave>\n");
-				}
-				else if (strcmp(token, "!") == 0) {
+				} else if (strcmp(token, "!") == 0) {
 					rtable_get_keys(remote_table);
 				} else {
 					rtable_get(remote_table, token);
