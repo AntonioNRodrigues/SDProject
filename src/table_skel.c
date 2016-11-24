@@ -32,14 +32,35 @@ int table_skel_destroy() {
 	return tabela == NULL ? 0 : -1;
 }
 
-/**
- * function to build the error message returned by the sever
- */
+
 struct message_t * build_error_msg(struct message_t *msg_error) {
 	msg_error->c_type = CT_RESULT;
 	msg_error->opcode = OC_RT_ERROR;
 	msg_error->content.result = -1;
 	return msg_error;
+}
+
+void print_status() {
+	printf("*************************\n");
+	printf("***SEC || PRIM  *********\n");
+	printf("                         \n");
+	printf(" Table keys              \n");
+
+	char ** keys = table_get_keys(tabela);
+	if (keys != NULL) {
+		int i = 0;
+		while (keys[i] != NULL) {
+			struct data_t *temp_data = table_get(tabela, keys[i]);
+			printf("key: %s Value: %s \n", keys[i], temp_data->data);
+			i++;
+			free(temp_data);
+		}
+	}else{
+		printf("The table is empty\n");
+	}
+	table_free_keys(keys);
+	printf("*************************\n");
+
 }
 
 struct message_t *invoke(struct message_t *msg_in) {
@@ -85,12 +106,12 @@ struct message_t *invoke(struct message_t *msg_in) {
 		//table_put failed
 		if (result == -1) {
 			msg_resposta = build_error_msg(msg_resposta);
-		//table_put of a key that is in the system
+			//table_put of a key that is in the system
 		} else if (result == -10) {
 			msg_resposta->c_type = CT_RESULT;
 			msg_resposta->opcode = OC_PUT + 1;
 			msg_resposta->content.result = -10;
-		//table put success
+			//table put success
 		} else {
 			msg_resposta->c_type = CT_RESULT;
 			msg_resposta->opcode = OC_PUT + 1;
