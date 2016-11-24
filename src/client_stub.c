@@ -27,7 +27,7 @@ struct rtable_t *rtable_bind(const char *address_port) {
 	if (remote_table == NULL) {
 		return NULL;
 	}
-	remote_table->server = network_connect(address_port);
+	remote_table->server_one = network_connect(address_port);
 
 	if (remote_table == NULL) {
 		free(remote_table);
@@ -41,18 +41,18 @@ struct rtable_t *rtable_rebind(struct rtable_t *remote_table) {
 		return NULL;
 	}
 	// if server inside remote_table is down try to connect
-	if (remote_table->server == NULL) {
-		remote_table->server = network_connect(address);
-		if (remote_table->server == NULL) {
+	if (remote_table->server_one == NULL) {
+		remote_table->server_one = network_connect(address);
+		if (remote_table->server_one == NULL) {
 			return NULL;
 		}
 		return remote_table;
 	} else {
 		//use the server inside the remote_table to reconnect
-		remote_table->server = network_reconnect(remote_table->server);
+		remote_table->server_one = network_reconnect(remote_table->server_one);
 	}
 	// it was not possible to reconnect
-	if (remote_table->server == NULL) {
+	if (remote_table->server_one == NULL) {
 		return NULL;
 	}
 
@@ -78,7 +78,7 @@ int rtable_unbind(struct rtable_t *rtable) {
 	if (rtable == NULL) {
 		return -1;
 	}
-	int result = network_close(rtable->server);
+	int result = network_close(rtable->server_one);
 	if (result == 0)
 		printf("The connection has been closed without errors\n");
 
@@ -87,6 +87,17 @@ int rtable_unbind(struct rtable_t *rtable) {
 
 	free(rtable);
 	return result;
+}
+
+int prepare_backup_server(struct rtable_t * rtable, const char *address_port){
+	if(rtable == NULL || address_port == NULL){
+		return -1;
+	}
+	rtable->server_two = network_prepare(address_port);
+	if(rtable->server_two == NULL){
+		return -1;
+	}
+	return 0;
 }
 
 int rtable_put(struct rtable_t *rtable, char *key, struct data_t *value) {
@@ -100,13 +111,13 @@ int rtable_put(struct rtable_t *rtable, char *key, struct data_t *value) {
 	msg_out->c_type = CT_ENTRY;
 	msg_out->content.entry = entry_create(key, value);
 
-	struct message_t * msg_resposta = network_send_receive(rtable->server,
+	struct message_t * msg_resposta = network_send_receive(rtable->server_one,
 			msg_out);
 
 	//try sending the message one more time
 	if (msg_resposta == NULL) {
 		if (retry(rtable) != -1)
-			msg_resposta = network_send_receive(rtable->server, msg_out);
+			msg_resposta = network_send_receive(rtable->server_one, msg_out);
 		else
 			printf("the server didnt respond");
 	}
@@ -123,7 +134,7 @@ int rtable_put(struct rtable_t *rtable, char *key, struct data_t *value) {
 			//trying again in 5000 ms
 			printf("The system is going to retry in %d ms\n\n", RETRY_TIME);
 			poll(0, 0, RETRY_TIME);
-			msg_resposta = network_send_receive(rtable->server, msg_out);
+			msg_resposta = network_send_receive(rtable->server_one, msg_out);
 
 			if(msg_resposta->opcode == OC_RT_ERROR){
 				printf("Error\n");
@@ -155,13 +166,13 @@ int rtable_update(struct rtable_t *rtable, char *key, struct data_t *value) {
 	msg_out->c_type = CT_ENTRY;
 	msg_out->content.entry = entry_create(key, value);
 
-	struct message_t * msg_resposta = network_send_receive(rtable->server,
+	struct message_t * msg_resposta = network_send_receive(rtable->server_one,
 			msg_out);
 
 	//try sending the message one more time
 	if (msg_resposta == NULL) {
 		if (retry(rtable) != -1)
-			msg_resposta = network_send_receive(rtable->server, msg_out);
+			msg_resposta = network_send_receive(rtable->server_one, msg_out);
 		else
 			printf("the server didnt respond");
 	}
@@ -194,13 +205,13 @@ struct data_t *rtable_get(struct rtable_t *rtable, char *key) {
 	msg_out->c_type = CT_KEY;
 	msg_out->content.key = strdup(key);
 
-	struct message_t * msg_resposta = network_send_receive(rtable->server,
+	struct message_t * msg_resposta = network_send_receive(rtable->server_one,
 			msg_out);
 
 	//try sending the message one more time
 	if (msg_resposta == NULL) {
 		if (retry(rtable) != -1)
-			msg_resposta = network_send_receive(rtable->server, msg_out);
+			msg_resposta = network_send_receive(rtable->server_one, msg_out);
 		else
 			printf("the server didnt respond");
 	}
@@ -244,13 +255,13 @@ int rtable_del(struct rtable_t *rtable, char *key) {
 	msg_out->c_type = CT_KEY;
 	msg_out->content.key = strdup(key);
 
-	struct message_t *msg_resposta = network_send_receive(rtable->server,
+	struct message_t *msg_resposta = network_send_receive(rtable->server_one,
 			msg_out);
 
 	//try sending the message one more time
 	if (msg_resposta == NULL) {
 		if (retry(rtable) != -1)
-			msg_resposta = network_send_receive(rtable->server, msg_out);
+			msg_resposta = network_send_receive(rtable->server_one, msg_out);
 		else
 			printf("the server didnt respond");
 	}
@@ -290,13 +301,13 @@ int rtable_size(struct rtable_t *rtable) {
 	msg_out->c_type = CT_RESULT;
 	msg_out->content.result = 0;
 
-	struct message_t *msg_resposta = network_send_receive(rtable->server,
+	struct message_t *msg_resposta = network_send_receive(rtable->server_one,
 			msg_out);
 
 	//try sending the message one more time
 	if (msg_resposta == NULL) {
 		if (retry(rtable) != -1)
-			msg_resposta = network_send_receive(rtable->server, msg_out);
+			msg_resposta = network_send_receive(rtable->server_one, msg_out);
 		else
 			printf("the server didnt respond");
 	}
@@ -330,13 +341,13 @@ char **rtable_get_keys(struct rtable_t *rtable) {
 	msg_out->c_type = CT_KEY;
 	msg_out->content.key = strdup("!");
 
-	struct message_t * msg_resposta = network_send_receive(rtable->server,
+	struct message_t * msg_resposta = network_send_receive(rtable->server_one,
 			msg_out);
 
 	//try sending the message one more time
 	if (msg_resposta == NULL) {
 		if (retry(rtable) != -1)
-			msg_resposta = network_send_receive(rtable->server, msg_out);
+			msg_resposta = network_send_receive(rtable->server_one, msg_out);
 		else
 			printf("the server didnt respond");
 	}
