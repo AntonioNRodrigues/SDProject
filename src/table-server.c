@@ -17,6 +17,7 @@
 
 #include <poll.h>
 #include <fcntl.h>
+#include <pthread.h>
 
 #include "inet.h"
 #include "network_client-private.h"
@@ -167,15 +168,19 @@ int find_free_connection(struct pollfd *conn) {
 	}
 	return free_index;
 }
-void print_info(int sockfd) {
-	printf("*********************\n");
-	printf("      SEC || PRI        \n");
-	printf("                         \n");
-	printf("      table get keys     \n");
-	printf("*********************\n");
+
+void *backup(void *str) {
+	printf("backup\n");
+	return NULL;
+}
+
+void *main_backup_server(void *){
+	return NULL;
 }
 
 int main(int argc, char **argv) {
+	pthread_t *thread_backup;
+	char *str = "backup";
 	struct sockaddr_in client;
 	socklen_t size_client = sizeof(struct sockaddr_in);
 	// struct of file descripters
@@ -248,7 +253,11 @@ int main(int argc, char **argv) {
 				input[strlen(input) - 1] = '\0';
 
 				(strcmp(input, "print") == 0) ?
-						print_info(stdin) : printf("Command Invalid\n");
+						print_status() : printf("Command Invalid\n");
+
+				if (strcmp(input, "back") == 0) {
+					pthread_create(&thread_backup, NULL, backup, (void *) str);
+				}
 
 				result--;
 
