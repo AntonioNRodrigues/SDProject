@@ -10,8 +10,8 @@
  Os comandos introduzido no programa não deverão exceder
  80 carateres.
 
- Uso: table-client <ip servidor>:<porta servidor>
- Exemplo de uso: ./table_client 10.101.148.144:54321
+ Use: table-client <ip primary server>:<port server> <ip backup server>:<port server>
+ use exemple: ./table_client 10.101.148.144:54321 10.101.148.144:54321
  */
 
 #include "network_client-private.h"
@@ -29,31 +29,31 @@ int testArgs(int argc, char ** argv) {
 		return -1;
 	}
 	int v = 0;
-	for (v = 0; v < 2; v++) {
 
+	/*valid the ip:port for the n_servers that the client is conected*/
+	for (v = 0; v < N_SERVERS; v++) {
 		int n, i;
 		char *token;
 		token = strtok(strdup(argv[1]), ".:");
-
 		n = atoi(token);
-		for (i = 0; i < 4; i++) {
 
+		//ip ex:10.101.148.144
+		for (i = 0; i < 4; i++) {
 			if (n < 0 || n > 255) {
-				printf("O endereço de IP nao e valido\n");
+				printf("IP adress is not valid\n");
 				return -1;
 			}
 			token = strtok(NULL, ".:");
 			n = atoi(token);
 
 		}
-
+		//port between o and 65535
 		if (n < 0 || n > 65535) {
 			printf("the port is not valid\n");
 			printf(
-					"Exemplo de uso: ./table_client 10.101.148.144:54321 10.101.148.144:54322\n");
+					"Example of use: ./table_client 10.101.148.144:54321 10.101.148.144:54322\n");
 			return -1;
 		}
-
 	}
 
 	return 0;
@@ -68,15 +68,21 @@ int main(int argc, char **argv) {
 		return -1;
 	}
 	/* Usar network_connect para estabelecer ligação ao servidor */
-	printf("A tentar estabelecer ligacao\n\n");
+	printf("trying to establish the connection\n\n");
 	remote_table = rtable_bind(argv[1]);
 
-	if (remote_table->server == NULL) {
+	if (remote_table->server_one == NULL) {
 		free(remote_table);
 		printf("Remote server is down\n");
 		return -1;
 	}
-	printf("ligacao estabelecida\n\n");
+	int value = prepare_backup_server(remote_table, argv[2]);
+
+	(value == -1) ?
+			printf("the backup server is not ready\n") :
+			printf("The backup server is ready for connected\n");
+
+	printf("Connection established\n\n");
 	/* Fazer ciclo até que o utilizador resolva fazer "quit" */
 
 	printf("***********************************\n");
@@ -195,7 +201,7 @@ int main(int argc, char **argv) {
 					}
 				}
 			} else {
-				printf("Comando invalido\n");
+				printf("Invalid Command\n");
 			}
 		}
 	}
