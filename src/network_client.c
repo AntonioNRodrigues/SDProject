@@ -142,6 +142,44 @@ struct server_t *network_reconnect(struct server_t* server) {
 	return new_server;
 
 }
+
+struct server_t *network_prepare(const char *address_port) {
+
+	if (address_port == NULL) {
+		return NULL;
+	}
+	struct server_t *server = (struct server_t *) malloc(
+			sizeof(struct server_t));
+	if (server == NULL) {
+		return NULL;
+	}
+
+	char *token1, *token2;
+
+	token1 = strtok(strdup(address_port), ":");
+	token2 = strtok(NULL, "\n");
+
+	//Cria a socket
+	if ((server->sock_file_descriptor = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+		perror("Erro ao criar socket");
+		free(server);
+		return NULL;
+	}
+
+	//Preenche estrutura struct sockaddr_in server com dados do endereço do servidor
+	server->server.sin_family = AF_INET;
+	server->server.sin_port = htons(atoi(token2)); //Porta TCP
+
+	if (inet_pton(AF_INET, token1, &server->server.sin_addr) < 1) {
+		printf("Erro ao converter IP\n");
+		close(server->sock_file_descriptor);
+		free(server);
+		return NULL;
+	}
+
+	return server;
+}
+
 struct message_t *network_send_receive(struct server_t *server,
 		struct message_t *msg) {
 	char *message_out;
