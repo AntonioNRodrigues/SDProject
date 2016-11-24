@@ -17,6 +17,14 @@
 #include "table-private.h"
 #include "table_skel.h"
 
+/**
+ * function to build the error message returned by the sever
+ */
 struct message_t *build_error_msg(struct message_t *msg_error);
+
+/**
+ * function to print the status (the keys and it's value) of the table.
+ */
+void print_status();
 
 #endif
