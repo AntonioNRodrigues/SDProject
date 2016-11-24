@@ -18,7 +18,7 @@ SERVER_OBJ = $(OBJ)/data.o $(OBJ)/entry.o $(OBJ)/list.o $(OBJ)/table.o $(OBJ)/me
 all: clean test_data test_entry test_list test_table test_message table-server table-client
 
 table-server: $(SERVER_OBJ)
-	$(CC) $(SERVER_OBJ) -o table-server
+	$(CC) $(SERVER_OBJ) -o table-server -lpthread
 
 table-client: $(CLIENT_OBJ)
 	$(CC) $(CLIENT_OBJ) -o table-client
