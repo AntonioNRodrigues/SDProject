@@ -11,19 +11,19 @@
 #include "inet.h"
 #include "network_client.h"
 
-struct server_t{
+struct server_t {
 	int sock_file_descriptor;
 	struct sockaddr_in server;
 };
 
 /* Função que garante o envio de len bytes armazenados em buf,
-   através da socket sock.
-*/
+ através da socket sock.
+ */
 int write_all(int sock, char *buf, int len);
 
 /* Função que garante a receção de len bytes através da socket sock,
-   armazenando-os em buf.
-*/
+ armazenando-os em buf.
+ */
 int read_all(int sock, char *buf, int len);
 
 /**
@@ -31,5 +31,10 @@ int read_all(int sock, char *buf, int len);
  * param server to fill a new_server an closes the server in the param.
  */
 struct server_t *network_reconnect(struct server_t* server);
+/**
+ * function that prepares a sever_t with the propor IP and Port to be connected
+ * if the primary is down
+ */
+struct server_t *network_prepare(const char *address_port);
 
 #endif
