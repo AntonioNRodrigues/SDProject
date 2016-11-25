@@ -169,54 +169,153 @@ int find_free_connection(struct pollfd *conn) {
 	return free_index;
 }
 
-void *backup(void *str) {
-	printf("backup\n");
-	return NULL;
-}
+void *main_backup_server(void * argv) {
+	//copy of argv
+	char ** argv_backup = (char **) argv;
+	struct sockaddr_in client;
+	socklen_t size_client = sizeof(struct sockaddr_in);
+	// struct of file descripters
+	// one for listening , one for the primary its a client of the backup
+	//one for the stdin
+	struct pollfd connections[3];
+	int listening_socket, result, i = 1, l = 1;
+	int number_clients = 0;
 
-void *main_backup_server(void *){
+	//test argc
+	//if (argc == 2) {
+	printf("Use: ./table-server <Port>\n");
+	printf("use exemple: ./table-server 54321\n");
+	//return -1;
+	//}
+
+	//listening socket up
+	if ((listening_socket = make_server_socket(atoi(argv_backup[1]))) < 0) {
+		return -1;
+	}
+	//table_skel_init
+	//init the table as a global variable in the table_skel
+	if (table_skel_init(10) == -1) {
+		close(listening_socket);
+		return -1;
+	}
+
+	printf("***********************************\n");
+	printf("*  SERVER BACKUP                  *\n");
+	printf("***********************************\n\n");
+	printf("Waiting for clients\n");
+
+	//init each positions of connections[i].fd with -1
+	for (i = 1; i < 3; i++) {
+		connections[i].fd = -1;
+	}
+	//first position of connetions is the listening_socket
+	connections[LISTENING_SOCKET_POS].fd = listening_socket;
+	// POLLIN ==> data to be read and in this case a new connections received
+	connections[LISTENING_SOCKET_POS].events = POLLIN;
+
+	connections[STDIN_POS].fd = fileno(stdin);
+	connections[STDIN_POS].events = POLLIN;
+
+	while ((result = poll(connections, 3, TIMEOUT)) >= 0) {
+		if (result > 0) {
+
+			// listenning socket has a new connection
+			if ((connections[LISTENING_SOCKET_POS].revents & POLLIN)
+					&& ((number_clients - N_POS_NOT_FREE) < MAX_SOCKETS)) {
+
+				//-1 there is no space in the array --> do not accept socket
+
+				if ((connections[2].fd = accept(
+						connections[LISTENING_SOCKET_POS].fd,
+						(struct sockaddr *) &client, &size_client)) > 0) {
+					connections[2].events = POLLIN;
+					number_clients++;
+					printf("Client connected %d\n\n", number_clients);
+				} else {
+					printf("there was some error with the accept\n");
+				}
+
+			}
+
+			result--;
+		}
+		if (connections[STDIN_POS].revents & POLLIN) {
+			char input[81];
+			fgets(input, sizeof(input), stdin);
+			input[strlen(input) - 1] = '\0';
+
+			(strcmp(input, "print") == 0) ?
+					print_status() : printf("Command Invalid\n");
+
+			result--;
+
+		}
+
+		//if socket has data to read
+		if (connections[2].revents & POLLIN) {
+			if (network_receive_send(connections[2].fd) < 0) {
+				close(connections[2].fd);
+				number_clients--;
+				connections[2].fd = -1;
+				printf("A client has disconnect from the server\n");
+				printf("The server has %d clients\n", number_clients);
+			}
+
+		}
+	}
+
+	table_skel_destroy();
+	for (l = 0; l < MAX_SOCKETS; l++) {
+		close(connections[l].fd);
+	}
 	return NULL;
 }
 
 int main(int argc, char **argv) {
-	pthread_t *thread_backup;
-	char *str = "backup";
+	pthread_t thread_backup;
 	struct sockaddr_in client;
 	socklen_t size_client = sizeof(struct sockaddr_in);
-	// struct of file descripters
+// struct of file descripters
 	struct pollfd connections[MAX_SOCKETS];
 	int listening_socket, result, i = 1, j = 1, l = 1;
 	int number_clients = 0;
-	//test argc
+	printf("%d\n", argc);
+	//
+	if (argc == 2) {
+		pthread_create(&thread_backup, NULL, main_backup_server, (void *) argv);
+	}
+	pthread_join(thread_backup, NULL);
+//test argc
 	if (argc != 3) {
 		printf("Uso: ./table-server <porta TCP> <dimensão da tabela>\n");
 		printf("Exemplo de uso: ./table-server 54321 10\n");
 		return -1;
 	}
 
-	//listening socket up
+//listening socket up
 	if ((listening_socket = make_server_socket(atoi(argv[1]))) < 0) {
 		return -1;
 	}
-	//table_skel_init
-	//init the table as a global variable in the table_skel
+//table_skel_init
+//init the table as a global variable in the table_skel
 	if (table_skel_init(atoi(argv[2])) == -1) {
 		close(listening_socket);
 		return -1;
 	}
 
 	printf("***********************************\n");
-	printf("*  SERVER --  SUPPORTS %d CLIENTS  *\n", MAX_SOCKETS - 2);
+	printf("*  SERVER --  SUPPORTS %d CLIENTS  *\n",
+	MAX_SOCKETS - N_POS_NOT_FREE);
 	printf("***********************************\n\n");
 	printf("Waiting for clients\n");
 
-	//init each positions of connections[i].fd with -1
+//init each positions of connections[i].fd with -1
 	for (i = 1; i < MAX_SOCKETS; i++) {
 		connections[i].fd = -1;
 	}
-	//first position of connetions is the listening_socket
+//first position of connetions is the listening_socket
 	connections[LISTENING_SOCKET_POS].fd = listening_socket;
-	// POLLIN ==> data to be read and in this case a new connections received
+// POLLIN ==> data to be read and in this case a new connections received
 	connections[LISTENING_SOCKET_POS].events = POLLIN;
 
 	connections[STDIN_POS].fd = fileno(stdin);
@@ -254,10 +353,6 @@ int main(int argc, char **argv) {
 
 				(strcmp(input, "print") == 0) ?
 						print_status() : printf("Command Invalid\n");
-
-				if (strcmp(input, "back") == 0) {
-					pthread_create(&thread_backup, NULL, backup, (void *) str);
-				}
 
 				result--;
 
