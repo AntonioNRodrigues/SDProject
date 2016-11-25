@@ -183,8 +183,8 @@ void *main_backup_server(void * argv) {
 
 	//test argc
 	//if (argc == 2) {
-	printf("Use: ./table-server <Port>\n");
-	printf("use exemple: ./table-server 54321\n");
+	printf("Use: ./table-server <Port> <size table>\n");
+	printf("use exemple: ./table-server 54321 10\n");
 	//return -1;
 	//}
 
@@ -194,7 +194,7 @@ void *main_backup_server(void * argv) {
 	}
 	//table_skel_init
 	//init the table as a global variable in the table_skel
-	if (table_skel_init(10) == -1) {
+	if (table_skel_init(atoi(argv_backup[2])) == -1) {
 		close(listening_socket);
 		return -1;
 	}
@@ -234,7 +234,6 @@ void *main_backup_server(void * argv) {
 				} else {
 					printf("there was some error with the accept\n");
 				}
-
 			}
 
 			result--;
@@ -248,7 +247,6 @@ void *main_backup_server(void * argv) {
 					print_status() : printf("Command Invalid\n");
 
 			result--;
-
 		}
 
 		//if socket has data to read
@@ -275,7 +273,7 @@ int main(int argc, char **argv) {
 	pthread_t thread_backup;
 	struct sockaddr_in client;
 	socklen_t size_client = sizeof(struct sockaddr_in);
-// struct of file descripters
+	// struct of file descripters
 	struct pollfd connections[MAX_SOCKETS];
 	int listening_socket, result, i = 1, j = 1, l = 1;
 	int number_clients = 0;
@@ -285,19 +283,26 @@ int main(int argc, char **argv) {
 		pthread_create(&thread_backup, NULL, main_backup_server, (void *) argv);
 	}
 	pthread_join(thread_backup, NULL);
-//test argc
-	if (argc != 3) {
-		printf("Uso: ./table-server <porta TCP> <dimensão da tabela>\n");
-		printf("Exemplo de uso: ./table-server 54321 10\n");
+	//test argc
+	if (argc != 4) {
+		printf(
+				"Uso: ./table-server <porta TCP> <dimensão da tabela> <IP:Port backup_sever>\n");
+		printf("Exemplo de uso: ./table-server 54321 10 127.0.0.1:44445\n");
 		return -1;
 	}
-
-//listening socket up
+	/*listening socket up*/
 	if ((listening_socket = make_server_socket(atoi(argv[1]))) < 0) {
 		return -1;
 	}
-//table_skel_init
-//init the table as a global variable in the table_skel
+
+	/*build a client socket to connecte to the backup server*/
+	struct server_t* backupserver = network_connect(argv[3]);
+	if(backupserver == NULL){
+		printf("The server is going without backup\n");
+	}
+	printf("The primary sever is connected to its backup\n");
+	//table_skel_init
+	//init the table as a global variable in the table_skel
 	if (table_skel_init(atoi(argv[2])) == -1) {
 		close(listening_socket);
 		return -1;
