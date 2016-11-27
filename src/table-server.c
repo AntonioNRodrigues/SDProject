@@ -25,6 +25,9 @@
 
 struct server_t *backup_server;
 
+/**
+ *
+ */
 void *send_receive_backup(void * msg) {
 	struct message_t *msg_to_backup = (struct message_t*) msg;
 	print_msg(msg_to_backup);
@@ -74,6 +77,9 @@ int make_server_socket(short port) {
 	}
 	return socket_fd;
 }
+/**
+ *
+ */
 int network_receive_send_backup(int sockfd) {
 	char *message_resposta, *message_pedido;
 	int message_size, msg_size, result;
@@ -253,7 +259,7 @@ int network_receive_send(int sockfd) {
 		temp->opcode = msg_pedido->opcode;
 
 		if (msg_pedido->opcode == OC_DEL) {
-			temp->content.entry = strdup(msg_pedido->content.key);
+			temp->content.key = strdup(msg_pedido->content.key);
 		} else {
 			temp->content.entry = entry_dup(msg_pedido->content.entry);
 		}
