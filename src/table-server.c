@@ -23,6 +23,16 @@
 #include "network_client-private.h"
 #include "table_skel-private.h"
 
+struct server_t *backup_server;
+
+void *send_receive_backup(void * msg) {
+	struct message_t *msg_to_backup = (struct message_t*) msg;
+	print_msg(msg_to_backup);
+	struct message_t *m = network_send_receive(backup_server, msg_to_backup);
+	print_msg(m);
+	return NULL;
+}
+
 /* Função para preparar uma socket de receção de pedidos de ligação.
  */
 int make_server_socket(short port) {
@@ -64,6 +74,89 @@ int make_server_socket(short port) {
 	}
 	return socket_fd;
 }
+int network_receive_send_backup(int sockfd) {
+	char *message_resposta, *message_pedido;
+	int message_size, msg_size, result;
+	struct message_t *msg_pedido, *msg_resposta;
+
+	/* Verificar parâmetros de entrada */
+	if (sockfd == -1) {
+		return -1;
+	}
+
+	/* Com a função read_all, receber num inteiro o tamanho da
+	 mensagem de pedido que será recebida de seguida.*/
+	result = read_all(sockfd, (char *) &msg_size, _INT);
+	/* Verificar se a receção teve sucesso */
+	if (result == 0) {
+		return -1;
+	}
+
+	message_size = ntohl(msg_size);
+	/* Alocar memória para receber o número de bytes da
+	 mensagem de pedido. */
+	message_pedido = (char *) malloc(message_size);
+	if (message_pedido == NULL) {
+		return -1;
+	}
+
+	/* Com a função read_all, receber a mensagem de pedido. */
+	result = read_all(sockfd, message_pedido, message_size);
+	/* Verificar se a receção teve sucesso */
+	if (result != message_size) {
+		free(message_pedido);
+		return -1;
+	}
+	/* Desserializar a mensagem do pedido */
+	msg_pedido = buffer_to_message(message_pedido, message_size);
+	/* Verificar se a desserialização teve sucesso */
+	if (msg_pedido == NULL) {
+		free(message_pedido);
+		return -1;
+	}
+
+	/* Processar a mensagem */
+	msg_resposta = invoke(msg_pedido);
+	/* Serializar a mensagem recebida */
+	message_size = message_to_buffer(msg_resposta, &message_resposta);
+
+	/* Verificar se a serialização teve sucesso */
+	if (message_size < 0) {
+		free_message(msg_resposta);
+		free_message(msg_pedido);
+		return -1;
+	}
+
+	/* Enviar ao cliente o tamanho da mensagem que será enviada
+	 logo de seguida
+	 */
+	msg_size = htonl(message_size);
+	result = write_all(sockfd, (char *) &msg_size, _INT);
+
+	/* Verificar se o envio teve sucesso */
+	if (result < 0) {
+		free_message(msg_resposta);
+		free_message(msg_pedido);
+		return -1;
+	}
+
+	/* Enviar a mensagem que foi previamente serializada */
+
+	result = write_all(sockfd, message_resposta, message_size);
+
+	/* Verificar se o envio teve sucesso */
+	if (result < 0) {
+		free_message(msg_pedido);
+		free_message(msg_resposta);
+		return -1;
+	}
+
+	/* Libertar memória */
+	free_message(msg_pedido);
+	free_message(msg_resposta);
+	return 1;
+
+}
 
 /* Função "inversa" da função network_send_receive usada no table-client.
  Neste caso a função implementa um ciclo receive/send:
@@ -74,6 +167,7 @@ int make_server_socket(short port) {
  this message returns 1 (OK) and -1 (NOK)
  */
 int network_receive_send(int sockfd) {
+	pthread_t thread;
 	char *message_resposta, *message_pedido;
 	int message_size, msg_size, result;
 	struct message_t *msg_pedido, *msg_resposta;
@@ -113,6 +207,7 @@ int network_receive_send(int sockfd) {
 		free(message_pedido);
 		return -1;
 	}
+
 	/* Processar a mensagem */
 	msg_resposta = invoke(msg_pedido);
 	/* Serializar a mensagem recebida */
@@ -148,11 +243,33 @@ int network_receive_send(int sockfd) {
 		free_message(msg_resposta);
 		return -1;
 	}
+
+	/* verificar o tipo de msg*/
+	if (msg_pedido->opcode == OC_DEL || msg_pedido->opcode == OC_PUT
+			|| msg_pedido->opcode == OC_UPDATE) {
+		struct message_t *temp = (struct message_t*) malloc(
+				sizeof(struct message_t));
+		temp->c_type = msg_pedido->c_type;
+		temp->opcode = msg_pedido->opcode;
+
+		if (msg_pedido->opcode == OC_DEL) {
+			temp->content.entry = strdup(msg_pedido->content.key);
+		} else {
+			temp->content.entry = entry_dup(msg_pedido->content.entry);
+		}
+
+		pthread_create(&thread, NULL, send_receive_backup, (void *) temp);
+
+	}
+	printf("backup end\n");
+	pthread_join(&thread, NULL);
+
 	/* Libertar memória */
 	free_message(msg_pedido);
 	free_message(msg_resposta);
 	return 1;
 }
+
 /**
  * function that iterates over the connections[] and finds the first
  * available position. Each fd in the array is marked with -1 if is empty
@@ -176,7 +293,7 @@ void *main_backup_server(void * argv) {
 	socklen_t size_client = sizeof(struct sockaddr_in);
 	// struct of file descripters
 	// one for listening , one for the primary its a client of the backup
-	//one for the stdin
+	// one for the stdin
 	struct pollfd connections[3];
 	int listening_socket, result, i = 1, l = 1;
 	int number_clients = 0;
@@ -190,13 +307,13 @@ void *main_backup_server(void * argv) {
 
 	//listening socket up
 	if ((listening_socket = make_server_socket(atoi(argv_backup[1]))) < 0) {
-		return -1;
+		return NULL;
 	}
 	//table_skel_init
 	//init the table as a global variable in the table_skel
 	if (table_skel_init(atoi(argv_backup[2])) == -1) {
 		close(listening_socket);
-		return -1;
+		return NULL;
 	}
 
 	printf("***********************************\n");
@@ -208,9 +325,8 @@ void *main_backup_server(void * argv) {
 	for (i = 1; i < 3; i++) {
 		connections[i].fd = -1;
 	}
-	//first position of connetions is the listening_socket
+
 	connections[LISTENING_SOCKET_POS].fd = listening_socket;
-	// POLLIN ==> data to be read and in this case a new connections received
 	connections[LISTENING_SOCKET_POS].events = POLLIN;
 
 	connections[STDIN_POS].fd = fileno(stdin);
@@ -222,8 +338,6 @@ void *main_backup_server(void * argv) {
 			// listenning socket has a new connection
 			if ((connections[LISTENING_SOCKET_POS].revents & POLLIN)
 					&& ((number_clients - N_POS_NOT_FREE) < MAX_SOCKETS)) {
-
-				//-1 there is no space in the array --> do not accept socket
 
 				if ((connections[2].fd = accept(
 						connections[LISTENING_SOCKET_POS].fd,
@@ -251,14 +365,13 @@ void *main_backup_server(void * argv) {
 
 		//if socket has data to read
 		if (connections[2].revents & POLLIN) {
-			if (network_receive_send(connections[2].fd) < 0) {
+			if (network_receive_send_backup(connections[2].fd) < 0) {
 				close(connections[2].fd);
 				number_clients--;
 				connections[2].fd = -1;
 				printf("A client has disconnect from the server\n");
 				printf("The server has %d clients\n", number_clients);
 			}
-
 		}
 	}
 
@@ -277,13 +390,13 @@ int main(int argc, char **argv) {
 	struct pollfd connections[MAX_SOCKETS];
 	int listening_socket, result, i = 1, j = 1, l = 1;
 	int number_clients = 0;
-	printf("%d\n", argc);
-	//
-	if (argc == 2) {
+
+	if (argc == 3) {
 		pthread_create(&thread_backup, NULL, main_backup_server, (void *) argv);
 	}
-	pthread_join(thread_backup, NULL);
+	pthread_join(&thread_backup, NULL);
 	//test argc
+
 	if (argc != 4) {
 		printf(
 				"Uso: ./table-server <porta TCP> <dimensão da tabela> <IP:Port backup_sever>\n");
@@ -291,13 +404,14 @@ int main(int argc, char **argv) {
 		return -1;
 	}
 	/*listening socket up*/
+
 	if ((listening_socket = make_server_socket(atoi(argv[1]))) < 0) {
 		return -1;
 	}
 
 	/*build a client socket to connecte to the backup server*/
-	struct server_t* backupserver = network_connect(argv[3]);
-	if(backupserver == NULL){
+	backup_server = network_connect(argv[3]);
+	if (backup_server == NULL) {
 		printf("The server is going without backup\n");
 	}
 	printf("The primary sever is connected to its backup\n");
@@ -363,7 +477,6 @@ int main(int argc, char **argv) {
 
 			}
 			for (j = N_POS_NOT_FREE; j < MAX_SOCKETS && result > 0; j++) {
-
 				//if socket has data to read
 				if (connections[j].revents & POLLIN) {
 					if (network_receive_send(connections[j].fd) < 0) {
