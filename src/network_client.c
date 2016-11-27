@@ -100,6 +100,26 @@ struct server_t *network_connect(const char *address_port) {
 	}
 	return server;
 }
+
+/**
+ * function to establish the connection with the server
+ */
+struct server_t *net_connect(struct server_t *server) {
+
+	if (server == NULL) {
+		return NULL;
+	}
+
+	if (connect(server->sock_file_descriptor,
+			(struct sockaddr *) &server->server, sizeof(server->server)) < 0) {
+		perror("Erro ao conectar-se ao servidor");
+		close(server->sock_file_descriptor);
+		free(server);
+		return NULL;
+	}
+	return server;
+}
+
 struct server_t *network_reconnect(struct server_t* server) {
 	if (server == NULL) {
 		return NULL;
