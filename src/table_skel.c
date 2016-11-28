@@ -129,7 +129,9 @@ struct message_t *invoke(struct message_t *msg_in) {
 		//key is ! --> GET ALL KEYS
 		if (strcmp("!", temp_key) == 0) {
 			if (tabela->quantity_entry == 0) {
-				msg_resposta = build_error_msg(msg_resposta);
+				msg_resposta->c_type = CT_RESULT;
+				msg_resposta->opcode = OC_GET + 1;
+				msg_resposta->content.result = 0;
 			} else {
 				msg_resposta->c_type = CT_KEYS;
 				msg_resposta->opcode = OC_GET + 1;
