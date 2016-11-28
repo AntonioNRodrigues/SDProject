@@ -29,11 +29,20 @@ struct server_t *backup_server;
  *
  */
 void *send_receive_backup(void * msg) {
+	int value = 0;
 	struct message_t *msg_to_backup = (struct message_t*) msg;
 	print_msg(msg_to_backup);
-	struct message_t *m = network_send_receive(backup_server, msg_to_backup);
-	print_msg(m);
-	return NULL;
+	struct message_t *msg_from_backup = network_send_receive(backup_server,
+			msg_to_backup);
+	print_msg(msg_from_backup);
+
+	if (msg_from_backup == NULL) {
+		value = -1;
+	}
+	//the operations os W(put, update, put) return a content.result
+	//this is the info that is passed to main thread.
+	value = msg_from_backup->content.result;
+	return (void *) msg_from_backup;
 }
 
 /* Função para preparar uma socket de receção de pedidos de ligação.
@@ -173,6 +182,7 @@ int network_receive_send_backup(int sockfd) {
  this message returns 1 (OK) and -1 (NOK)
  */
 int network_receive_send(int sockfd) {
+	struct message_t *temp, *temp1;
 	pthread_t thread;
 	char *message_resposta, *message_pedido;
 	int message_size, msg_size, result;
@@ -216,6 +226,32 @@ int network_receive_send(int sockfd) {
 
 	/* Processar a mensagem */
 	msg_resposta = invoke(msg_pedido);
+
+	/*after receiving the message ask the backup server*/
+	/*check if the operation is a Write type*/
+	if (msg_pedido->opcode == OC_DEL || msg_pedido->opcode == OC_PUT
+			|| msg_pedido->opcode == OC_UPDATE) {
+
+		//build temp message equal to the initial request to "send" in the thread
+		temp = (struct message_t*) malloc(sizeof(struct message_t));
+		temp->c_type = msg_pedido->c_type;
+		temp->opcode = msg_pedido->opcode;
+
+		if (msg_pedido->opcode == OC_DEL) {
+			temp->content.key = strdup(msg_pedido->content.key);
+		} else {
+			temp->content.entry = entry_dup(msg_pedido->content.entry);
+		}
+		//init the thread with the initial message request
+		pthread_create(&thread, NULL, send_receive_backup, (void *) temp);
+
+	}
+	//waiting for the thread to finish
+	printf("backup end\n");
+	temp1 = (struct message_t*) malloc(sizeof(struct message_t));
+	pthread_join(&thread, (void *) &temp1);
+
+
 	/* Serializar a mensagem recebida */
 	message_size = message_to_buffer(msg_resposta, &message_resposta);
 
@@ -249,26 +285,6 @@ int network_receive_send(int sockfd) {
 		free_message(msg_resposta);
 		return -1;
 	}
-
-	/* verificar o tipo de msg*/
-	if (msg_pedido->opcode == OC_DEL || msg_pedido->opcode == OC_PUT
-			|| msg_pedido->opcode == OC_UPDATE) {
-		struct message_t *temp = (struct message_t*) malloc(
-				sizeof(struct message_t));
-		temp->c_type = msg_pedido->c_type;
-		temp->opcode = msg_pedido->opcode;
-
-		if (msg_pedido->opcode == OC_DEL) {
-			temp->content.key = strdup(msg_pedido->content.key);
-		} else {
-			temp->content.entry = entry_dup(msg_pedido->content.entry);
-		}
-
-		pthread_create(&thread, NULL, send_receive_backup, (void *) temp);
-
-	}
-	printf("backup end\n");
-	pthread_join(&thread, NULL);
 
 	/* Libertar memória */
 	free_message(msg_pedido);
