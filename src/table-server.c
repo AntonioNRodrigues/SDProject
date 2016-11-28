@@ -11,6 +11,9 @@
  Exemplo de uso: ./table_server 54321 10
  */
 
+#define DOWN -1
+#define UP 1
+
 #include <error.h>
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -24,6 +27,12 @@
 #include "table_skel-private.h"
 
 struct server_t *backup_server;
+
+typedef struct n_servers {
+	struct server_t *backup_server;
+	int state;
+	FILE *file;
+}backup_server2;
 
 /**
  *
@@ -251,6 +260,10 @@ int network_receive_send(int sockfd) {
 	temp1 = (struct message_t*) malloc(sizeof(struct message_t));
 	pthread_join(&thread, (void *) &temp1);
 
+	//check response from primary and backup
+	if (msg_resposta == NULL) {
+
+	}
 
 	/* Serializar a mensagem recebida */
 	message_size = message_to_buffer(msg_resposta, &message_resposta);
