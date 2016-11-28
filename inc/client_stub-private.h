@@ -12,6 +12,8 @@
 #define RETRY_TIME 5000
 /*quantity of servers*/
 #define N_SERVERS 2
+#define SERVER_ONE 1
+#define SERVER_TWO 2
 
 #include "client_stub.h"
 
@@ -20,8 +22,11 @@
 struct rtable_t {
 	struct server_t *server_one;
 	struct server_t *server_two;
-
+	/*SERVER_ONE primary server is server_one*/
+	/*SERVER_TWO primary server is server_two*/
+	int current_server;
 };
+
 /**
  * function to define a retry after a RETRY_TIME of miliseconds
  */

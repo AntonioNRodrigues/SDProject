@@ -1,5 +1,5 @@
 /*
-< * Grupo 33
+ < * Grupo 33
  * Miguel Vale n.39279
  * António Rodrigues n.º40853
  * Ricardo Veloso n.º44842
@@ -33,6 +33,7 @@ struct rtable_t *rtable_bind(const char *address_port) {
 		free(remote_table);
 		return NULL;
 	}
+	remote_table->current_server = SERVER_ONE;
 	return remote_table;
 }
 
@@ -89,15 +90,23 @@ int rtable_unbind(struct rtable_t *rtable) {
 	return result;
 }
 
-int prepare_backup_server(struct rtable_t * rtable, const char *address_port){
-	if(rtable == NULL || address_port == NULL){
+int prepare_backup_server(struct rtable_t * rtable, const char *address_port) {
+	if (rtable == NULL || address_port == NULL) {
 		return -1;
 	}
 	rtable->server_two = network_prepare(address_port);
-	if(rtable->server_two == NULL){
+	if (rtable->server_two == NULL) {
 		return -1;
 	}
 	return 0;
+}
+
+struct server_t *current_server(struct rtable_t *rtable) {
+	if (rtable == NULL) {
+		return NULL;
+	}
+	return (rtable->current_server == SERVER_ONE) ?
+			rtable->server_one : rtable->server_two;
 }
 
 int rtable_put(struct rtable_t *rtable, char *key, struct data_t *value) {
@@ -111,15 +120,44 @@ int rtable_put(struct rtable_t *rtable, char *key, struct data_t *value) {
 	msg_out->c_type = CT_ENTRY;
 	msg_out->content.entry = entry_create(key, value);
 
-	struct message_t * msg_resposta = network_send_receive(rtable->server_one,
-			msg_out);
+	struct message_t * msg_resposta = network_send_receive(
+			current_server(rtable), msg_out);
 
+	//try sendig the msg through the other server
+	if (msg_resposta == NULL) {
+		if (rtable->current_server == SERVER_ONE) {
+			printf("CRURRENT SERVER IS SERVER_TWO\n");
+			rtable->current_server = SERVER_TWO;
+			rtable->server_two = net_connect(rtable->server_two);
+			//connecting is gone wrong
+			if (rtable->server_two == NULL) {
+				//retry_time to send message
+			} else {
+				msg_resposta = network_send_receive(current_server(rtable),
+						msg_out);
+			}
+		}
+		else if (rtable->current_server == SERVER_TWO) {
+			printf("CRURRENT SERVER IS SERVER_ONE\n");
+			rtable->current_server = SERVER_ONE;
+			rtable->server_one = net_connect(rtable->server_one);
+			//connecting is gone wrong
+			if (rtable->server_one == NULL) {
+				//retry_time to send message
+			} else {
+				msg_resposta = network_send_receive(current_server(rtable),
+						msg_out);
+			}
+		}
+	}
 	//try sending the message one more time
 	if (msg_resposta == NULL) {
+
+		//send the message to the backup server
 		if (retry(rtable) != -1)
 			msg_resposta = network_send_receive(rtable->server_one, msg_out);
 		else
-			printf("the server didnt respond");
+			printf("the server didnt respond\n");
 	}
 
 	printf("----Message Sent------\n");
@@ -136,7 +174,7 @@ int rtable_put(struct rtable_t *rtable, char *key, struct data_t *value) {
 			poll(0, 0, RETRY_TIME);
 			msg_resposta = network_send_receive(rtable->server_one, msg_out);
 
-			if(msg_resposta->opcode == OC_RT_ERROR){
+			if (msg_resposta->opcode == OC_RT_ERROR) {
 				printf("Error\n");
 			}
 		}
@@ -361,8 +399,8 @@ char **rtable_get_keys(struct rtable_t *rtable) {
 		return NULL;
 	} else {
 		print_msg(msg_resposta);
-		if (msg_resposta->opcode == OC_RT_ERROR) {
-			printf("key does not exist or error\n");
+		if (msg_resposta->content.result == 0) {
+			printf("Table is empty\n");
 			return NULL;
 		}
 		if (msg_resposta->c_type == CT_KEYS) {
