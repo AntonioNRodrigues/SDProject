@@ -18,7 +18,10 @@
 #include <poll.h>
 #include <fcntl.h>
 #include <pthread.h>
+#include <signal.h>
+#include <unistd.h>
 
+#include <errno.h>
 #include "inet.h"
 #include "network_client-private.h"
 #include "table_skel-private.h"
@@ -28,28 +31,24 @@ struct server_t *backup_server;
 typedef struct n_servers {
 	struct server_t *backup_server;
 	FILE *file;
-	char *state = "UP";
-	char *name = "BACKUP";
+	char *state;
+	char *name;
 
-}backup_server2;
+} backup_server2;
 
-/**
- *
- */
+int ignsigpipe() {
+	struct sigaction s;
+
+	s.sa_handler = SIG_IGN;
+	return sigaction(SIGPIPE, &s, NULL);
+}
+
 void *send_receive_backup(void * msg) {
-	int value = 0;
+
 	struct message_t *msg_to_backup = (struct message_t*) msg;
-	print_msg(msg_to_backup);
 	struct message_t *msg_from_backup = network_send_receive(backup_server,
 			msg_to_backup);
-	print_msg(msg_from_backup);
 
-	if (msg_from_backup == NULL) {
-		value = -1;
-	}
-	//the operations os W(put, update, put) return a content.result
-	//this is the info that is passed to main thread.
-	value = msg_from_backup->content.result;
 	return (void *) msg_from_backup;
 }
 
@@ -237,6 +236,9 @@ int network_receive_send(int sockfd) {
 
 	/*after receiving the message ask the backup server*/
 	/*check if the operation is a Write type*/
+	/*IN THIS MOMENT WE HAVE TO CHECK IF THE BACKUP SERVER IS UP || DOWN
+	 * IF IS NOT DONT DO THIS ---> mutex or a condition check
+	 */
 	if (msg_pedido->opcode == OC_DEL || msg_pedido->opcode == OC_PUT
 			|| msg_pedido->opcode == OC_UPDATE) {
 
@@ -261,7 +263,7 @@ int network_receive_send(int sockfd) {
 
 	//check response from primary and backup
 	if (msg_resposta == NULL) {
-
+		printf("backup server is down");
 	}
 
 	/* Serializar a mensagem recebida */
@@ -438,6 +440,11 @@ int main(int argc, char **argv) {
 		return -1;
 	}
 	/*listening socket up*/
+
+	if (ignsigpipe() != 0) {
+		perror("ignsigpipe falhou");
+		return -1;
+	}
 
 	if ((listening_socket = make_server_socket(atoi(argv[1]))) < 0) {
 		return -1;

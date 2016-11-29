@@ -16,6 +16,13 @@
 
 #include "network_client-private.h"
 #include "client_stub-private.h"
+#include <signal.h>
+
+int ignsigpipe() {
+	struct sigaction s;
+	s.sa_handler = SIG_IGN;
+	return sigaction(SIGPIPE, &s, NULL);
+}
 
 /*
  * Checks if command line arguments are a valid
@@ -67,6 +74,11 @@ int main(int argc, char **argv) {
 	if (testArgs(argc, argv) < 0) {
 		return -1;
 	}
+
+	if (ignsigpipe() != 0) {
+		printf("ignsigpipe falhou\n");
+		return -1;
+	}
 	/* Usar network_connect para estabelecer ligação ao servidor */
 	printf("trying to establish the connection\n\n");
 	remote_table = rtable_bind(argv[1]);
@@ -96,7 +108,6 @@ int main(int argc, char **argv) {
 		/* Receber o comando introduzido pelo utilizador
 		 */
 		fgets(input, sizeof(input), stdin);
-
 		/*
 		 * Just in case no actual input is received
 		 * the input prompt is shown again
@@ -162,11 +173,9 @@ int main(int argc, char **argv) {
 							token = strtok(NULL, " ");
 						}
 						struct data_t *data;
-
 						data = data_create2(strlen(datastr) + 1, datastr);
 
 						rtable_put(remote_table, key, data);
-
 						data_destroy(data);
 					}
 				}
