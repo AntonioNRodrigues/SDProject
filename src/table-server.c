@@ -11,9 +11,6 @@
  Exemplo de uso: ./table_server 54321 10
  */
 
-#define DOWN -1
-#define UP 1
-
 #include <error.h>
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -30,8 +27,10 @@ struct server_t *backup_server;
 
 typedef struct n_servers {
 	struct server_t *backup_server;
-	int state;
 	FILE *file;
+	char *state = "UP";
+	char *name = "BACKUP";
+
 }backup_server2;
 
 /**
