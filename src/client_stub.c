@@ -110,7 +110,6 @@ struct server_t *current_server(struct rtable_t *rtable) {
 }
 
 int rtable_put(struct rtable_t *rtable, char *key, struct data_t *value) {
-
 	if (rtable == NULL || key == NULL || value == NULL) {
 		return -1;
 	}
@@ -119,7 +118,6 @@ int rtable_put(struct rtable_t *rtable, char *key, struct data_t *value) {
 	msg_out->opcode = OC_PUT;
 	msg_out->c_type = CT_ENTRY;
 	msg_out->content.entry = entry_create(key, value);
-
 	struct message_t * msg_resposta = network_send_receive(
 			current_server(rtable), msg_out);
 
