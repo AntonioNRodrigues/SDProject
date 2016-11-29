@@ -206,7 +206,6 @@ struct message_t *network_send_receive(struct server_t *server,
 	char *message_in;
 	int message_size, msg_size, result;
 	struct message_t *msg_resposta;
-
 	/* Verificar parâmetros de entrada */
 	if (msg == NULL || server == NULL) {
 		return NULL;
@@ -235,10 +234,9 @@ struct message_t *network_send_receive(struct server_t *server,
 	result = write_all(server->sock_file_descriptor, message_out, message_size);
 	/* Verificar se o envio teve sucesso */
 	if (result != message_size) {
-		close(server->sock_file_descriptor);
+		//close(server->sock_file_descriptor);
 		return NULL;
 	}
-
 	/* De seguida vamos receber a resposta do servidor:
 
 	 Com a função read_all, receber num inteiro o tamanho da
@@ -258,7 +256,6 @@ struct message_t *network_send_receive(struct server_t *server,
 		close(server->sock_file_descriptor);
 		return NULL;
 	}
-
 	int msg_returned = ntohl(size_returned_msg);
 	message_in = (char *) malloc(msg_returned);
 
