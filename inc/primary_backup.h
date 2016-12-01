@@ -3,7 +3,7 @@
 
 #include "primary_backup-private.h"
 
-struct *server_t;
+struct server_t;
 
 /**
  * Funcão usada para um servidor avisar o "server" de que já acordou.
