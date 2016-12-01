@@ -223,17 +223,15 @@ struct message_t *network_send_receive(struct server_t *server,
 	 */
 	msg_size = htonl(message_size);
 	result = write_all(server->sock_file_descriptor, (char *) &msg_size, _INT);
-
 	/* Verificar se o envio teve sucesso */
 	if (result != _INT) {
 		close(server->sock_file_descriptor);
 		return NULL;
 	}
-
 	/* Enviar a mensagem que foi previamente serializada */
 	result = write_all(server->sock_file_descriptor, message_out, message_size);
 	/* Verificar se o envio teve sucesso */
-	if (result != message_size) {
+	if (result == -1) {
 		//close(server->sock_file_descriptor);
 		return NULL;
 	}
