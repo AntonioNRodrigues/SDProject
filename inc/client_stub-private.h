@@ -40,6 +40,25 @@ struct rtable_t *rtable_rebind(struct rtable_t *remote_table);
  * function to prepare the backup server. Fill all the
  * struct server_t server_two
  */
-int prepare_backup_server(struct rtable_t * remote_table, const char *address_port);
+int prepare_backup_server(struct rtable_t * remote_table,
+		const char *address_port);
+/*
+ * function to simulate the pattern, in case of errors.
+ * If the message to one server is null, try the other server
+ * if that one does not respond, sleep 5000ms and try again
+ * the same order
+ */
+struct message_t * retry_servers(struct rtable_t *rtable,
+		struct message_t* msg_out);
+/*
+ * function to check which server is active and returned it
+ */
+struct server_t *current_server(struct rtable_t *rtable);
+
+/**
+ * function to switch between the two servers activating
+ * one and closing the other.
+ */
+void switch_server(struct rtable_t *rtable) {
 
 #endif
