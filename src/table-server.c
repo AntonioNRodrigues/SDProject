@@ -38,7 +38,6 @@ typedef struct n_servers {
 
 int ignsigpipe() {
 	struct sigaction s;
-
 	s.sa_handler = SIG_IGN;
 	return sigaction(SIGPIPE, &s, NULL);
 }
@@ -48,7 +47,11 @@ void *send_receive_backup(void * msg) {
 	struct message_t *msg_to_backup = (struct message_t*) msg;
 	struct message_t *msg_from_backup = network_send_receive(backup_server,
 			msg_to_backup);
-
+	if (msg_from_backup == NULL) {
+		printf("The backup server is down\n");
+		backup_server->sock_file_descriptor = -10;
+		return NULL;
+	}
 	return (void *) msg_from_backup;
 }
 
@@ -241,31 +244,30 @@ int network_receive_send(int sockfd) {
 	 */
 	if (msg_pedido->opcode == OC_DEL || msg_pedido->opcode == OC_PUT
 			|| msg_pedido->opcode == OC_UPDATE) {
-
-		//build temp message equal to the initial request to "send" in the thread
-		temp = (struct message_t*) malloc(sizeof(struct message_t));
-		temp->c_type = msg_pedido->c_type;
-		temp->opcode = msg_pedido->opcode;
-
-		if (msg_pedido->opcode == OC_DEL) {
-			temp->content.key = strdup(msg_pedido->content.key);
+		if (backup_server->sock_file_descriptor == -10) {
+			printf("The server is runing without backup\n");
 		} else {
-			temp->content.entry = entry_dup(msg_pedido->content.entry);
+			//build temp message equal to the initial request to "send" in the thread
+			temp = (struct message_t*) malloc(sizeof(struct message_t));
+			temp->c_type = msg_pedido->c_type;
+			temp->opcode = msg_pedido->opcode;
+
+			if (msg_pedido->opcode == OC_DEL) {
+				temp->content.key = strdup(msg_pedido->content.key);
+			} else {
+				temp->content.entry = entry_dup(msg_pedido->content.entry);
+			}
+			//init the thread with the initial message request
+			pthread_create(&thread, NULL, send_receive_backup, (void *) temp);
+
 		}
-		//init the thread with the initial message request
-		pthread_create(&thread, NULL, send_receive_backup, (void *) temp);
 
 	}
 	//waiting for the thread to finish
-	printf("backup end\n");
+	printf("Thread for the backup server fininshed\n");
 	temp1 = (struct message_t*) malloc(sizeof(struct message_t));
+
 	pthread_join(&thread, (void *) &temp1);
-
-	//check response from primary and backup
-	if (msg_resposta == NULL) {
-		printf("backup server is down");
-	}
-
 	/* Serializar a mensagem recebida */
 	message_size = message_to_buffer(msg_resposta, &message_resposta);
 
@@ -327,17 +329,19 @@ void *main_backup_server(void * argv) {
 	char ** argv_backup = (char **) argv;
 	struct sockaddr_in client;
 	socklen_t size_client = sizeof(struct sockaddr_in);
-	// struct of file descripters
-	// one for listening , one for the primary its a client of the backup
-	// one for the stdin
-	struct pollfd connections[3];
-	int listening_socket, result, i = 1, l = 1;
+	struct pollfd connections[MAX_SOCKETS];
+	int listening_socket, result, i = 1, j = 1, l = 1;
 	int number_clients = 0;
 
+	if (ignsigpipe() != 0) {
+		perror("ignsigpipe falhou");
+		return -1;
+	}
+
 	//test argc
-	//if (argc == 2) {
-	printf("Use: ./table-server <Port> <size table>\n");
-	printf("use exemple: ./table-server 54321 10\n");
+	//if (argc != 2) {
+	//printf("Use: ./table-server <Port> <size table>\n");
+	//printf("use exemple: ./table-server 54321 10\n");
 	//return -1;
 	//}
 
@@ -358,7 +362,7 @@ void *main_backup_server(void * argv) {
 	printf("Waiting for clients\n");
 
 	//init each positions of connections[i].fd with -1
-	for (i = 1; i < 3; i++) {
+	for (i = 1; i < MAX_SOCKETS; i++) {
 		connections[i].fd = -1;
 	}
 
@@ -368,49 +372,53 @@ void *main_backup_server(void * argv) {
 	connections[STDIN_POS].fd = fileno(stdin);
 	connections[STDIN_POS].events = POLLIN;
 
-	while ((result = poll(connections, 3, TIMEOUT)) >= 0) {
+	while ((result = poll(connections, MAX_SOCKETS, TIMEOUT)) >= 0) {
 		if (result > 0) {
 
 			// listenning socket has a new connection
 			if ((connections[LISTENING_SOCKET_POS].revents & POLLIN)
 					&& ((number_clients - N_POS_NOT_FREE) < MAX_SOCKETS)) {
 
-				if ((connections[2].fd = accept(
-						connections[LISTENING_SOCKET_POS].fd,
-						(struct sockaddr *) &client, &size_client)) > 0) {
-					connections[2].events = POLLIN;
-					number_clients++;
-					printf("Client connected %d\n\n", number_clients);
-				} else {
-					printf("there was some error with the accept\n");
+				int free_index = find_free_connection(connections);
+				if (free_index != -1) {
+
+					if ((connections[free_index].fd = accept(
+							connections[LISTENING_SOCKET_POS].fd,
+							(struct sockaddr *) &client, &size_client)) > 0) {
+						connections[free_index].events = POLLIN;
+						number_clients++;
+						printf("Client connected %d\n\n", number_clients);
+					} else {
+						printf("there was some error with the accept\n");
+					}
 				}
+
+				result--;
 			}
+			if (connections[STDIN_POS].revents & POLLIN) {
+				char input[81];
+				fgets(input, sizeof(input), stdin);
+				input[strlen(input) - 1] = '\0';
 
-			result--;
-		}
-		if (connections[STDIN_POS].revents & POLLIN) {
-			char input[81];
-			fgets(input, sizeof(input), stdin);
-			input[strlen(input) - 1] = '\0';
+				(strcmp(input, "print") == 0) ?
+						print_status() : printf("Command Invalid\n");
 
-			(strcmp(input, "print") == 0) ?
-					print_status() : printf("Command Invalid\n");
-
-			result--;
-		}
-
-		//if socket has data to read
-		if (connections[2].revents & POLLIN) {
-			if (network_receive_send_backup(connections[2].fd) < 0) {
-				close(connections[2].fd);
-				number_clients--;
-				connections[2].fd = -1;
-				printf("A client has disconnect from the server\n");
-				printf("The server has %d clients\n", number_clients);
+				result--;
+			}
+			for (j = N_POS_NOT_FREE; j < MAX_SOCKETS && result > 0; j++) {
+				//if socket has data to read
+				if (connections[j].revents & POLLIN) {
+					if (network_receive_send_backup(connections[j].fd) < 0) {
+						close(connections[j].fd);
+						number_clients--;
+						connections[j].fd = -1;
+						printf("A client has disconnect from the server\n");
+						printf("The server has %d clients\n", number_clients);
+					}
+				}
 			}
 		}
 	}
-
 	table_skel_destroy();
 	for (l = 0; l < MAX_SOCKETS; l++) {
 		close(connections[l].fd);
@@ -439,13 +447,12 @@ int main(int argc, char **argv) {
 		printf("Exemplo de uso: ./table-server 54321 10 127.0.0.1:44445\n");
 		return -1;
 	}
-	/*listening socket up*/
 
 	if (ignsigpipe() != 0) {
 		perror("ignsigpipe falhou");
 		return -1;
 	}
-
+	/*listening socket up*/
 	if ((listening_socket = make_server_socket(atoi(argv[1]))) < 0) {
 		return -1;
 	}
@@ -492,6 +499,7 @@ int main(int argc, char **argv) {
 
 				//-1 there is no space in the array --> do not accept socket
 				if (free_index != -1) {
+
 					if ((connections[free_index].fd = accept(
 							connections[LISTENING_SOCKET_POS].fd,
 							(struct sockaddr *) &client, &size_client)) > 0) {
@@ -501,7 +509,6 @@ int main(int argc, char **argv) {
 					} else {
 						printf("there was some error with the accept\n");
 					}
-
 				}
 
 				result--;
@@ -528,6 +535,7 @@ int main(int argc, char **argv) {
 						printf("The server has %d clients\n", number_clients);
 					}
 				}
+
 			}
 		}
 	}
