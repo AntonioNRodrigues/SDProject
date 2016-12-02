@@ -258,7 +258,8 @@ int network_receive_send(int sockfd) {
 				temp->content.entry = entry_dup(msg_pedido->content.entry);
 			}
 			//init the thread with the initial message request
-			pthread_create(&thread, NULL, send_receive_secundary, (void *) temp);
+			pthread_create(&thread, NULL, send_receive_secundary,
+					(void *) temp);
 
 		}
 
@@ -335,15 +336,8 @@ void *main_secundary(void * argv) {
 
 	if (ignsigpipe() != 0) {
 		perror("ignsigpipe falhou");
-		return -1;
+		return NULL;
 	}
-
-	/*test argc
-	 * 	if (argv_backup[3] == NULL) {
-	 printf("Use: ./table-server <Port> <size table>\n");
-	 printf("use exemple: ./table-server 54321 10\n");
-	 return NULL; }
-	 */
 
 	/*listening socket up*/
 	if ((listening_socket = make_server_socket(atoi(argv_backup[1]))) < 0) {
@@ -354,6 +348,37 @@ void *main_secundary(void * argv) {
 	if (table_skel_init(atoi(argv_backup[2])) == -1) {
 		close(listening_socket);
 		return NULL;
+	}
+
+
+	struct server_t *client_s = network_connect("127.0.0.1:44444");
+	if (client_s != NULL) {
+		struct message_t *msg_out = (struct message_t *) malloc(
+				sizeof(struct message_t));
+		if (msg_out == NULL)
+			return NULL;
+
+		msg_out->opcode = OC_GET;
+		msg_out->c_type = CT_KEY;
+		msg_out->content.key = strdup("!");
+
+		struct message_t * msg_out_2 = (struct message_t *) malloc(
+				sizeof(struct message_t));
+
+		msg_out_2->opcode = OC_PUT;
+		msg_out_2->c_type = CT_ENTRY;
+
+		struct message_t * t = network_send_receive(client_s, msg_out);
+		char ** temp1 = t->content.keys;
+		int i = 0;
+		while (temp1[i] != NULL) {
+			msg_out->content.key = strdup(temp1[i]);
+			struct message_t *tt = network_send_receive(client_s, msg_out);
+			msg_out_2->content.entry = entry_create(temp1[i], tt->content.data);
+			invoke(msg_out_2);
+			i++;
+		}
+		network_close(client_s);
 	}
 
 	printf("***********************************\n");
@@ -461,10 +486,9 @@ int main(int argc, char **argv) {
 	secundary = network_connect(argv[3]);
 	if (secundary == NULL) {
 		printf("The server is going without secundary\n");
-	}else{
+	} else {
 		printf("The primary sever is connected to its secundary\n");
 	}
-
 	//table_skel_init
 	//init the table as a global variable in the table_skel
 	if (table_skel_init(atoi(argv[2])) == -1) {
@@ -478,13 +502,13 @@ int main(int argc, char **argv) {
 	printf("***********************************\n\n");
 	printf("Waiting for clients\n");
 
-//init each positions of connections[i].fd with -1
+	/*init each positions of connections[i].fd with -1*/
 	for (i = 1; i < MAX_SOCKETS; i++) {
 		connections[i].fd = -1;
 	}
-//first position of connetions is the listening_socket
+	/*first position of connetions is the listening_socket*/
 	connections[LISTENING_SOCKET_POS].fd = listening_socket;
-// POLLIN ==> data to be read and in this case a new connections received
+	/* POLLIN ==> data to be read and in this case a new connections received*/
 	connections[LISTENING_SOCKET_POS].events = POLLIN;
 
 	connections[STDIN_POS].fd = fileno(stdin);
