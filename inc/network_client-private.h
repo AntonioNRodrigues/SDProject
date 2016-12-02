@@ -30,7 +30,7 @@ int read_all(int sock, char *buf, int len);
  * function that reconnects to the server. Uses the information presented in the
  * param server to fill a new_server an closes the server in the param.
  */
-struct server_t *network_reconnect(struct server_t* server);
+struct server_t *network_reconnect(struct server_t *server);
 /**
  * function that prepares a sever_t with the propor IP and Port to be connected
  * if the primary is down

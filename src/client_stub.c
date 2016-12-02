@@ -14,19 +14,17 @@
 const char *address; // TO BE DELETED
 
 struct rtable_t *rtable_bind(const char *address_port) {
-	if (address_port == NULL) {
+	if (address_port == NULL)
 		return NULL;
-	}
 	address = strdup(address_port);
-	if (address == NULL) {
+	if (address == NULL)
 		return NULL;
-	}
 
 	struct rtable_t *remote_table = (struct rtable_t *) malloc(
 			sizeof(struct rtable_t));
-	if (remote_table == NULL) {
+	if (remote_table == NULL)
 		return NULL;
-	}
+
 	remote_table->server_one = network_connect(address_port);
 
 	if (remote_table == NULL) {
@@ -40,9 +38,9 @@ struct rtable_t *rtable_bind(const char *address_port) {
 
 /*tTO BE DELETED*/
 struct rtable_t *rtable_rebind(struct rtable_t *remote_table) {
-	if (remote_table == NULL) {
+	if (remote_table == NULL)
 		return NULL;
-	}
+
 	// if server inside remote_table is down try to connect
 	if (remote_table->server_one == NULL) {
 		remote_table->server_one = network_connect(address);
@@ -79,9 +77,8 @@ int retry(struct rtable_t *remote_table) {
 }
 
 int rtable_unbind(struct rtable_t *rtable) {
-	if (rtable == NULL) {
+	if (rtable == NULL)
 		return -1;
-	}
 	int result = network_close(rtable->server_one);
 	if (result == 0)
 		printf("The connection has been closed without errors\n");
@@ -151,9 +148,9 @@ struct message_t * retry_servers(struct rtable_t *rtable,
 	return msg_resposta;
 }
 int rtable_put(struct rtable_t *rtable, char *key, struct data_t *value) {
-	if (rtable == NULL || key == NULL || value == NULL) {
+	if (rtable == NULL || key == NULL || value == NULL)
 		return -1;
-	}
+
 	struct message_t *msg_out = (struct message_t *) malloc(
 			sizeof(struct message_t));
 	if (msg_out == NULL)
@@ -391,5 +388,3 @@ void rtable_free_keys(char **keys) {
 		table_free_keys(keys);
 	}
 }
-
-s

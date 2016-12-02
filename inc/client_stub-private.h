@@ -59,6 +59,6 @@ struct server_t *current_server(struct rtable_t *rtable);
  * function to switch between the two servers activating
  * one and closing the other.
  */
-void switch_server(struct rtable_t *rtable) {
+void switch_server(struct rtable_t *rtable);
 
 #endif
