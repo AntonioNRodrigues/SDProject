@@ -26,7 +26,7 @@
 #include "network_client-private.h"
 #include "table_skel-private.h"
 
-struct server_t *backup_server;
+struct server_t *secundary;
 
 typedef struct n_servers {
 	struct server_t *backup_server;
@@ -42,14 +42,14 @@ int ignsigpipe() {
 	return sigaction(SIGPIPE, &s, NULL);
 }
 
-void *send_receive_backup(void * msg) {
+void *send_receive_secundary(void * msg) {
 
 	struct message_t *msg_to_backup = (struct message_t*) msg;
-	struct message_t *msg_from_backup = network_send_receive(backup_server,
+	struct message_t *msg_from_backup = network_send_receive(secundary,
 			msg_to_backup);
 	if (msg_from_backup == NULL) {
 		printf("The backup server is down\n");
-		backup_server->sock_file_descriptor = -10;
+		secundary->sock_file_descriptor = -10;
 		return NULL;
 	}
 	return (void *) msg_from_backup;
@@ -99,7 +99,7 @@ int make_server_socket(short port) {
 /**
  *
  */
-int network_receive_send_backup(int sockfd) {
+int network_receive_send_secundary(int sockfd) {
 	char *message_resposta, *message_pedido;
 	int message_size, msg_size, result;
 	struct message_t *msg_pedido, *msg_resposta;
@@ -244,7 +244,7 @@ int network_receive_send(int sockfd) {
 	 */
 	if (msg_pedido->opcode == OC_DEL || msg_pedido->opcode == OC_PUT
 			|| msg_pedido->opcode == OC_UPDATE) {
-		if (backup_server->sock_file_descriptor == -10) {
+		if (secundary->sock_file_descriptor == -10) {
 			printf("The server is runing without backup\n");
 		} else {
 			//build temp message equal to the initial request to "send" in the thread
@@ -258,7 +258,7 @@ int network_receive_send(int sockfd) {
 				temp->content.entry = entry_dup(msg_pedido->content.entry);
 			}
 			//init the thread with the initial message request
-			pthread_create(&thread, NULL, send_receive_backup, (void *) temp);
+			pthread_create(&thread, NULL, send_receive_secundary, (void *) temp);
 
 		}
 
@@ -324,7 +324,7 @@ int find_free_connection(struct pollfd *conn) {
 	return free_index;
 }
 
-void *main_backup_server(void * argv) {
+void *main_secundary(void * argv) {
 	//copy of argv
 	char ** argv_backup = (char **) argv;
 	struct sockaddr_in client;
@@ -408,7 +408,7 @@ void *main_backup_server(void * argv) {
 			for (j = N_POS_NOT_FREE; j < MAX_SOCKETS && result > 0; j++) {
 				//if socket has data to read
 				if (connections[j].revents & POLLIN) {
-					if (network_receive_send_backup(connections[j].fd) < 0) {
+					if (network_receive_send_secundary(connections[j].fd) < 0) {
 						close(connections[j].fd);
 						number_clients--;
 						connections[j].fd = -1;
@@ -436,7 +436,7 @@ int main(int argc, char **argv) {
 	int number_clients = 0;
 
 	if (argc == 3) {
-		pthread_create(&thread_backup, NULL, main_backup_server, (void *) argv);
+		pthread_create(&thread_backup, NULL, main_secundary, (void *) argv);
 	}
 	pthread_join(&thread_backup, NULL);
 	//test argc
@@ -458,11 +458,13 @@ int main(int argc, char **argv) {
 	}
 
 	/*build a client socket to connecte to the backup server*/
-	backup_server = network_connect(argv[3]);
-	if (backup_server == NULL) {
-		printf("The server is going without backup\n");
+	secundary = network_connect(argv[3]);
+	if (secundary == NULL) {
+		printf("The server is going without secundary\n");
+	}else{
+		printf("The primary sever is connected to its secundary\n");
 	}
-	printf("The primary sever is connected to its backup\n");
+
 	//table_skel_init
 	//init the table as a global variable in the table_skel
 	if (table_skel_init(atoi(argv[2])) == -1) {
