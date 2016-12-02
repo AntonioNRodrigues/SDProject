@@ -32,16 +32,15 @@ int testArgs(int argc, char ** argv) {
 		printf(
 				"use: table-client <ip server primary>:<port primary> <ip server secundary>:<port secundary>\n");
 		printf(
-				"use exemple: ./table_client 10.101.148.144:54321 10.101.148.144:54322\n");
+				"use example: ./table_client 10.101.148.144:54321 10.101.148.144:54322\n");
 		return -1;
 	}
-	int v = 0;
-
+	int v, n, i;
+	char *token;
 	/*valid the ip:port for the n_servers that the client is conected*/
-	for (v = 0; v < N_SERVERS; v++) {
-		int n, i;
-		char *token;
-		token = strtok(strdup(argv[1]), ".:");
+	for (v = 1; v < N_SERVERS+1; v++) {
+		
+		token = strtok(strdup(argv[v]), ".:");
 		n = atoi(token);
 
 		//ip ex:10.101.148.144
