@@ -111,11 +111,11 @@ struct server_t *current_server(struct rtable_t *rtable) {
 void switch_server(struct rtable_t *rtable) {
 	if (rtable != NULL) {
 		if (rtable->current_server == SERVER_ONE) {
-			close(current_server(rtable));
+			close(current_server(rtable)->sock_file_descriptor);
 			rtable->current_server = SERVER_TWO;
 			rtable->server_two = net_connect(rtable->server_two);
 		} else {
-			close(current_server(rtable));
+			close(current_server(rtable)->sock_file_descriptor);
 			rtable->current_server = SERVER_ONE;
 			rtable->server_one = net_connect(rtable->server_one);
 		}

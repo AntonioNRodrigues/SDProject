@@ -357,7 +357,7 @@ void *main_secundary(void * argv) {
 	}
 
 	printf("***********************************\n");
-	printf("*  SERVER BACKUP                  *\n");
+	printf("*  SERVER SECUNDARY                *\n");
 	printf("***********************************\n\n");
 	printf("Waiting for clients\n");
 
