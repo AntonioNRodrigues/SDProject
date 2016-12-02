@@ -338,14 +338,14 @@ void *main_backup_server(void * argv) {
 		return -1;
 	}
 
-	//test argc
-	if (argv_backup[2] == NULL) {
-	printf("Use: ./table-server <Port> <size table>\n");
-	printf("use exemple: ./table-server 54321 10\n");
-	return NULL;
-	}
+	/*test argc
+	 * 	if (argv_backup[3] == NULL) {
+	 printf("Use: ./table-server <Port> <size table>\n");
+	 printf("use exemple: ./table-server 54321 10\n");
+	 return NULL; }
+	 */
 
-	//listening socket up
+	/*listening socket up*/
 	if ((listening_socket = make_server_socket(atoi(argv_backup[1]))) < 0) {
 		return NULL;
 	}

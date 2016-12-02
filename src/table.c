@@ -191,7 +191,6 @@ int table_del(struct table_t *table, char *key) {
 	return ret_value;
 }
 
-/* Esta é dada! Ao estilo C! */
 /**
  * number of pairs key->value of the table
  */
