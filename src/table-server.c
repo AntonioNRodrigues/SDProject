@@ -237,6 +237,13 @@ int network_receive_send(int sockfd) {
 	/* Processar a mensagem */
 	msg_resposta = invoke(msg_pedido);
 
+	if(msg_pedido->opcode == OC_UP){
+		secundary = network_connect(msg_pedido->content.key);
+		printf("The secundary is back on\n");
+	}
+
+
+
 	/*after receiving the message ask the backup server*/
 	/*check if the operation is a Write type*/
 	/*IN THIS MOMENT WE HAVE TO CHECK IF THE BACKUP SERVER IS UP || DOWN
@@ -350,14 +357,16 @@ void *main_secundary(void * argv) {
 		return NULL;
 	}
 
-
-	struct server_t *client_s = network_connect("127.0.0.1:44444");
+	/*In this stage the secuncary is client of the primary to
+	 * ask him its keys from its table
+	 */
+	struct server_t *client_s = network_connect("127.0.0.1:44444");//this is thr IP:Port for the PRIMARY
 	if (client_s != NULL) {
 		struct message_t *msg_out = (struct message_t *) malloc(
 				sizeof(struct message_t));
 		if (msg_out == NULL)
 			return NULL;
-
+		//buil a msg to get all keys from the primary
 		msg_out->opcode = OC_GET;
 		msg_out->c_type = CT_KEY;
 		msg_out->content.key = strdup("!");
@@ -365,6 +374,7 @@ void *main_secundary(void * argv) {
 		struct message_t * msg_out_2 = (struct message_t *) malloc(
 				sizeof(struct message_t));
 
+		//build a msg to put the entry in the table of the secundary
 		msg_out_2->opcode = OC_PUT;
 		msg_out_2->c_type = CT_ENTRY;
 
@@ -373,11 +383,20 @@ void *main_secundary(void * argv) {
 		int i = 0;
 		while (temp1[i] != NULL) {
 			msg_out->content.key = strdup(temp1[i]);
+			// get the data from all keys
 			struct message_t *tt = network_send_receive(client_s, msg_out);
 			msg_out_2->content.entry = entry_create(temp1[i], tt->content.data);
+			//put it on its table
 			invoke(msg_out_2);
 			i++;
 		}
+
+		/*build a special message to send to the PRIMARY*/
+		msg_out->opcode = OC_UP;
+		msg_out->c_type = CT_KEY;
+		msg_out->content.key = "127.0.0.1:44445";
+		struct message_t *tt = network_send_receive(client_s, msg_out);
+		printf("the message was send\n");
 		network_close(client_s);
 	}
 
@@ -463,9 +482,9 @@ int main(int argc, char **argv) {
 	if (argc == 3) {
 		pthread_create(&thread_backup, NULL, main_secundary, (void *) argv);
 	}
+
 	pthread_join(&thread_backup, NULL);
 	//test argc
-
 	if (argc != 4) {
 		printf(
 				"Uso: ./table-server <porta TCP> <dimensão da tabela> <IP:Port backup_sever>\n");
