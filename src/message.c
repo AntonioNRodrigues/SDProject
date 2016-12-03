@@ -172,7 +172,7 @@ struct message_t *buffer_to_message(char *msg_buf, int msg_size) {
 	msg_buf += _SHORT;
 
 	/* O opcode e c_type são válidos? */
-	if ((valid(msg->opcode, msg->c_type)) != 0){
+	if ((valid(msg->opcode, msg->c_type)) != 0) {
 		free_message(msg);
 		return NULL;
 	}
@@ -275,11 +275,11 @@ struct message_t *buffer_to_message(char *msg_buf, int msg_size) {
  */
 
 int valid(short opcode, short c_type) {
-	return ((opcode == OC_DEL || opcode == OC_SIZE || opcode == OC_PUT
-			|| opcode == OC_UPDATE || opcode == OC_GET || opcode == OC_RT_ERROR
-			|| opcode == OC_DEL + 1 || opcode == OC_SIZE + 1
-			|| opcode == OC_PUT + 1 || opcode == OC_UPDATE + 1
-			|| opcode == OC_GET + 1)
+	return ((opcode == OC_UP || opcode == OC_DOWN || opcode == OC_DEL
+			|| opcode == OC_SIZE || opcode == OC_PUT || opcode == OC_UPDATE
+			|| opcode == OC_GET || opcode == OC_RT_ERROR || opcode == OC_DEL + 1
+			|| opcode == OC_SIZE + 1 || opcode == OC_PUT + 1
+			|| opcode == OC_UPDATE + 1 || opcode == OC_GET + 1)
 			&& (c_type == CT_ENTRY || c_type == CT_KEY || c_type == CT_KEYS
 					|| c_type == CT_RESULT || c_type == CT_VALUE)) ? 0 : -1;
 

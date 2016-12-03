@@ -12,6 +12,8 @@
 #define _INT 4
 
 #define OC_RT_ERROR 99
+#define OC_UP 100
+#define OC_DOWN 101
 
 #include "table-private.h" /* For table_free_keys() */
 #include "message.h"
