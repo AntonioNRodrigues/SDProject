@@ -11,31 +11,30 @@
  Exemplo de uso: ./table_server 54321 10
  */
 
+#include <stdio.h>
 #include <error.h>
 #include <sys/types.h>
 #include <sys/socket.h>
-
+#include <netdb.h>
 #include <poll.h>
 #include <fcntl.h>
 #include <pthread.h>
 #include <signal.h>
 #include <unistd.h>
-
+#include <netinet/in.h>
+#include <arpa/inet.h>
 #include <errno.h>
 #include "inet.h"
 #include "network_client-private.h"
 #include "table_skel-private.h"
 
-struct server_t *secundary;
-
-typedef struct n_servers {
+struct shared_t {
 	struct server_t *backup_server;
-	FILE *file;
-	char *state;
-	char *name;
+	char *ip_port_secundary;
+	char *port_secundary;
+};
 
-} backup_server2;
-
+struct shared_t shared;
 int ignsigpipe() {
 	struct sigaction s;
 	s.sa_handler = SIG_IGN;
@@ -45,11 +44,11 @@ int ignsigpipe() {
 void *send_receive_secundary(void * msg) {
 
 	struct message_t *msg_to_backup = (struct message_t*) msg;
-	struct message_t *msg_from_backup = network_send_receive(secundary,
-			msg_to_backup);
+	struct message_t *msg_from_backup = network_send_receive(
+			shared.backup_server, msg_to_backup);
 	if (msg_from_backup == NULL) {
 		printf("The backup server is down\n");
-		secundary->sock_file_descriptor = -10;
+		shared.backup_server->sock_file_descriptor = -10;
 		return NULL;
 	}
 	return (void *) msg_from_backup;
@@ -237,12 +236,10 @@ int network_receive_send(int sockfd) {
 	/* Processar a mensagem */
 	msg_resposta = invoke(msg_pedido);
 
-	if(msg_pedido->opcode == OC_UP){
-		secundary = network_connect(msg_pedido->content.key);
+	if (msg_pedido->opcode == OC_UP) {
+		shared.backup_server = network_connect(msg_pedido->content.key);
 		printf("The secundary is back on\n");
 	}
-
-
 
 	/*after receiving the message ask the backup server*/
 	/*check if the operation is a Write type*/
@@ -251,7 +248,7 @@ int network_receive_send(int sockfd) {
 	 */
 	if (msg_pedido->opcode == OC_DEL || msg_pedido->opcode == OC_PUT
 			|| msg_pedido->opcode == OC_UPDATE) {
-		if (secundary->sock_file_descriptor == -10) {
+		if (shared.backup_server->sock_file_descriptor == -10) {
 			printf("The server is runing without backup\n");
 		} else {
 			//build temp message equal to the initial request to "send" in the thread
@@ -332,6 +329,30 @@ int find_free_connection(struct pollfd *conn) {
 	return free_index;
 }
 
+FILE * write_to_file(char *name_file, char *str) {
+	FILE *f = fopen(name_file, "w");
+	if (f == NULL) {
+		perror("File failed to open");
+		return NULL;
+	}
+	fprintf(f, "%s", str);
+	fclose(f);
+	return f;
+}
+char * read_from_file(char *name_file) {
+	char c[1000];
+	FILE *f = fopen(name_file, "r");
+	if (f == NULL) {
+		perror("File failed to open");
+		return NULL;
+	}
+	fscanf(f, "%[^\n]", c);
+	printf("%s\n", c);
+	fclose(f);
+	return c;
+
+}
+
 void *main_secundary(void * argv) {
 	//copy of argv
 	char ** argv_backup = (char **) argv;
@@ -360,7 +381,13 @@ void *main_secundary(void * argv) {
 	/*In this stage the secuncary is client of the primary to
 	 * ask him its keys from its table
 	 */
-	struct server_t *client_s = network_connect("127.0.0.1:44444");//this is thr IP:Port for the PRIMARY
+
+	/*this is the <IP_SEC:PORT_PRIM>
+	 * this is for the PRIMARY to connect to the secundary so it can get all the keys*/
+	read_from_file("secundary");
+
+	struct server_t *client_s = network_connect("192.168.1.97:33333");
+
 	if (client_s != NULL) {
 		struct message_t *msg_out = (struct message_t *) malloc(
 				sizeof(struct message_t));
@@ -394,7 +421,7 @@ void *main_secundary(void * argv) {
 		/*build a special message to send to the PRIMARY*/
 		msg_out->opcode = OC_UP;
 		msg_out->c_type = CT_KEY;
-		msg_out->content.key = "127.0.0.1:44445";
+		msg_out->content.key = "192.168.1.71:33334";//<IP_PRIM:PORT_PRIM> // estamos no ambito do secundario logo nao temos acesso a isto
 		struct message_t *tt = network_send_receive(client_s, msg_out);
 		printf("the message was send\n");
 		network_close(client_s);
@@ -431,7 +458,13 @@ void *main_secundary(void * argv) {
 							(struct sockaddr *) &client, &size_client)) > 0) {
 						connections[free_index].events = POLLIN;
 						number_clients++;
-						printf("Client connected %d\n\n", number_clients);
+						char str[INET_ADDRSTRLEN];
+						inet_ntop(AF_INET, &(client.sin_addr), str,
+						INET_ADDRSTRLEN);
+						write_to_file("secundary",
+								strcat(strcat(str, ":"), argv_backup[1]));
+						printf("Client connected on %s with %d\n\n", str,
+								number_clients);
 					} else {
 						printf("there was some error with the accept\n");
 					}
@@ -472,14 +505,17 @@ void *main_secundary(void * argv) {
 
 int main(int argc, char **argv) {
 	pthread_t thread_backup;
+	pthread_attr_t attr;
+	pthread_attr_init(&attr);
+	pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
 	struct sockaddr_in client;
 	socklen_t size_client = sizeof(struct sockaddr_in);
-	// struct of file descripters
 	struct pollfd connections[MAX_SOCKETS];
 	int listening_socket, result, i = 1, j = 1, l = 1;
 	int number_clients = 0;
 
 	if (argc == 3) {
+		shared.port_secundary = argv[2];
 		pthread_create(&thread_backup, NULL, main_secundary, (void *) argv);
 	}
 
@@ -501,15 +537,18 @@ int main(int argc, char **argv) {
 		return -1;
 	}
 
-	/*build a client socket to connecte to the backup server*/
-	secundary = network_connect(argv[3]);
-	if (secundary == NULL) {
+	/*build a client socket to connect to the secundary server*/
+	shared.backup_server = network_connect(argv[3]);
+	if (shared.backup_server == NULL) {
 		printf("The server is going without secundary\n");
 	} else {
-		printf("The primary sever is connected to its secundary\n");
+		shared.ip_port_secundary = strdup(argv[3]);
+		printf(
+				"The primary sever is connected to its secundary on the ip:port %s\n",
+				shared.ip_port_secundary);
 	}
-	//table_skel_init
-	//init the table as a global variable in the table_skel
+//table_skel_init
+//init the table as a global variable in the table_skel
 	if (table_skel_init(atoi(argv[2])) == -1) {
 		close(listening_socket);
 		return -1;
