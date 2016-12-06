@@ -37,7 +37,7 @@ struct shared_t {
 };
 
 struct shared_t shared;
-int number = 0;
+int bit_control = 0;
 pthread_mutex_t dados = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t dados_dispo = PTHREAD_COND_INITIALIZER;
 
@@ -242,11 +242,6 @@ int network_receive_send(int sockfd) {
 	/* Processar a mensagem */
 	msg_resposta = invoke(msg_pedido);
 
-	if (msg_pedido->opcode == OC_UP) {
-		shared.current_backup = network_connect(msg_pedido->content.key);
-		printf("The secundary is back on\n");
-	}
-
 	/*after receiving the message ask the backup server*/
 	/*check if the operation is a Write type*/
 	/*IN THIS MOMENT WE HAVE TO CHECK IF THE BACKUP SERVER IS UP || DOWN
@@ -254,26 +249,18 @@ int network_receive_send(int sockfd) {
 	 */
 	if (msg_pedido->opcode == OC_DEL || msg_pedido->opcode == OC_PUT
 			|| msg_pedido->opcode == OC_UPDATE) {
-		if (shared.current_backup->sock_file_descriptor == -10) {
-			printf("The server is runing without backup\n");
-		} else {
-			struct message_t *msg_from_backup = network_send_receive(
-					shared.current_backup, msg_pedido);
-			if (msg_from_backup == NULL) {
-				printf("The backup server is down\n");
-				shared.current_backup->sock_file_descriptor = -10;
-				return NULL;
-			}
-		}
-	}
-	//waiting for the thread to finish
-	printf("Thread for the backup server fininshed\n");
-	temp1 = (struct message_t*) malloc(sizeof(struct message_t));
 
-	if (pthread_join(&thread, (void *) &temp1) != 0) {
-		perror("\nErro no join.\n");
-		exit(EXIT_FAILURE);
+		struct message_t *msg_from_backup = network_send_receive(
+				shared.current_backup, msg_pedido);
+
+		if (msg_from_backup == NULL) {
+			printf("The backup server is down\n");
+			shared.current_backup->sock_file_descriptor = -10;
+			return NULL;
+		}
+
 	}
+
 	/* Serializar a mensagem recebida */
 	message_size = message_to_buffer(msg_resposta, &message_resposta);
 
@@ -355,24 +342,20 @@ char * read_from_file(char *name_file) {
 }
 
 void *main_secundary(void * argv) {
-	//copy of argv
+//copy of argv
 	char ** argv_backup = (char **) argv;
 
 	shared.current_backup = network_connect(argv_backup[3]);
-	printf("----%d\n", shared.current_backup);
+	printf("----%d\n", shared.current_backup->sock_file_descriptor);
 	while (1) {
-
 		pthread_mutex_lock(&dados);
-
-		/* Esperar por dados > 0 */
-		while (network_receive_send(shared.current_backup->sock_file_descriptor)
-				> 0)
+		while(bit_control != 0)
 			pthread_cond_wait(&dados_dispo, &dados);
-		number = 0; /* Já processámos dados */
+		bit_control = 0; /* Já processámos dados */
 
 		/* Se já fiz o que tinha a fazer, liberto o mutex*/
 		pthread_mutex_unlock(&dados);
-		if (number != 0)
+		if (bit_control != 0)
 			break;
 
 	}
@@ -406,12 +389,12 @@ int main(int argc, char **argv) {
 	 exit(EXIT_FAILURE);
 	 }*/
 
-	//if primario cria a thread
+//if primario cria a thread
 	if (argc == 4) {
 		printf("Thread created\n");
 		create_thread(argv);
 	}
-	//test argc
+//test argc
 
 	if (ignsigpipe() != 0) {
 		perror("ignsigpipe falhou");
@@ -466,7 +449,7 @@ int main(int argc, char **argv) {
 						inet_ntop(AF_INET, &(client.sin_addr), str,
 						INET_ADDRSTRLEN);
 						//write_to_file("primary",
-							//		strcat(strcat(str, ":"), argv[1]));
+						//		strcat(strcat(str, ":"), argv[1]));
 						printf("Client connected on %s with %d\n\n", str,
 								number_clients);
 					} else {
@@ -490,8 +473,7 @@ int main(int argc, char **argv) {
 			for (j = N_POS_NOT_FREE; j < MAX_SOCKETS && result > 0; j++) {
 				//if socket has data to read
 				if (connections[j].revents & POLLIN) {
-
-					printf("INSIDE MAIN");
+					pthread_mutex_lock(&dados);
 					if (network_receive_send(connections[j].fd) < 0) {
 						close(connections[j].fd);
 						number_clients--;
@@ -499,13 +481,9 @@ int main(int argc, char **argv) {
 						printf("A client has disconnect from the server\n");
 						printf("The server has %d clients\n", number_clients);
 					}
-					pthread_mutex_lock(&dados);
-					if (number == 0) {
-						number = 1;
-						pthread_cond_signal(&dados_dispo); /* Avisar que há dados novos > 0 */
-
-					}
-					pthread_mutex_unlock(&dados);
+					pthread_cond_signal(&dados_dispo);
+					bit_control = 1;
+					pthread_mutex_unlock(&dados);/* Avisar que há dados novos > 0 */
 				}
 
 			}
