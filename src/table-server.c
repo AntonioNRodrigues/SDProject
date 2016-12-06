@@ -247,19 +247,22 @@ int network_receive_send(int sockfd) {
 	/*IN THIS MOMENT WE HAVE TO CHECK IF THE BACKUP SERVER IS UP || DOWN
 	 * IF IS NOT DONT DO THIS ---> mutex or a condition check
 	 */
-	if (msg_pedido->opcode == OC_DEL || msg_pedido->opcode == OC_PUT
-			|| msg_pedido->opcode == OC_UPDATE) {
+	pthread_mutex_lock(&dados);
+	if (bit_control == 1) {
+		if (msg_pedido->opcode == OC_DEL || msg_pedido->opcode == OC_PUT
+				|| msg_pedido->opcode == OC_UPDATE) {
 
-		struct message_t *msg_from_backup = network_send_receive(
-				shared.current_backup, msg_pedido);
+			struct message_t *msg_from_backup = network_send_receive(
+					shared.current_backup, msg_pedido);
 
-		if (msg_from_backup == NULL) {
-			printf("The backup server is down\n");
-			shared.current_backup->sock_file_descriptor = -10;
-			return NULL;
+			if (msg_from_backup == NULL) {
+				printf("The backup server is down\n");
+				shared.current_backup->sock_file_descriptor = -10;
+				return NULL;
+			}
 		}
-
 	}
+	pthread_mutex_unlock(&dados);
 
 	/* Serializar a mensagem recebida */
 	message_size = message_to_buffer(msg_resposta, &message_resposta);
@@ -349,7 +352,7 @@ void *main_secundary(void * argv) {
 	printf("----%d\n", shared.current_backup->sock_file_descriptor);
 	while (1) {
 		pthread_mutex_lock(&dados);
-		while(bit_control != 0)
+		while (bit_control != 0)
 			pthread_cond_wait(&dados_dispo, &dados);
 		bit_control = 0; /* Já processámos dados */
 
@@ -357,7 +360,6 @@ void *main_secundary(void * argv) {
 		pthread_mutex_unlock(&dados);
 		if (bit_control != 0)
 			break;
-
 	}
 
 	return NULL;
@@ -473,7 +475,7 @@ int main(int argc, char **argv) {
 			for (j = N_POS_NOT_FREE; j < MAX_SOCKETS && result > 0; j++) {
 				//if socket has data to read
 				if (connections[j].revents & POLLIN) {
-					pthread_mutex_lock(&dados);
+
 					if (network_receive_send(connections[j].fd) < 0) {
 						close(connections[j].fd);
 						number_clients--;
@@ -481,8 +483,14 @@ int main(int argc, char **argv) {
 						printf("A client has disconnect from the server\n");
 						printf("The server has %d clients\n", number_clients);
 					}
+					pthread_mutex_lock(&dados);
 					pthread_cond_signal(&dados_dispo);
-					bit_control = 1;
+
+					if (bit_control == 0) {
+						bit_control = 1;
+					} else {
+						bit_control = 0;
+					}
 					pthread_mutex_unlock(&dados);/* Avisar que há dados novos > 0 */
 				}
 
