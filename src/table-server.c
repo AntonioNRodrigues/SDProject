@@ -37,8 +37,9 @@ struct shared_t {
 };
 
 struct shared_t shared;
-
+int number = 0;
 pthread_mutex_t dados = PTHREAD_MUTEX_INITIALIZER;
+pthread_cond_t dados_dispo = PTHREAD_COND_INITIALIZER;
 
 int ignsigpipe() {
 	struct sigaction s;
@@ -256,22 +257,14 @@ int network_receive_send(int sockfd) {
 		if (shared.current_backup->sock_file_descriptor == -10) {
 			printf("The server is runing without backup\n");
 		} else {
-			//build temp message equal to the initial request to "send" in the thread
-			temp = (struct message_t*) malloc(sizeof(struct message_t));
-			temp->c_type = msg_pedido->c_type;
-			temp->opcode = msg_pedido->opcode;
-
-			if (msg_pedido->opcode == OC_DEL) {
-				temp->content.key = strdup(msg_pedido->content.key);
-			} else {
-				temp->content.entry = entry_dup(msg_pedido->content.entry);
+			struct message_t *msg_from_backup = network_send_receive(
+					shared.current_backup, msg_pedido);
+			if (msg_from_backup == NULL) {
+				printf("The backup server is down\n");
+				shared.current_backup->sock_file_descriptor = -10;
+				return NULL;
 			}
-			//init the thread with the initial message request
-			pthread_create(&thread, NULL, send_receive_secundary,
-					(void *) temp);
-
 		}
-
 	}
 	//waiting for the thread to finish
 	printf("Thread for the backup server fininshed\n");
@@ -366,14 +359,30 @@ void *main_secundary(void * argv) {
 	char ** argv_backup = (char **) argv;
 
 	shared.current_backup = network_connect(argv_backup[3]);
+	printf("----%d\n", shared.current_backup);
+	while (1) {
+
+		pthread_mutex_lock(&dados);
+
+		/* Esperar por dados > 0 */
+		while (network_receive_send(shared.current_backup->sock_file_descriptor)
+				> 0)
+			pthread_cond_wait(&dados_dispo, &dados);
+		number = 0; /* Já processámos dados */
+
+		/* Se já fiz o que tinha a fazer, liberto o mutex*/
+		pthread_mutex_unlock(&dados);
+		if (number != 0)
+			break;
+
+	}
 
 	return NULL;
 }
 
 void create_thread(char **argv) {
 	pthread_t thread_sec;
-	if (pthread_create(&thread_sec, NULL, main_secundary, (void *) argv)
-			!= 0) {
+	if (pthread_create(&thread_sec, NULL, main_secundary, (void *) argv) != 0) {
 		perror("Thread failed");
 		exit(EXIT_FAILURE);
 	}
@@ -456,8 +465,8 @@ int main(int argc, char **argv) {
 						char str[INET_ADDRSTRLEN];
 						inet_ntop(AF_INET, &(client.sin_addr), str,
 						INET_ADDRSTRLEN);
-						write_to_file("primary",
-								strcat(strcat(str, ":"), argv[1]));
+						//write_to_file("primary",
+							//		strcat(strcat(str, ":"), argv[1]));
 						printf("Client connected on %s with %d\n\n", str,
 								number_clients);
 					} else {
@@ -481,6 +490,8 @@ int main(int argc, char **argv) {
 			for (j = N_POS_NOT_FREE; j < MAX_SOCKETS && result > 0; j++) {
 				//if socket has data to read
 				if (connections[j].revents & POLLIN) {
+
+					printf("INSIDE MAIN");
 					if (network_receive_send(connections[j].fd) < 0) {
 						close(connections[j].fd);
 						number_clients--;
@@ -488,6 +499,13 @@ int main(int argc, char **argv) {
 						printf("A client has disconnect from the server\n");
 						printf("The server has %d clients\n", number_clients);
 					}
+					pthread_mutex_lock(&dados);
+					if (number == 0) {
+						number = 1;
+						pthread_cond_signal(&dados_dispo); /* Avisar que há dados novos > 0 */
+
+					}
+					pthread_mutex_unlock(&dados);
 				}
 
 			}
