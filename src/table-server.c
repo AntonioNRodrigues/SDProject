@@ -248,20 +248,16 @@ int network_receive_send(int sockfd) {
 	 * IF IS NOT DONT DO THIS ---> mutex or a condition check
 	 */
 	pthread_mutex_lock(&dados);
-	if (bit_control == 1) {
+	if (bit_control == 0) {
 		if (msg_pedido->opcode == OC_DEL || msg_pedido->opcode == OC_PUT
 				|| msg_pedido->opcode == OC_UPDATE) {
 
 			struct message_t *msg_from_backup = network_send_receive(
 					shared.current_backup, msg_pedido);
-
-			if (msg_from_backup == NULL) {
-				printf("The backup server is down\n");
-				shared.current_backup->sock_file_descriptor = -10;
-				return NULL;
-			}
 		}
 	}
+	bit_control = 1;
+	pthread_cond_signal(&dados_dispo);
 	pthread_mutex_unlock(&dados);
 
 	/* Serializar a mensagem recebida */
@@ -347,16 +343,13 @@ char * read_from_file(char *name_file) {
 void *main_secundary(void * argv) {
 //copy of argv
 	char ** argv_backup = (char **) argv;
-
 	shared.current_backup = network_connect(argv_backup[3]);
-	printf("----%d\n", shared.current_backup->sock_file_descriptor);
 	while (1) {
 		pthread_mutex_lock(&dados);
 		while (bit_control != 0)
 			pthread_cond_wait(&dados_dispo, &dados);
 		bit_control = 0; /* Já processámos dados */
-
-		/* Se já fiz o que tinha a fazer, liberto o mutex*/
+		/*all done free mutex*/
 		pthread_mutex_unlock(&dados);
 		if (bit_control != 0)
 			break;
@@ -391,12 +384,10 @@ int main(int argc, char **argv) {
 	 exit(EXIT_FAILURE);
 	 }*/
 
-//if primario cria a thread
 	if (argc == 4) {
 		printf("Thread created\n");
 		create_thread(argv);
 	}
-//test argc
 
 	if (ignsigpipe() != 0) {
 		perror("ignsigpipe falhou");
@@ -413,7 +404,7 @@ int main(int argc, char **argv) {
 	}
 
 	printf("***********************************\n");
-	printf("*  SERVER --  SUPPORTS %d CLIENTS  *\n",
+	printf("*  SERVER -  SUPPORTS %d CLIENTS  *\n",
 	MAX_SOCKETS - N_POS_NOT_FREE);
 	printf("***********************************\n\n");
 	printf("Waiting for clients\n");
@@ -475,6 +466,7 @@ int main(int argc, char **argv) {
 			for (j = N_POS_NOT_FREE; j < MAX_SOCKETS && result > 0; j++) {
 				//if socket has data to read
 				if (connections[j].revents & POLLIN) {
+					printf("----POLLIN %d\n", bit_control);
 
 					if (network_receive_send(connections[j].fd) < 0) {
 						close(connections[j].fd);
@@ -484,14 +476,18 @@ int main(int argc, char **argv) {
 						printf("The server has %d clients\n", number_clients);
 					}
 					pthread_mutex_lock(&dados);
-					pthread_cond_signal(&dados_dispo);
-
 					if (bit_control == 0) {
+						printf("BEF:: bit == %d\n", bit_control);
 						bit_control = 1;
-					} else {
+						printf("AFT:: bit == %d\n", bit_control);
+					} else if (bit_control == 1) {
+						printf("BEF:: bit == %d\n", bit_control);
 						bit_control = 0;
+						printf("AFT:: bit == %d\n", bit_control);
 					}
-					pthread_mutex_unlock(&dados);/* Avisar que há dados novos > 0 */
+					pthread_cond_signal(&dados_dispo);
+					printf("----POLLIN %d\n", bit_control);
+					pthread_mutex_unlock(&dados);
 				}
 
 			}
