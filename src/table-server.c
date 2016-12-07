@@ -31,7 +31,6 @@
 
 struct shared_t {
 	struct server_t *current_backup;
-	struct server_t *current_primary;
 	char *ip_port_secundary;
 	char *port_secundary;
 };
@@ -45,19 +44,6 @@ int ignsigpipe() {
 	struct sigaction s;
 	s.sa_handler = SIG_IGN;
 	return sigaction(SIGPIPE, &s, NULL);
-}
-
-void *send_receive_secundary(void * msg) {
-
-	struct message_t *msg_to_backup = (struct message_t*) msg;
-	struct message_t *msg_from_backup = network_send_receive(
-			shared.current_backup, msg_to_backup);
-	if (msg_from_backup == NULL) {
-		printf("The backup server is down\n");
-		shared.current_backup->sock_file_descriptor = -10;
-		return NULL;
-	}
-	return (void *) msg_from_backup;
 }
 
 /* Função para preparar uma socket de receção de pedidos de ligação.
@@ -101,92 +87,6 @@ int make_server_socket(short port) {
 	}
 	return socket_fd;
 }
-/**
- *
- */
-int network_receive_send_secundary(int sockfd) {
-	char *message_resposta, *message_pedido;
-	int message_size, msg_size, result;
-	struct message_t *msg_pedido, *msg_resposta;
-
-	/* Verificar parâmetros de entrada */
-	if (sockfd == -1) {
-		return -1;
-	}
-
-	/* Com a função read_all, receber num inteiro o tamanho da
-	 mensagem de pedido que será recebida de seguida.*/
-	result = read_all(sockfd, (char *) &msg_size, _INT);
-	/* Verificar se a receção teve sucesso */
-	if (result == 0) {
-		return -1;
-	}
-
-	message_size = ntohl(msg_size);
-	/* Alocar memória para receber o número de bytes da
-	 mensagem de pedido. */
-	message_pedido = (char *) malloc(message_size);
-	if (message_pedido == NULL) {
-		return -1;
-	}
-
-	/* Com a função read_all, receber a mensagem de pedido. */
-	result = read_all(sockfd, message_pedido, message_size);
-	/* Verificar se a receção teve sucesso */
-	if (result != message_size) {
-		free(message_pedido);
-		return -1;
-	}
-	/* Desserializar a mensagem do pedido */
-	msg_pedido = buffer_to_message(message_pedido, message_size);
-	/* Verificar se a desserialização teve sucesso */
-	if (msg_pedido == NULL) {
-		free(message_pedido);
-		return -1;
-	}
-
-	/* Processar a mensagem */
-	msg_resposta = invoke(msg_pedido);
-	/* Serializar a mensagem recebida */
-	message_size = message_to_buffer(msg_resposta, &message_resposta);
-
-	/* Verificar se a serialização teve sucesso */
-	if (message_size < 0) {
-		free_message(msg_resposta);
-		free_message(msg_pedido);
-		return -1;
-	}
-
-	/* Enviar ao cliente o tamanho da mensagem que será enviada
-	 logo de seguida
-	 */
-	msg_size = htonl(message_size);
-	result = write_all(sockfd, (char *) &msg_size, _INT);
-
-	/* Verificar se o envio teve sucesso */
-	if (result < 0) {
-		free_message(msg_resposta);
-		free_message(msg_pedido);
-		return -1;
-	}
-
-	/* Enviar a mensagem que foi previamente serializada */
-
-	result = write_all(sockfd, message_resposta, message_size);
-
-	/* Verificar se o envio teve sucesso */
-	if (result < 0) {
-		free_message(msg_pedido);
-		free_message(msg_resposta);
-		return -1;
-	}
-
-	/* Libertar memória */
-	free_message(msg_pedido);
-	free_message(msg_resposta);
-	return 1;
-
-}
 
 /* Função "inversa" da função network_send_receive usada no table-client.
  Neste caso a função implementa um ciclo receive/send:
@@ -197,11 +97,9 @@ int network_receive_send_secundary(int sockfd) {
  this message returns 1 (OK) and -1 (NOK)
  */
 int network_receive_send(int sockfd) {
-	struct message_t *temp, *temp1;
-	pthread_t thread;
 	char *message_resposta, *message_pedido;
 	int message_size, msg_size, result;
-	struct message_t *msg_pedido, *msg_resposta;
+	struct message_t *msg_pedido, *msg_resposta, *msg_from_secundary;
 
 	/* Verificar parâmetros de entrada */
 	if (sockfd == -1) {
@@ -242,19 +140,20 @@ int network_receive_send(int sockfd) {
 	/* Processar a mensagem */
 	msg_resposta = invoke(msg_pedido);
 
-	/*after receiving the message ask the backup server*/
-	/*check if the operation is a Write type*/
-	/*IN THIS MOMENT WE HAVE TO CHECK IF THE BACKUP SERVER IS UP || DOWN
-	 * IF IS NOT DONT DO THIS ---> mutex or a condition check
-	 */
+	/*in this stage the if the bitcontrol == 0 the primary already
+	 * passed here and the secundary needs to run this
+	 * in the end change the bitcontrol to 1.*/
 	pthread_mutex_lock(&dados);
 	if (bit_control == 0) {
 		if (msg_pedido->opcode == OC_DEL || msg_pedido->opcode == OC_PUT
 				|| msg_pedido->opcode == OC_UPDATE) {
 
-			struct message_t *msg_from_backup = network_send_receive(
-					shared.current_backup, msg_pedido);
+			msg_from_secundary = network_send_receive(shared.current_backup,
+					msg_pedido);
 		}
+	}
+	if (msg_from_secundary == NULL) {
+		printf("The secundary is down\n");
 	}
 	bit_control = 1;
 	pthread_cond_signal(&dados_dispo);
@@ -340,24 +239,31 @@ char * read_from_file(char *name_file) {
 
 }
 
+/**
+ * function to run when the creation of a thread for the secundary
+ */
 void *main_secundary(void * argv) {
-//copy of argv
 	char ** argv_backup = (char **) argv;
+	// build a server to be the client of the secundary
 	shared.current_backup = network_connect(argv_backup[3]);
 	while (1) {
 		pthread_mutex_lock(&dados);
+		/* while bit_control is not 0 --> in the case of zero the secundary is "active"*/
 		while (bit_control != 0)
+			//waits for dados to be available
 			pthread_cond_wait(&dados_dispo, &dados);
-		bit_control = 0; /* Já processámos dados */
+		bit_control = 0;
 		/*all done free mutex*/
 		pthread_mutex_unlock(&dados);
 		if (bit_control != 0)
 			break;
 	}
-
 	return NULL;
 }
 
+/**
+ *
+ */
 void create_thread(char **argv) {
 	pthread_t thread_sec;
 	if (pthread_create(&thread_sec, NULL, main_secundary, (void *) argv) != 0) {
