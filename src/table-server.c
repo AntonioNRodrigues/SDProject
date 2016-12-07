@@ -10,7 +10,9 @@
  Uso: table-server <porta TCP> <dimensão da tabela>
  Exemplo de uso: ./table_server 54321 10
  */
-
+#define UP 1
+#define DOWN 0
+#define NONE -1
 #include <stdio.h>
 #include <error.h>
 #include <sys/types.h>
@@ -31,12 +33,16 @@
 
 struct shared_t {
 	struct server_t *current_backup;
-	char *ip_port_secundary;
+	char *ip_secundary;
+	char *ip_primary;
 	char *port_secundary;
+	char *port_primary;
+
 };
 
 struct shared_t shared;
 int bit_control = 0;
+int state = NONE;
 pthread_mutex_t dados = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t dados_dispo = PTHREAD_COND_INITIALIZER;
 
@@ -154,6 +160,8 @@ int network_receive_send(int sockfd) {
 	}
 	if (msg_from_secundary == NULL) {
 		printf("The secundary is down\n");
+		state = DOWN;
+		printf("%d\n", state);
 	}
 	bit_control = 1;
 	pthread_cond_signal(&dados_dispo);
@@ -246,6 +254,7 @@ void *main_secundary(void * argv) {
 	char ** argv_backup = (char **) argv;
 	// build a server to be the client of the secundary
 	shared.current_backup = network_connect(argv_backup[3]);
+
 	while (1) {
 		pthread_mutex_lock(&dados);
 		/* while bit_control is not 0 --> in the case of zero the secundary is "active"*/
@@ -289,9 +298,20 @@ int main(int argc, char **argv) {
 
 	 exit(EXIT_FAILURE);
 	 }*/
-
+	printf("%d\n", state);
+	if(argc == 3 && state == DOWN){
+		printf("server is down\n");
+	}
 	if (argc == 4) {
+		char *token1, *token2;
+		token1 = strtok(strdup(argv[3]), ":");
+		token2 = strtok(NULL, "\n");
+		shared.port_primary = strdup(argv[1]);
+		shared.ip_secundary = strdup(token1);
+		shared.port_secundary = strdup(token2);
 		printf("Thread created\n");
+		printf("PORT_P:%s, IP_S:%s PORT_S:%s \n", shared.port_primary,
+				shared.ip_secundary, shared.port_secundary);
 		create_thread(argv);
 	}
 
