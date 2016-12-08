@@ -8,7 +8,7 @@
 #ifndef _TABLE_SKEL_PRIVATE_H
 #define _TABLE_SKEL_PRTIVATE_H
 
-#define MAX_SOCKETS 5
+#define MAX_SOCKETS 10
 #define STDIN_POS 1
 #define TIMEOUT -1
 #define LISTENING_SOCKET_POS 0
