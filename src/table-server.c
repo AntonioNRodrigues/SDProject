@@ -10,6 +10,7 @@
  Uso: table-server <porta TCP> <dimensão da tabela>
  Exemplo de uso: ./table_server 54321 10
  */
+#define PORT_PRIM 44444
 #define UP 1
 #define DOWN 0
 #define NONE -1
@@ -40,6 +41,7 @@ struct shared_t {
 
 };
 
+struct server_t *server;
 struct shared_t shared;
 int bit_control = 0;
 int state = NONE;
@@ -143,29 +145,41 @@ int network_receive_send(int sockfd) {
 		return -1;
 	}
 
-	/* Processar a mensagem */
 	msg_resposta = invoke(msg_pedido);
+
+	if (msg_pedido->opcode == OC_UP) {
+		shared.current_backup = network_connect(msg_pedido->content.key);
+		printf("The secundary is back on\n");
+	}
+	/* Processar a mensagem */
 
 	/*in this stage the if the bitcontrol == 0 the primary already
 	 * passed here and the secundary needs to run this
 	 * in the end change the bitcontrol to 1.*/
 	pthread_mutex_lock(&dados);
 	if (bit_control == 0) {
+
 		if (msg_pedido->opcode == OC_DEL || msg_pedido->opcode == OC_PUT
 				|| msg_pedido->opcode == OC_UPDATE) {
-
-			msg_from_secundary = network_send_receive(shared.current_backup,
-					msg_pedido);
+			//only runs if the opcode is impar, in this case the message has been to the primary
+			//and has to be sent to the secudary
+			if (msg_resposta->opcode % 2 != 0) {
+				msg_pedido->opcode += 1;
+				msg_from_secundary = network_send_receive(shared.current_backup,
+						msg_pedido);
+			}
+			//in the first time the message from the server is null mark the state of the secundary as DOWN
+			if (msg_from_secundary == NULL && state != DOWN) {
+				printf("The secundary is down\n");
+				state = DOWN;
+				printf("%d\n", state);
+			}
 		}
+
+		bit_control = 1;
+		pthread_cond_signal(&dados_dispo);
+		pthread_mutex_unlock(&dados);
 	}
-	if (msg_from_secundary == NULL) {
-		printf("The secundary is down\n");
-		state = DOWN;
-		printf("%d\n", state);
-	}
-	bit_control = 1;
-	pthread_cond_signal(&dados_dispo);
-	pthread_mutex_unlock(&dados);
 
 	/* Serializar a mensagem recebida */
 	message_size = message_to_buffer(msg_resposta, &message_resposta);
@@ -223,15 +237,20 @@ int find_free_connection(struct pollfd *conn) {
 	return free_index;
 }
 
-FILE * write_to_file(char *name_file, char *str) {
+void write_to_file(char *name_file, char *str) {
+	char addresss_port[100];
+	char port[100];
+	sprintf(port, "%d", PORT_PRIM);
+
 	FILE *f = fopen(name_file, "w");
 	if (f == NULL) {
 		perror("File failed to open");
-		return NULL;
 	}
-	fprintf(f, "%s", str);
+	fprintf(f, "%s", strcat(strcat(str, ":"), port));
 	fclose(f);
-	return f;
+
+	printf("File with ip_port of client has been written\n");
+
 }
 char * read_from_file(char *name_file) {
 	char c[1000];
@@ -243,8 +262,16 @@ char * read_from_file(char *name_file) {
 	fscanf(f, "%[^\n]", c);
 	printf("%s\n", c);
 	fclose(f);
-	return c;
+	return *c;
+}
 
+int file_exists(char *name_file) {
+	FILE *f;
+	if (f = fopen(name_file, "r")) {
+		fclose(f);
+		return 1;
+	}
+	return 0;
 }
 
 /**
@@ -254,6 +281,11 @@ void *main_secundary(void * argv) {
 	char ** argv_backup = (char **) argv;
 	// build a server to be the client of the secundary
 	shared.current_backup = network_connect(argv_backup[3]);
+	if (shared.current_backup == NULL) {
+		state = DOWN;
+	} else {
+		state = UP;
+	}
 
 	while (1) {
 		pthread_mutex_lock(&dados);
@@ -261,6 +293,7 @@ void *main_secundary(void * argv) {
 		while (bit_control != 0)
 			//waits for dados to be available
 			pthread_cond_wait(&dados_dispo, &dados);
+
 		bit_control = 0;
 		/*all done free mutex*/
 		pthread_mutex_unlock(&dados);
@@ -298,10 +331,8 @@ int main(int argc, char **argv) {
 
 	 exit(EXIT_FAILURE);
 	 }*/
-	printf("%d\n", state);
-	if(argc == 3 && state == DOWN){
-		printf("server is down\n");
-	}
+
+	//its primary passing here
 	if (argc == 4) {
 		char *token1, *token2;
 		token1 = strtok(strdup(argv[3]), ":");
@@ -327,6 +358,28 @@ int main(int argc, char **argv) {
 	if (table_skel_init(atoi(argv[2])) == -1) {
 		close(listening_socket);
 		return -1;
+	}
+
+	if (argc == 3) {
+		if (file_exists("secundary") == 1) {
+			char address[100];
+			FILE *f = fopen("secundary", "r");
+			fscanf(f, "%[^\n]", address);
+			fclose(f);
+			//connect from the secundary to the primary to update its state
+			struct serve_t *temp_client_s = network_connect(address);
+			if (temp_client_s == NULL) {
+				printf("Connection failed\n");
+			} else {
+				printf("Connection established\n");
+				update_state(temp_client_s);
+				hello(temp_client_s);
+				//FREE TEMP_CLIENT_S----------------__>
+			}
+
+		}
+		state = UP;
+
 	}
 
 	printf("***********************************\n");
@@ -364,13 +417,19 @@ int main(int argc, char **argv) {
 							(struct sockaddr *) &client, &size_client)) > 0) {
 						connections[free_index].events = POLLIN;
 						number_clients++;
+						//get the IP
 						char str[INET_ADDRSTRLEN];
 						inet_ntop(AF_INET, &(client.sin_addr), str,
 						INET_ADDRSTRLEN);
-						//write_to_file("primary",
-						//		strcat(strcat(str, ":"), argv[1]));
-						printf("Client connected on %s with %d\n\n", str,
-								number_clients);
+						/*only writes the ip of the primary so in case of crash of the secundary
+						 * we can make a call to the primary to update the state of the table in the secundary*/
+						if (argc == 3) {
+							write_to_file("secundary", str);
+						}
+
+						printf(
+								"Client on IP = %s connected.\nIt's client number %d\n\n",
+								str, number_clients);
 					} else {
 						printf("there was some error with the accept\n");
 					}
@@ -392,7 +451,7 @@ int main(int argc, char **argv) {
 			for (j = N_POS_NOT_FREE; j < MAX_SOCKETS && result > 0; j++) {
 				//if socket has data to read
 				if (connections[j].revents & POLLIN) {
-					printf("----POLLIN %d\n", bit_control);
+					//printf("----POLLIN %d\n", bit_control);
 
 					if (network_receive_send(connections[j].fd) < 0) {
 						close(connections[j].fd);
@@ -403,16 +462,16 @@ int main(int argc, char **argv) {
 					}
 					pthread_mutex_lock(&dados);
 					if (bit_control == 0) {
-						printf("BEF:: bit == %d\n", bit_control);
+						//printf("BEF:: bit == %d\n", bit_control);
 						bit_control = 1;
-						printf("AFT:: bit == %d\n", bit_control);
+						//printf("AFT:: bit == %d\n", bit_control);
 					} else if (bit_control == 1) {
-						printf("BEF:: bit == %d\n", bit_control);
+						//printf("BEF:: bit == %d\n", bit_control);
 						bit_control = 0;
-						printf("AFT:: bit == %d\n", bit_control);
+						//printf("AFT:: bit == %d\n", bit_control);
 					}
 					pthread_cond_signal(&dados_dispo);
-					printf("----POLLIN %d\n", bit_control);
+					//printf("----POLLIN %d\n", bit_control);
 					pthread_mutex_unlock(&dados);
 				}
 
