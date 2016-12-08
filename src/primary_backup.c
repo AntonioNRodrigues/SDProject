@@ -14,6 +14,10 @@ struct server;
  * Retorna 0 em caso de sucesso, -1 em caso de insucesso
  */
 int hello(struct server_t *server) {
+	if(server == NULL){
+		printf("the message was not send, The server is down\n");
+		return -1;
+	}
 	struct message_t *msg_out = (struct message_t *) malloc(
 			sizeof(struct message_t));
 	if (msg_out == NULL)
@@ -54,6 +58,8 @@ int update_state(struct server_t *server) {
 		msg_out_2->c_type = CT_ENTRY;
 
 		struct message_t * t = network_send_receive(server, msg_out);
+		printf("INSIDE UPDATE_STATE\n");
+		print_msg(t);
 		char ** temp1 = t->content.keys;
 		int i = 0;
 		while (temp1[i] != NULL) {
@@ -69,6 +75,7 @@ int update_state(struct server_t *server) {
 		free_message(msg_out_2);
 		free_message(msg_out);
 	}
+	printf("the state was updated\n");
 	return 0;
 }
 
