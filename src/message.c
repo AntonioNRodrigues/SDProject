@@ -279,7 +279,9 @@ int valid(short opcode, short c_type) {
 			|| opcode == OC_SIZE || opcode == OC_PUT || opcode == OC_UPDATE
 			|| opcode == OC_GET || opcode == OC_RT_ERROR || opcode == OC_DEL + 1
 			|| opcode == OC_SIZE + 1 || opcode == OC_PUT + 1
-			|| opcode == OC_UPDATE + 1 || opcode == OC_GET + 1)
+			|| opcode == OC_UPDATE + 1 || opcode == OC_GET + 1
+			|| opcode == OC_DEL + 1 || opcode == OC_PUT + 2
+			|| opcode == OC_UPDATE + 2)
 			&& (c_type == CT_ENTRY || c_type == CT_KEY || c_type == CT_KEYS
 					|| c_type == CT_RESULT || c_type == CT_VALUE)) ? 0 : -1;
 
