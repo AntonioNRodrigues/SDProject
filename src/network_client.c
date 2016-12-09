@@ -114,7 +114,7 @@ struct server_t *net_connect(struct server_t *server) {
 			(struct sockaddr *) &server->server, sizeof(server->server)) < 0) {
 		perror("Erro ao conectar-se ao servidor");
 		close(server->sock_file_descriptor);
-		free(server);
+		//free(server);
 		return NULL;
 	}
 	return server;

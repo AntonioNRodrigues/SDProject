@@ -149,14 +149,15 @@ int network_receive_send(int sockfd) {
 	}
 
 	/* Processar a mensagem */
-
-	msg_resposta = invoke(msg_pedido);
+	//only process message
+	if (msg_pedido->opcode != OC_STATUS || msg_pedido->opcode != OC_UP) {
+		msg_resposta = invoke(msg_pedido);
+	}
 
 	if (msg_pedido->opcode == OC_STATUS) {
 		msg_resposta->opcode = OC_STATUS;
 		msg_resposta->c_type = CT_RESULT;
 		msg_resposta->content.result = status;
-		print_msg(msg_resposta);
 	}
 
 	if (msg_pedido->opcode == OC_UP) {
@@ -166,6 +167,9 @@ int network_receive_send(int sockfd) {
 					"The secundary could not establish connection to the primary\n");
 		}
 		printf("The secundary is back on\n");
+		msg_resposta->opcode = OC_UP;
+		msg_resposta->c_type = CT_RESULT;
+		msg_resposta->content.result = UP;
 		state = UP;
 	}
 
@@ -182,13 +186,13 @@ int network_receive_send(int sockfd) {
 			//msg_pedido->opcode += 1;
 			msg_from_secundary = network_send_receive(shared.current_backup,
 					msg_pedido);
-		
-		//in the first time the message from the server is null mark the state of the secundary as DOWN
-		if (msg_from_secundary == NULL && state != DOWN) {
-			printf("The secundary is down\n");
-			state = DOWN;
-			printf("State = %d Status = \n", state);
-		}
+
+			//in the first time the message from the server is null mark the state of the secundary as DOWN
+			if (msg_from_secundary == NULL && state != DOWN) {
+				printf("The secundary is down\n");
+				state = DOWN;
+				printf("State = %d Status = \n", state);
+			}
 		}
 	}
 
@@ -417,18 +421,21 @@ int main(int argc, char **argv) {
 
 	//its primary passing here
 	if (argc == 4) {
+		//temp connection to obtain status
 		struct server_t *temp_client_s = network_connect(argv[3]);
-		int v = hello_special(temp_client_s);
-		printf("status %d\n", v);
-		if (v == PRIMARY) {
+		//send message to obtain current status
+		int status_value = hello_special(temp_client_s);
+		printf("Status %d\n", status_value);
+		if (status_value == PRIMARY) {
+			//reconnect again
 			temp_client_s = network_connect(argv[3]);
+			//make the update of its table
 			update_state(temp_client_s);
-			hello_again(temp_client_s, "127.0.0.1:44444");
+			//send the message with his ip and port adress so the current primary connects to him
+			hello_again(temp_client_s, "127.0.0.1:44444")
 			create_thread2(argv);
 		} else {
-
-			printf("STATE %d\n", state);
-
+			//this server is going to be the primary
 			create_thread(argv);
 			status = PRIMARY;
 			state = UP;
@@ -542,10 +549,11 @@ int main(int argc, char **argv) {
 						//printf("%d\", status)
 						/* Since a secundary server only has the primary server as client
 						 * a disconnection means the primary server is down*/
-						if (status == SECUNDARY){
+						if (status == SECUNDARY) {
 							status = PRIMARY;
 							state = DOWN;
-							printf("Primary server is offline, status switched to primary\n");
+							printf(
+									"Primary server is offline, status switched to primary\n");
 						}
 					}
 //					pthread_mutex_lock(&dados);
