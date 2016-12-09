@@ -293,6 +293,7 @@ void *main_secundary(void * argv) {
 	size_message->c_type = CT_RESULT;
 	size_message->content.result = 0;
 
+
 	struct message_t *ret = network_send_receive(shared.current_backup, size_message);
 
 	if(ret->content.result != 0){
