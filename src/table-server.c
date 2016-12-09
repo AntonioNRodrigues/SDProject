@@ -151,6 +151,14 @@ int network_receive_send(int sockfd) {
 	/* Processar a mensagem */
 
 	msg_resposta = invoke(msg_pedido);
+
+	if (msg_pedido->opcode == OC_STATUS) {
+		msg_resposta->opcode = OC_STATUS;
+		msg_resposta->c_type = CT_RESULT;
+		msg_resposta->content.result = status;
+		print_msg(msg_resposta);
+	}
+
 	if (msg_pedido->opcode == OC_UP) {
 		shared.current_backup = network_connect(msg_pedido->content.key);
 		if (shared.current_backup == NULL) {
@@ -180,7 +188,7 @@ int network_receive_send(int sockfd) {
 			printf("The secundary is down\n");
 			status = PRIMARY;
 			state = DOWN;
-			printf("%d\n", state);
+			printf("State = %d Status = \n", state);
 		}
 	}
 
@@ -279,6 +287,46 @@ int file_exists(char *name_file) {
 	}
 	return 0;
 }
+hello_again(struct server_t *server, char *ip_port) {
+	if (server == NULL) {
+		printf("the message was not send, The server is down\n");
+		return -1;
+	}
+	struct message_t *msg_out = (struct message_t *) malloc(
+			sizeof(struct message_t));
+	if (msg_out == NULL)
+		return -1;
+	msg_out->opcode = OC_UP;
+	msg_out->c_type = CT_KEY;
+	msg_out->content.key = strdup(ip_port);
+	struct message_t *tt = network_send_receive(server, msg_out);
+	if (tt == NULL) {
+		return -1;
+	}
+	printf("the message was send\n");
+	network_close(server);
+	return 0;
+}
+hello_special(struct server_t *server) {
+	if (server == NULL) {
+		printf("the message was not send, The server is down\n");
+		return -1;
+	}
+	struct message_t *msg_out = (struct message_t *) malloc(
+			sizeof(struct message_t));
+	if (msg_out == NULL)
+		return -1;
+	msg_out->opcode = OC_STATUS;
+	msg_out->c_type = CT_RESULT;
+	msg_out->content.result = -100;
+	struct message_t *tt = network_send_receive(server, msg_out);
+	if (tt == NULL) {
+		return -1;
+	}
+	printf("the message of OC_STATUS was send\n");
+	network_close(server);
+	return tt->content.result;
+}
 /**
  * function to run when the creation of a thread for the secundary
  */
@@ -286,22 +334,24 @@ void *main_secundary(void * argv) {
 	char ** argv_backup = (char **) argv;
 	// build a server to be the client of the secundary
 	shared.current_backup = network_connect(argv_backup[3]);
-	/*struct message_t *size_message = (struct message_t *) malloc(
-			sizeof(struct message_t));
 
-	size_message->opcode = OC_SIZE;
-	size_message->c_type = CT_RESULT;
-	size_message->content.result = 0;
-
-
-	struct message_t *ret = network_send_receive(shared.current_backup, size_message);
-
-	if(ret->content.result != 0){
-		update_state(shared.current_backup);
-		hello(shared.current_backup);
+	while (1) {
+		pthread_mutex_lock(&dados);
+		/* while bit_control is not 0 --> in the case of zero the secundary is "active"*/
+		while (bit_control != 0)
+			//waits for dados to be available
+			pthread_cond_wait(&dados_dispo, &dados);
+		bit_control = 0;
+		/*all done free mutex*/
+		pthread_mutex_unlock(&dados);
+		if (bit_control != 0)
+			break;
 	}
-*/
-	printf("STATE %d\n", state);
+	return NULL;
+}
+void *main_secundary2(void * argv) {
+	char ** argv_backup = (char **) argv;
+
 	while (1) {
 		pthread_mutex_lock(&dados);
 		/* while bit_control is not 0 --> in the case of zero the secundary is "active"*/
@@ -328,6 +378,15 @@ void create_thread(char **argv) {
 	}
 }
 
+void create_thread2(char **argv) {
+	pthread_t thread_sec;
+	if (pthread_create(&thread_sec, NULL, main_secundary2, (void *) argv)
+			!= 0) {
+		perror("Thread failed");
+		exit(EXIT_FAILURE);
+	}
+}
+
 int main(int argc, char **argv) {
 	struct sockaddr_in client;
 	socklen_t size_client = sizeof(struct sockaddr_in);
@@ -346,27 +405,6 @@ int main(int argc, char **argv) {
 	 exit(EXIT_FAILURE);
 	 }*/
 
-	//its primary passing here
-	if (argc == 4) {
-
-		char *token1, *token2;
-		token1 = strtok(strdup(argv[3]), ":");
-		token2 = strtok(NULL, "\n");
-		shared.port_primary = strdup(argv[1]);
-		shared.ip_secundary = strdup(token1);
-		shared.port_secundary = strdup(token2);
-		printf("Thread created\n");
-		printf("PORT_P:%s, IP_S:%s PORT_S:%s \n", shared.port_primary,
-				shared.ip_secundary, shared.port_secundary);
-		create_thread(argv);
-		status = PRIMARY;
-		state = UP;
-	}
-
-	if (ignsigpipe() != 0) {
-		perror("ignsigpipe falhou");
-		return -1;
-	}
 	/*listening socket up*/
 	if ((listening_socket = make_server_socket(atoi(argv[1]))) < 0) {
 		return -1;
@@ -374,6 +412,32 @@ int main(int argc, char **argv) {
 
 	if (table_skel_init(atoi(argv[2])) == -1) {
 		close(listening_socket);
+		return -1;
+	}
+
+	//its primary passing here
+	if (argc == 4) {
+		struct server_t *temp_client_s = network_connect(argv[3]);
+		int v = hello_special(temp_client_s);
+		printf("status %d\n", v);
+		if (v == PRIMARY) {
+			temp_client_s = network_connect(argv[3]);
+			update_state(temp_client_s);
+			hello_again(temp_client_s, "127.0.0.1:44444");
+			create_thread2(argv);
+		} else {
+
+			printf("STATE %d\n", state);
+
+			create_thread(argv);
+			status = PRIMARY;
+			state = UP;
+
+		}
+	}
+
+	if (ignsigpipe() != 0) {
+		perror("ignsigpipe falhou");
 		return -1;
 	}
 

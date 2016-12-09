@@ -68,7 +68,7 @@ $(OBJ)/table_skel.o: $(SRC)/table_skel.c $(INC)/table_skel.h $(INC)/table_skel-p
 $(OBJ)/table-server.o: $(SRC)/table-server.c $(INC)/inet.h $(INC)/network_client-private.h $(INC)/table.h
 	$(CC) $(FLAGS) -c $(SRC)/table-server.c -o $(OBJ)/table-server.o
 
-$(OBJ)/primary_backup.o: $(SRC)/primary_backup.c
+$(OBJ)/primary_backup.o: $(SRC)/primary_backup.c 
 	$(CC) $(FLAGS) -c $(SRC)/primary_backup.c -o $(OBJ)/primary_backup.o
 	
 $(OBJ)/test_data.o: test_data.c $(INC)/data.h

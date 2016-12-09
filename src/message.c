@@ -275,7 +275,7 @@ struct message_t *buffer_to_message(char *msg_buf, int msg_size) {
  */
 
 int valid(short opcode, short c_type) {
-	return ((opcode == OC_UP || opcode == OC_DOWN || opcode == OC_DEL
+	return ((opcode = OC_STATUS ||opcode == OC_UP || opcode == OC_DOWN || opcode == OC_DEL
 			|| opcode == OC_SIZE || opcode == OC_PUT || opcode == OC_UPDATE
 			|| opcode == OC_GET || opcode == OC_RT_ERROR || opcode == OC_DEL + 1
 			|| opcode == OC_SIZE + 1 || opcode == OC_PUT + 1
