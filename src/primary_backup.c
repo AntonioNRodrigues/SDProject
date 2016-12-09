@@ -26,10 +26,16 @@ int hello(struct server_t *server) {
 	msg_out->c_type = CT_KEY;
 	msg_out->content.key = "127.0.0.1:44445"; //<IP_PRIM:PORT_PRIM> // estamos no ambito do secundario logo nao temos acesso a isto
 	struct message_t *tt = network_send_receive(server, msg_out);
+	if(tt == NULL){
+		return -1;
+	}
 	printf("the message was send\n");
 	network_close(server);
 	return 0;
 }
+//int hello (struct server_t *server, char*ip_port){
+
+//}
 
 /**
  * Pede atualização de estado ao server.
@@ -59,7 +65,6 @@ int update_state(struct server_t *server) {
 
 		struct message_t * t = network_send_receive(server, msg_out);
 		printf("INSIDE UPDATE_STATE\n");
-		print_msg(t);
 		char ** temp1 = t->content.keys;
 		int i = 0;
 		while (temp1[i] != NULL) {

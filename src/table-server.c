@@ -279,7 +279,6 @@ int file_exists(char *name_file) {
 	}
 	return 0;
 }
-
 /**
  * function to run when the creation of a thread for the secundary
  */
@@ -287,13 +286,21 @@ void *main_secundary(void * argv) {
 	char ** argv_backup = (char **) argv;
 	// build a server to be the client of the secundary
 	shared.current_backup = network_connect(argv_backup[3]);
+	/*struct message_t *size_message = (struct message_t *) malloc(
+			sizeof(struct message_t));
 
-	if (shared.current_backup == NULL) {
-		state = DOWN;
-	} else {
-		state = UP;
+	size_message->opcode = OC_SIZE;
+	size_message->c_type = CT_RESULT;
+	size_message->content.result = 0;
+
+	struct message_t *ret = network_send_receive(shared.current_backup, size_message);
+
+	if(ret->content.result != 0){
+		update_state(shared.current_backup);
+		hello(shared.current_backup);
 	}
-
+*/
+	printf("STATE %d\n", state);
 	while (1) {
 		pthread_mutex_lock(&dados);
 		/* while bit_control is not 0 --> in the case of zero the secundary is "active"*/
@@ -340,6 +347,7 @@ int main(int argc, char **argv) {
 
 	//its primary passing here
 	if (argc == 4) {
+
 		char *token1, *token2;
 		token1 = strtok(strdup(argv[3]), ":");
 		token2 = strtok(NULL, "\n");
