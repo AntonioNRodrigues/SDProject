@@ -174,13 +174,13 @@ int network_receive_send(int sockfd) {
 			//msg_pedido->opcode += 1;
 			msg_from_secundary = network_send_receive(shared.current_backup,
 					msg_pedido);
-		}
+		
 		//in the first time the message from the server is null mark the state of the secundary as DOWN
 		if (msg_from_secundary == NULL && state != DOWN) {
 			printf("The secundary is down\n");
-			status = PRIMARY;
 			state = DOWN;
 			printf("%d\n", state);
+		}
 		}
 	}
 
@@ -475,6 +475,14 @@ int main(int argc, char **argv) {
 						connections[j].fd = -1;
 						printf("A client has disconnect from the server\n");
 						printf("The server has %d clients\n", number_clients);
+						//printf("%d\", status)
+						/* Since a secundary server only has the primary server as client
+						 * a disconnection means the primary server is down*/
+						if (status == SECUNDARY){
+							status = PRIMARY;
+							state = DOWN;
+							printf("Primary server is offline, status switched to primary\n");
+						}
 					}
 //					pthread_mutex_lock(&dados);
 					//			if (bit_control == 0) {
