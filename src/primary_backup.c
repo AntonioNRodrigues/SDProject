@@ -8,7 +8,6 @@
 #include <stdio.h>
 #include <error.h>
 
-struct server;
 /**
  * Funcão usada para um servidor avisar o "server" de que já acordou.
  * Retorna 0 em caso de sucesso, -1 em caso de insucesso
@@ -33,9 +32,6 @@ int hello(struct server_t *server) {
 	network_close(server);
 	return 0;
 }
-//int hello (struct server_t *server, char*ip_port){
-
-//}
 
 /**
  * Pede atualização de estado ao server.
@@ -64,24 +60,33 @@ int update_state(struct server_t *server) {
 		msg_out_2->c_type = CT_ENTRY;
 
 		struct message_t * t = network_send_receive(server, msg_out);
-		printf("INSIDE UPDATE_STATE\n");
-		char ** temp1 = t->content.keys;
-		int i = 0;
-		while (temp1[i] != NULL) {
-			msg_out->content.key = strdup(temp1[i]);
-			// get the data from all keys
-			struct message_t *tt = network_send_receive(server, msg_out);
-			msg_out_2->content.entry = entry_create(temp1[i], tt->content.data);
-			//put it on its table
-			invoke(msg_out_2);
-			i++;
+		//is the table is empty the message sent is with content.result wit zero
+		if (t->content.result == 0) {
+			printf("the state was updated table has no elements\n");
+		} else {
+			char ** temp1 = t->content.keys;
+			int i = 0;
+			while (temp1[i] != NULL) {
+				msg_out->content.key = strdup(temp1[i]);
+				// get the data from all keys
+				struct message_t *tt = network_send_receive(server, msg_out);
+				msg_out_2->content.entry = entry_create(temp1[i],
+						tt->content.data);
+				//put it on its table
+				invoke(msg_out_2);
+				i++;
+			}
+			table_free_keys(temp1);
 		}
-		table_free_keys(temp1);
+
 		free_message(msg_out_2);
 		free_message(msg_out);
+
+		printf("the state was updated\n");
+		return 0;
 	}
-	printf("the state was updated\n");
-	return 0;
+	printf("the state was not updated the server was null\n");
+	return -1;
 }
 
 int hello_again(struct server_t *server, char *ip_port) {
@@ -104,7 +109,7 @@ int hello_again(struct server_t *server, char *ip_port) {
 	network_close(server);
 	return 0;
 }
-int hello_special(struct server_t *server) {
+int ask_status(struct server_t *server) {
 	if (server == NULL) {
 		printf("the message was not send, The server is down\n");
 		return -1;
@@ -120,7 +125,7 @@ int hello_special(struct server_t *server) {
 	if (tt == NULL) {
 		return -1;
 	}
-	printf("the message of OC_STATUS was send\n");
+	printf("the message with OC_STATUS was send\n");
 	network_close(server);
 	return tt->content.result;
 }

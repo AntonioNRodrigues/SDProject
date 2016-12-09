@@ -31,14 +31,8 @@
 
 struct shared_t {
 	struct server_t *current_backup;
-	char *ip_secundary;
-	char *ip_primary;
-	char *port_secundary;
-	char *port_primary;
-
 };
 
-struct server_t *server;
 struct shared_t shared;
 int bit_control = 0;
 int state = NONE;
@@ -144,7 +138,7 @@ int network_receive_send(int sockfd) {
 	}
 
 	/* Processar a mensagem */
-	//only process message
+	//only process message if its not one of the cases : OC_STATUS || OC_UP
 	if (msg_pedido->opcode != OC_STATUS || msg_pedido->opcode != OC_UP) {
 		msg_resposta = invoke(msg_pedido);
 	}
@@ -265,18 +259,6 @@ void write_to_file(char *name_file, char *str) {
 	printf("File with ip_port of client has been written\n");
 
 }
-char * read_from_file(char *name_file) {
-	char c[1000];
-	FILE *f = fopen(name_file, "r");
-	if (f == NULL) {
-		perror("File failed to open");
-		return NULL;
-	}
-	fscanf(f, "%[^\n]", c);
-	printf("%s\n", c);
-	fclose(f);
-	return *c;
-}
 
 int file_exists(char *name_file) {
 	FILE *f;
@@ -310,8 +292,6 @@ void *main_secundary(void * argv) {
 	return NULL;
 }
 void *main_secundary2(void * argv) {
-	char ** argv_backup = (char **) argv;
-
 	while (1) {
 		pthread_mutex_lock(&dados);
 		/* while bit_control is not 0 --> in the case of zero the secundary is "active"*/
@@ -347,6 +327,59 @@ void create_thread2(char **argv) {
 	}
 }
 
+void deal_with_secundary(char ** argv_copy) {
+	//checks is the file exists
+	if (file_exists("secundary") == 1) {
+		char address[INET_ADDRSTRLEN + 6];
+		FILE *f = fopen("secundary", "r");
+		fscanf(f, "%[^\n]", address);
+		fclose(f);
+		//connect from the secundary to the primary to update its state
+		struct server_t *temp_client_s = network_connect(address);
+		if (temp_client_s == NULL) {
+			printf("Connection failed\n");
+		} else {
+			printf("The Secundary is client of the Primary\n");
+			update_state(temp_client_s);
+			hello_again(temp_client_s, address);
+		}
+	}
+	status = SECUNDARY;
+	state = UP;
+}
+
+void deal_with_primary(char **argv_copy) {
+	//temp connection to obtain status
+	struct server_t *temp_client_s = network_connect(argv_copy[3]);
+	//send message to obtain current status
+	int status_value = ask_status(temp_client_s);
+	printf("Status %d\n", status_value);
+	if (status_value == PRIMARY) {
+
+		char ip[INET_ADDRSTRLEN];
+		char port[6];
+		inet_ntop(AF_INET, &(temp_client_s->server.sin_addr), ip,
+		INET_ADDRSTRLEN);
+		sprintf(port, "%d", PORT_PRIM);
+		//reconnect again
+		temp_client_s = network_connect(argv_copy[3]);
+		//make the update of its table
+		update_state(temp_client_s);
+		//send the message with his ip and port adress so the current primary connects to him
+		hello_again(temp_client_s, strcat(strcat(ip, ":"), port));
+		status = SECUNDARY;
+		state = UP;
+		create_thread2(argv_copy);
+
+	} else {
+		//this server is going to be the primary
+		status = PRIMARY;
+		state = UP;
+		create_thread(argv_copy);
+
+	}
+}
+
 int main(int argc, char **argv) {
 	struct sockaddr_in client;
 	socklen_t size_client = sizeof(struct sockaddr_in);
@@ -375,65 +408,18 @@ int main(int argc, char **argv) {
 		return -1;
 	}
 
-	//its primary passing here
-	if (argc == 4) {
-		int len = sizeof(struct sockaddr);
-		struct sockaddr_in local;
-		//temp connection to obtain status
-		struct server_t *temp_client_s = network_connect(argv[3]);
-		//send message to obtain current status
-		int status_value = hello_special(temp_client_s);
-		printf("Status %d\n", status_value);
-		if (status_value == PRIMARY) {
-			//reconnect again
-			char str[INET_ADDRSTRLEN];
-
-			getsockname(temp_client_s->sock_file_descriptor,
-					(struct sockaddr *) &local, &len);
-			inet_ntop(AF_INET, &(temp_client_s->server.sin_addr), str,
-			INET_ADDRSTRLEN);
-			printf("%s", str);
-			temp_client_s = network_connect(argv[3]);
-			//make the update of its table
-			update_state(temp_client_s);
-			//send the message with his ip and port adress so the current primary connects to him
-			hello_again(temp_client_s, "127.0.0.1:44444");
-			create_thread2(argv);
-			status = SECUNDARY;
-			state = UP;
-		} else {
-			//this server is going to be the primary
-			create_thread(argv);
-			status = PRIMARY;
-			state = UP;
-
-		}
-	}
-
 	if (ignsigpipe() != 0) {
-		perror("ignsigpipe falhou");
+		perror("ignsigpipe failed");
 		return -1;
 	}
 
-	if (argc == 3) {
-		if (file_exists("secundary") == 1) {
-			char address[100];
-			FILE *f = fopen("secundary", "r");
-			fscanf(f, "%[^\n]", address);
-			fclose(f);
-			//connect from the secundary to the primary to update its state
-			struct server_t *temp_client_s = network_connect(address);
-			if (temp_client_s == NULL) {
-				printf("Connection failed\n");
-			} else {
-				printf("The Secundary is client of the primary\n");
-				update_state(temp_client_s);
-				hello_again(temp_client_s, address);
-			}
-		}
-		status = SECUNDARY;
-		state = UP;
+	//its primary passing here
+	if (argc == 4) {
+		deal_with_primary(argv);
+	}
 
+	if (argc == 3) {
+		deal_with_secundary(argv);
 	}
 
 	printf("***********************************\n");
