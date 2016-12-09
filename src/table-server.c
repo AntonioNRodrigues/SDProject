@@ -14,6 +14,8 @@
 #define UP 1
 #define DOWN 0
 #define NONE -1
+#define PRIMARY 1
+#define SECUNDARY 2
 #include <stdio.h>
 #include <error.h>
 #include <sys/types.h>
@@ -45,6 +47,7 @@ struct server_t *server;
 struct shared_t shared;
 int bit_control = 0;
 int state = NONE;
+int status;
 pthread_mutex_t dados = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t dados_dispo = PTHREAD_COND_INITIALIZER;
 
@@ -167,14 +170,15 @@ int network_receive_send(int sockfd) {
 			|| msg_pedido->opcode == OC_UPDATE) {
 		//only runs if the opcode is impar, in this case the message has been to the primary
 		//and has to be sent to the secudary
-		if (msg_resposta->opcode % 2 != 0 && state == UP) {
-			msg_pedido->opcode += 1;
+		if (state == UP && status == PRIMARY) {
+			//msg_pedido->opcode += 1;
 			msg_from_secundary = network_send_receive(shared.current_backup,
 					msg_pedido);
 		}
 		//in the first time the message from the server is null mark the state of the secundary as DOWN
 		if (msg_from_secundary == NULL && state != DOWN) {
 			printf("The secundary is down\n");
+			status = PRIMARY;
 			state = DOWN;
 			printf("%d\n", state);
 		}
@@ -346,6 +350,8 @@ int main(int argc, char **argv) {
 		printf("PORT_P:%s, IP_S:%s PORT_S:%s \n", shared.port_primary,
 				shared.ip_secundary, shared.port_secundary);
 		create_thread(argv);
+		status = PRIMARY;
+		state = UP;
 	}
 
 	if (ignsigpipe() != 0) {
@@ -377,8 +383,8 @@ int main(int argc, char **argv) {
 				update_state(temp_client_s);
 				hello(temp_client_s);
 			}
-
 		}
+		status = SECUNDARY;
 		state = UP;
 
 	}
