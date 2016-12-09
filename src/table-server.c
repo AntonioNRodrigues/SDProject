@@ -10,12 +10,7 @@
  Uso: table-server <porta TCP> <dimensão da tabela>
  Exemplo de uso: ./table_server 54321 10
  */
-#define PORT_PRIM 44444
-#define UP 1
-#define DOWN 0
-#define NONE -1
-#define PRIMARY 1
-#define SECUNDARY 2
+
 #include <stdio.h>
 #include <error.h>
 #include <sys/types.h>
@@ -291,46 +286,7 @@ int file_exists(char *name_file) {
 	}
 	return 0;
 }
-hello_again(struct server_t *server, char *ip_port) {
-	if (server == NULL) {
-		printf("the message was not send, The server is down\n");
-		return -1;
-	}
-	struct message_t *msg_out = (struct message_t *) malloc(
-			sizeof(struct message_t));
-	if (msg_out == NULL)
-		return -1;
-	msg_out->opcode = OC_UP;
-	msg_out->c_type = CT_KEY;
-	msg_out->content.key = strdup(ip_port);
-	struct message_t *tt = network_send_receive(server, msg_out);
-	if (tt == NULL) {
-		return -1;
-	}
-	printf("the message was send\n");
-	network_close(server);
-	return 0;
-}
-hello_special(struct server_t *server) {
-	if (server == NULL) {
-		printf("the message was not send, The server is down\n");
-		return -1;
-	}
-	struct message_t *msg_out = (struct message_t *) malloc(
-			sizeof(struct message_t));
-	if (msg_out == NULL)
-		return -1;
-	msg_out->opcode = OC_STATUS;
-	msg_out->c_type = CT_RESULT;
-	msg_out->content.result = -100;
-	struct message_t *tt = network_send_receive(server, msg_out);
-	if (tt == NULL) {
-		return -1;
-	}
-	printf("the message of OC_STATUS was send\n");
-	network_close(server);
-	return tt->content.result;
-}
+
 /**
  * function to run when the creation of a thread for the secundary
  */
@@ -432,8 +388,10 @@ int main(int argc, char **argv) {
 			//make the update of its table
 			update_state(temp_client_s);
 			//send the message with his ip and port adress so the current primary connects to him
-			hello_again(temp_client_s, "127.0.0.1:44444")
+			hello_again(temp_client_s, "127.0.0.1:44444");
 			create_thread2(argv);
+			status = SECUNDARY;
+			state = UP;
 		} else {
 			//this server is going to be the primary
 			create_thread(argv);
@@ -530,7 +488,7 @@ int main(int argc, char **argv) {
 				input[strlen(input) - 1] = '\0';
 
 				(strcmp(input, "print") == 0) ?
-						print_status() : printf("Command Invalid\n");
+						print_status(status) : printf("Command Invalid\n");
 
 				result--;
 

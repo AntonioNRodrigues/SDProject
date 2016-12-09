@@ -39,9 +39,13 @@ struct message_t * build_error_msg(struct message_t *msg_error) {
 	return msg_error;
 }
 
-void print_status() {
+void print_status(int sta) {
 	printf("*************************\n");
-	printf("***SEC || PRIM  *********\n");
+	if (sta == PRIMARY) {
+		printf("*** PRIMARY  *********\n");
+	}if (sta == SECUNDARY) {
+		printf("*** SECUNDARY  *********\n");
+	}
 	printf("                         \n");
 	printf(" Table keys              \n");
 

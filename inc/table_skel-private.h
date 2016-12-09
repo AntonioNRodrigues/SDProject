@@ -14,6 +14,13 @@
 #define LISTENING_SOCKET_POS 0
 #define N_POS_NOT_FREE 2
 
+#define PORT_PRIM 44444
+#define UP 1
+#define DOWN 0
+#define NONE -1
+#define PRIMARY 1
+#define SECUNDARY 2
+
 #include "table-private.h"
 #include "table_skel.h"
 
