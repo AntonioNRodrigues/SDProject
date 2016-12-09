@@ -377,6 +377,8 @@ int main(int argc, char **argv) {
 
 	//its primary passing here
 	if (argc == 4) {
+		int len = sizeof(struct sockaddr);
+		struct sockaddr_in local;
 		//temp connection to obtain status
 		struct server_t *temp_client_s = network_connect(argv[3]);
 		//send message to obtain current status
@@ -384,6 +386,13 @@ int main(int argc, char **argv) {
 		printf("Status %d\n", status_value);
 		if (status_value == PRIMARY) {
 			//reconnect again
+			char str[INET_ADDRSTRLEN];
+
+			getsockname(temp_client_s->sock_file_descriptor,
+					(struct sockaddr *) &local, &len);
+			inet_ntop(AF_INET, &(temp_client_s->server.sin_addr), str,
+			INET_ADDRSTRLEN);
+			printf("%s", str);
 			temp_client_s = network_connect(argv[3]);
 			//make the update of its table
 			update_state(temp_client_s);
@@ -419,7 +428,7 @@ int main(int argc, char **argv) {
 			} else {
 				printf("The Secundary is client of the primary\n");
 				update_state(temp_client_s);
-				hello(temp_client_s);
+				hello_again(temp_client_s, address);
 			}
 		}
 		status = SECUNDARY;
