@@ -432,7 +432,7 @@ int main(int argc, char **argv) {
 			//make the update of its table
 			update_state(temp_client_s);
 			//send the message with his ip and port adress so the current primary connects to him
-			hello_again(temp_client_s, "127.0.0.1:44444")
+			hello_again(temp_client_s, "127.0.0.1:44444");
 			create_thread2(argv);
 		} else {
 			//this server is going to be the primary

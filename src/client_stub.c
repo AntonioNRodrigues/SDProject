@@ -111,22 +111,22 @@ struct server_t *current_server(struct rtable_t *rtable) {
 void switch_server(struct rtable_t *rtable) {
 	if (rtable != NULL) {
 		if (rtable->current_server == SERVER_ONE) {
-			close(current_server(rtable)->sock_file_descriptor);
+			//close(current_server(rtable)->sock_file_descriptor);
 			rtable->current_server = SERVER_TWO;
 			rtable->server_two = net_connect(rtable->server_two);
 		} else {
-			close(current_server(rtable)->sock_file_descriptor);
+			//close(current_server(rtable)->sock_file_descriptor);
 			rtable->current_server = SERVER_ONE;
 			rtable->server_one = net_connect(rtable->server_one);
 		}
 	}
 }
+
 /*@see client_stub-private.h*/
 struct message_t * retry_servers(struct rtable_t *rtable,
 		struct message_t* msg_out) {
 	struct message_t *msg_resposta = network_send_receive(
 			current_server(rtable), msg_out);
-
 	if (msg_resposta == NULL) {
 		switch_server(rtable);
 		//send message to next server
@@ -144,7 +144,6 @@ struct message_t * retry_servers(struct rtable_t *rtable,
 			}
 		}
 	}
-
 	return msg_resposta;
 }
 int rtable_put(struct rtable_t *rtable, char *key, struct data_t *value) {
@@ -168,6 +167,7 @@ int rtable_put(struct rtable_t *rtable, char *key, struct data_t *value) {
 	printf("----Message Received----\n");
 	if (msg_resposta == NULL) {
 		printf("There was no answer\n ");
+		return -1;
 	} else {
 		print_msg(msg_resposta);
 		if (msg_resposta->opcode == OC_RT_ERROR) {
