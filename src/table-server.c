@@ -328,20 +328,35 @@ void create_thread2(char **argv) {
 }
 
 void deal_with_secundary(char ** argv_copy) {
+	char ip_sec[INET_ADDRSTRLEN];
+	char ip_secundary_client[INET_ADDRSTRLEN];
+	char address[INET_ADDRSTRLEN + 6];
+	socklen_t len = sizeof(struct sockaddr_in);
+	struct sockaddr_in local;
+
 	//checks is the file exists
 	if (file_exists("secundary") == 1) {
-		char address[INET_ADDRSTRLEN + 6];
 		FILE *f = fopen("secundary", "r");
 		fscanf(f, "%[^\n]", address);
 		fclose(f);
 		//connect from the secundary to the primary to update its state
+		//<IP_PRIM: PORT DE ESCUTA DELE>
 		struct server_t *temp_client_s = network_connect(address);
 		if (temp_client_s == NULL) {
 			printf("Connection failed\n");
 		} else {
+			getsockname(temp_client_s->sock_file_descriptor,
+					(struct sockaddr *) &local, &len);
+			inet_ntop(AF_INET, &(local.sin_addr), ip_sec,
+			INET_ADDRSTRLEN);
+			inet_ntop(AF_INET, &(temp_client_s->server.sin_addr),
+					ip_secundary_client,
+					INET_ADDRSTRLEN);
 			printf("The Secundary is client of the Primary\n");
 			update_state(temp_client_s);
-			hello_again(temp_client_s, address);
+			//<reconnect to primary send the IP_SEC:MYPORT_ESCUTA>
+			hello_again(temp_client_s,
+					strcat(strcat(ip_sec, ":"), argv_copy[1]));
 		}
 	}
 	status = SECUNDARY;
@@ -349,23 +364,30 @@ void deal_with_secundary(char ** argv_copy) {
 }
 
 void deal_with_primary(char **argv_copy) {
+	socklen_t len = sizeof(struct sockaddr_in);
+	struct sockaddr_in local;
+
 	//temp connection to obtain status
 	struct server_t *temp_client_s = network_connect(argv_copy[3]);
 	//send message to obtain current status
 	int status_value = ask_status(temp_client_s);
 	printf("Status %d\n", status_value);
 	if (status_value == PRIMARY) {
-
+		//this one is going to be the secundary
 		char ip[INET_ADDRSTRLEN];
 		char port[6];
-		inet_ntop(AF_INET, &(temp_client_s->server.sin_addr), ip,
-		INET_ADDRSTRLEN);
 		sprintf(port, "%d", PORT_PRIM);
 		//reconnect again
 		temp_client_s = network_connect(argv_copy[3]);
 		//make the update of its table
 		update_state(temp_client_s);
-		//send the message with his ip and port adress so the current primary connects to him
+
+		getsockname(temp_client_s->sock_file_descriptor,
+				(struct sockaddr *) &local, &len);
+		inet_ntop(AF_INET, &(local.sin_addr), ip,
+		INET_ADDRSTRLEN);
+		printf("IP===%s\n", ip);
+		//send the message with his ip and port address so the current primary connects to him
 		hello_again(temp_client_s, strcat(strcat(ip, ":"), port));
 		status = SECUNDARY;
 		state = UP;

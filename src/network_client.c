@@ -283,7 +283,6 @@ int network_close(struct server_t *server) {
 	/* Terminar ligação ao servidor */
 	/*result = (0 ==> sucess) || (-1 ==> error) */
 	int result = close(server->sock_file_descriptor);
-
 	free(server);
 	return result;
 }
