@@ -409,16 +409,17 @@ int main(int argc, char **argv) {
 	int listening_socket, result, i = 1, j = 1, l = 1;
 	int number_clients = 0;
 
-	/*if (argc != 3 || argc != 4) {
+	if (argc != 3 || argc != 4) {
+	 printf("------------------------------------------------------------\n");
 	 printf(
-	 "Use for primary: ./table-server <port TCP> <size table> <IP:Port backup_sever>\n");
-	 printf("use ex: ./table-server 54321 10 127.0.0.1:44445\n");
-
-	 printf("Use for secundary: ./table-server <port TCP> <size table> \n");
-	 printf("use ex: ./table-server 54321 10 \n");
-
+	 "Use for primary: \n./table-server <port TCP> <size table> <IP:Port backup_sever>\n");
+	 printf("Ex: ./table-server 54321 10 127.0.0.1:44445\n");
+	 printf("------------------------------------------------------------\n");
+	 printf("Use for secundary: \n./table-server <port TCP> <size table> \n");
+	 printf("Ex: ./table-server 54321 10 \n");
+	 printf("------------------------------------------------------------\n");
 	 exit(EXIT_FAILURE);
-	 }*/
+	 }
 
 	/*listening socket up*/
 	if ((listening_socket = make_server_socket(atoi(argv[1]))) < 0) {
