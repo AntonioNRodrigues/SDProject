@@ -374,7 +374,7 @@ void deal_with_primary(char **argv_copy) {
 	printf("Status %d\n", status_value);
 	if (status_value == PRIMARY) {
 		//this one is going to be the secundary
-		char ip[INET_ADDRSTRLEN];
+		char ip[INET_ADDRSTRLEN + 6];
 		char port[6];
 		sprintf(port, "%d", PORT_PRIM);
 		//reconnect again
@@ -391,7 +391,7 @@ void deal_with_primary(char **argv_copy) {
 		hello_again(temp_client_s, strcat(strcat(ip, ":"), port));
 		status = SECUNDARY;
 		state = UP;
-		create_thread2(argv_copy);
+		//create_thread2(argv_copy);
 
 	} else {
 		//this server is going to be the primary
