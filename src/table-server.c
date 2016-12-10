@@ -485,7 +485,7 @@ int main(int argc, char **argv) {
 						INET_ADDRSTRLEN);
 						/*only writes the ip of the primary so in case of crash of the secundary
 						 * we can make a call to the primary to update the state of the table in the secundary*/
-						if (argc == 3) {
+						if (argc == 3 && status == SECUNDARY) {
 							write_to_file("secundary", str);
 						}
 
