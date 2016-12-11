@@ -165,7 +165,6 @@ int network_receive_send(int sockfd) {
 			if (msg_from_secundary == NULL && state != DOWN) {
 				printf("The secundary is down\n");
 				state = DOWN;
-				printf("State = %d Status = %d\n", state, status);
 			}
 		}
 	}
