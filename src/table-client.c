@@ -18,12 +18,6 @@
 #include "client_stub-private.h"
 #include <signal.h>
 
-int ignsigpipe() {
-	struct sigaction s;
-	s.sa_handler = SIG_IGN;
-	return sigaction(SIGPIPE, &s, NULL);
-}
-
 /*
  * Checks if command line arguments are a valid
  */

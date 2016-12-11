@@ -9,6 +9,7 @@
 #define _NETWORK_CLIENT_PRIVATE_H
 
 #include "inet.h"
+#include <signal.h>
 #include "network_client.h"
 
 struct server_t {
@@ -41,5 +42,10 @@ struct server_t *network_prepare(const char *address_port);
  * function to establish the connection with the server
  */
 struct server_t *net_connect(struct server_t *server);
+
+/*
+ * function to deal with SIGPIPE signals
+ */
+int ignsigpipe();
 
 #endif

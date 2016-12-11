@@ -287,3 +287,9 @@ int network_close(struct server_t *server) {
 	return result;
 }
 
+int ignsigpipe() {
+	struct sigaction s;
+	s.sa_handler = SIG_IGN;
+	return sigaction(SIGPIPE, &s, NULL);
+}
+

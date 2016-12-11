@@ -5,12 +5,6 @@
  * Ricardo Veloso n.º44842
  */
 
-/*
- Programa que implementa um servidor de uma tabela hash com chainning.
- Uso: table-server <porta TCP> <dimensão da tabela>
- Exemplo de uso: ./table_server 54321 10
- */
-
 #include <stdio.h>
 #include <error.h>
 #include <sys/types.h>
@@ -40,11 +34,6 @@ int status;
 pthread_mutex_t dados = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t dados_dispo = PTHREAD_COND_INITIALIZER;
 
-int ignsigpipe() {
-	struct sigaction s;
-	s.sa_handler = SIG_IGN;
-	return sigaction(SIGPIPE, &s, NULL);
-}
 
 /* Função para preparar uma socket de receção de pedidos de ligação.
  */
@@ -137,9 +126,9 @@ int network_receive_send(int sockfd) {
 		return -1;
 	}
 
-	/* Processar a mensagem */
 	//only process message if its not one of the cases : OC_STATUS || OC_UP
 	if (msg_pedido->opcode != OC_STATUS || msg_pedido->opcode != OC_UP) {
+		/* Processar a mensagem */
 		msg_resposta = invoke(msg_pedido);
 	}
 
@@ -162,17 +151,12 @@ int network_receive_send(int sockfd) {
 		state = UP;
 	}
 
-	/*in this stage the if the bitcontrol == 0 the primary already
-	 * passed here and the secundary needs to run this
-	 * in the end change the bitcontrol to 1.*/
-	//pthread_mutex_lock(&dados);
-	//if (bit_control == 0) {
 	if (msg_pedido->opcode == OC_DEL || msg_pedido->opcode == OC_PUT
 			|| msg_pedido->opcode == OC_UPDATE) {
-		//only runs if the opcode is impar, in this case the message has been to the primary
-		//and has to be sent to the secudary
+
+		/*only runs if the state is UP (scundary is on) and the primary
+		 * sent's the msg to the secundary*/
 		if (state == UP && status == PRIMARY) {
-			//msg_pedido->opcode += 1;
 			msg_from_secundary = network_send_receive(shared.current_backup,
 					msg_pedido);
 
@@ -184,11 +168,6 @@ int network_receive_send(int sockfd) {
 			}
 		}
 	}
-
-	//	bit_control = 1;
-	//pthread_cond_signal(&dados_dispo);
-	//pthread_mutex_unlock(&dados);
-	//}
 
 	/* Serializar a mensagem recebida */
 	message_size = message_to_buffer(msg_resposta, &message_resposta);
@@ -409,18 +388,22 @@ int main(int argc, char **argv) {
 	int listening_socket, result, i = 1, j = 1, l = 1;
 	int number_clients = 0;
 
-	if (argc != 3 || argc != 4) {
-	 printf("------------------------------------------------------------\n");
+	/*	if (argc != 3 || argc != 4) {
 	 printf(
-	 "Use for primary: \n./table-server <port TCP> <size table> <IP:Port backup_sever>\n");
+	 "------------------------------------------------------------\n");
+	 printf(
+	 "Use for primary: \n./table-server <port TCP> <size table> <IP:Port primary>\n");
 	 printf("Ex: ./table-server 54321 10 127.0.0.1:44445\n");
-	 printf("------------------------------------------------------------\n");
-	 printf("Use for secundary: \n./table-server <port TCP> <size table> \n");
+	 printf(
+	 "------------------------------------------------------------\n");
+	 printf(
+	 "Use for secundary: \n./table-server <port TCP> <size table> \n");
 	 printf("Ex: ./table-server 54321 10 \n");
-	 printf("------------------------------------------------------------\n");
+	 printf(
+	 "------------------------------------------------------------\n");
 	 exit(EXIT_FAILURE);
 	 }
-
+	 */
 	/*listening socket up*/
 	if ((listening_socket = make_server_socket(atoi(argv[1]))) < 0) {
 		return -1;
@@ -514,15 +497,12 @@ int main(int argc, char **argv) {
 			for (j = N_POS_NOT_FREE; j < MAX_SOCKETS && result > 0; j++) {
 				//if socket has data to read
 				if (connections[j].revents & POLLIN) {
-					//printf("----POLLIN %d\n", bit_control);
-
 					if (network_receive_send(connections[j].fd) < 0) {
 						close(connections[j].fd);
 						number_clients--;
 						connections[j].fd = -1;
 						printf("A client has disconnect from the server\n");
 						printf("The server has %d clients\n", number_clients);
-						//printf("%d\", status)
 						/* Since a secundary server only has the primary server as client
 						 * a disconnection means the primary server is down*/
 						if (status == SECUNDARY) {
@@ -532,21 +512,8 @@ int main(int argc, char **argv) {
 									"Primary server is offline, status switched to primary\n");
 						}
 					}
-//					pthread_mutex_lock(&dados);
-					//			if (bit_control == 0) {
-					//printf("BEF:: bit == %d\n", bit_control);
-					//			bit_control = 1;
-					//printf("AFT:: bit == %d\n", bit_control);
-					//		} else if (bit_control == 1) {
-					//printf("BEF:: bit == %d\n", bit_control);
-					//		bit_control = 0;
-					//printf("AFT:: bit == %d\n", bit_control);
-				}
-				//pthread_cond_signal(&dados_dispo);
-				//printf("----POLLIN %d\n", bit_control);
-				//	pthread_mutex_unlock(&dados);
-				//}
 
+				}
 			}
 		}
 	}
