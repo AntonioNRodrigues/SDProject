@@ -11,13 +11,8 @@
 #include "client_stub-private.h"
 #include "network_client-private.h"
 
-const char *address; // TO BE DELETED
-
 struct rtable_t *rtable_bind(const char *address_port) {
 	if (address_port == NULL)
-		return NULL;
-	address = strdup(address_port);
-	if (address == NULL)
 		return NULL;
 
 	struct rtable_t *remote_table = (struct rtable_t *) malloc(
@@ -35,45 +30,12 @@ struct rtable_t *rtable_bind(const char *address_port) {
 	remote_table->current_server = SERVER_ONE;
 	return remote_table;
 }
-
-/*tTO BE DELETED*/
-struct rtable_t *rtable_rebind(struct rtable_t *remote_table) {
-	if (remote_table == NULL)
-		return NULL;
-
-	// if server inside remote_table is down try to connect
-	if (remote_table->server_one == NULL) {
-		remote_table->server_one = network_connect(address);
-		if (remote_table->server_one == NULL) {
-			return NULL;
-		}
-		return remote_table;
-	} else {
-		//use the server inside the remote_table to reconnect
-		remote_table->server_one = network_reconnect(remote_table->server_one);
+void complete_remote_table(struct rtable_t *remote_table, char **argv_copy) {
+	if (remote_table != NULL) {
+		remote_table->server_two = NULL;
+		remote_table->ip_port_server_one = strdup(argv_copy[1]);
+		remote_table->ip_port_server_two = strdup(argv_copy[2]);
 	}
-	// it was not possible to reconnect
-	if (remote_table->server_one == NULL) {
-		return NULL;
-	}
-
-	return remote_table;
-}
-
-/*TO BE DELETED ------->*/
-int retry(struct rtable_t *remote_table) {
-
-	printf("The server failed to respond, trying again in %d ms\n",
-	RETRY_TIME);
-	/*time out in miliseconds*/
-	poll(0, 0, RETRY_TIME);
-	//remote_table = rtable_rebind(remote_table);
-	if (remote_table == NULL) {
-		rtable_unbind(remote_table);
-		return -1;
-	}
-
-	return 1;
 }
 
 int rtable_unbind(struct rtable_t *rtable) {
@@ -90,17 +52,6 @@ int rtable_unbind(struct rtable_t *rtable) {
 	return result;
 }
 
-int prepare_backup_server(struct rtable_t * rtable, const char *address_port) {
-	if (rtable == NULL || address_port == NULL) {
-		return -1;
-	}
-	rtable->server_two = network_prepare(address_port);
-	if (rtable->server_two == NULL) {
-		return -1;
-	}
-	return 0;
-}
-
 struct server_t *current_server(struct rtable_t *rtable) {
 	if (rtable == NULL)
 		return NULL;
@@ -111,13 +62,11 @@ struct server_t *current_server(struct rtable_t *rtable) {
 void switch_server(struct rtable_t *rtable) {
 	if (rtable != NULL) {
 		if (rtable->current_server == SERVER_ONE) {
-			//close(current_server(rtable)->sock_file_descriptor);
 			rtable->current_server = SERVER_TWO;
-			rtable->server_two = net_connect(rtable->server_two);
+			rtable->server_two = network_connect(rtable->ip_port_server_two);
 		} else {
-			//close(current_server(rtable)->sock_file_descriptor);
 			rtable->current_server = SERVER_ONE;
-			rtable->server_one = net_connect(rtable->server_one);
+			rtable->server_one = network_connect(rtable->ip_port_server_one);
 		}
 	}
 }

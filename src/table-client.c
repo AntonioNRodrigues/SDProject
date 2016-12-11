@@ -75,17 +75,14 @@ int main(int argc, char **argv) {
 	/* Usar network_connect para estabelecer ligação ao servidor */
 	printf("trying to establish the connection\n\n");
 	remote_table = rtable_bind(argv[1]);
+	/*fill the rest of the struct*/
+	complete_remote_table(remote_table, argv);
 
 	if (remote_table->server_one == NULL) {
 		free(remote_table);
 		printf("Remote server is down\n");
 		return -1;
 	}
-	int value = prepare_backup_server(remote_table, argv[2]);
-
-	(value == -1) ?
-			printf("the backup server is not ready\n") :
-			printf("The backup server is ready for connected\n");
 
 	printf("Connection established\n\n");
 	/* Fazer ciclo até que o utilizador resolva fazer "quit" */
