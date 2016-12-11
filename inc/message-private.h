@@ -16,11 +16,27 @@
 #define OC_DOWN 101
 #define OC_STATUS 102
 
-#include "table-private.h" /* For table_free_keys() */
+#include "table-private.h"
 #include "message.h"
 
 int valid(short opcode, short c_type);
 
+/**
+ * function to build a message to send the ip and port between severs
+ */
 void print_msg(struct message_t *msg);
+/**
+ * function to build a message to send the ip and port between severs
+ */
+struct message_t * build_ip_msg(struct message_t *msg_ip, char *ip_port) ;
+
+/**
+ * function to build a message to send the status between servers
+ */
+struct message_t * build_status_msg(struct message_t *msg_status);
+/**
+ * function to build a message to send the an msg_error
+ */
+struct message_t * build_error_msg(struct message_t *msg_error);
 
 #endif

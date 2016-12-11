@@ -162,7 +162,7 @@ int rtable_put(struct rtable_t *rtable, char *key, struct data_t *value) {
 	/*send message to current_server*/
 	struct message_t * msg_resposta = retry_servers(rtable, msg_out);
 
-	printf("----Message Sent------\n");
+	printf("----Message Sent--------\n");
 	print_msg(msg_out);
 	printf("----Message Received----\n");
 	if (msg_resposta == NULL) {
@@ -212,7 +212,7 @@ int rtable_update(struct rtable_t *rtable, char *key, struct data_t *value) {
 	/*send message to current_server*/
 	struct message_t * msg_resposta = retry_servers(rtable, msg_out);
 
-	printf("----Message Sent------\n");
+	printf("----Message Sent--------\n");
 	print_msg(msg_out);
 	printf("----Message Received----\n");
 	if (msg_resposta == NULL) {
@@ -243,7 +243,7 @@ struct data_t *rtable_get(struct rtable_t *rtable, char *key) {
 	/*send message to current_server*/
 	struct message_t * msg_resposta = retry_servers(rtable, msg_out);
 
-	printf("----Message Sent------\n");
+	printf("----Message Sent--------\n");
 	print_msg(msg_out);
 	free_message(msg_out);
 	printf("----Message Received----\n");
@@ -284,7 +284,7 @@ int rtable_del(struct rtable_t *rtable, char *key) {
 	/*send message to current_server*/
 	struct message_t * msg_resposta = retry_servers(rtable, msg_out);
 
-	printf("----Message Sent------\n");
+	printf("----Message Sent--------\n");
 	print_msg(msg_out);
 	free_message(msg_out);
 	printf("----Message Received----\n");
@@ -321,7 +321,7 @@ int rtable_size(struct rtable_t *rtable) {
 	/*send message to current_server*/
 	struct message_t * msg_resposta = retry_servers(rtable, msg_out);
 
-	printf("----Message Sent------\n");
+	printf("----Message Sent--------\n");
 	print_msg(msg_out);
 	free_message(msg_out);
 	printf("----Message Received----\n");
@@ -357,7 +357,7 @@ char **rtable_get_keys(struct rtable_t *rtable) {
 	/*send message to current_server*/
 	struct message_t * msg_resposta = retry_servers(rtable, msg_out);
 
-	printf("----Message Sent------\n");
+	printf("----Message Sent--------\n");
 	print_msg(msg_out);
 	free_message(msg_out);
 	printf("----Message Received----\n");

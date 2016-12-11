@@ -23,6 +23,7 @@
 #include "table_skel-private.h"
 #include "primary_backup.h"
 
+/*data type to share the sever_t*/
 struct shared_t {
 	struct server_t *current_backup;
 };
@@ -33,7 +34,6 @@ int state = NONE;
 int status;
 pthread_mutex_t dados = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t dados_dispo = PTHREAD_COND_INITIALIZER;
-
 
 /* Função para preparar uma socket de receção de pedidos de ligação.
  */
@@ -143,12 +143,13 @@ int network_receive_send(int sockfd) {
 		if (shared.current_backup == NULL) {
 			printf(
 					"The secundary could not establish connection to the primary\n");
+		} else {
+			printf("The secundary is back on\n");
+			msg_resposta->opcode = OC_UP;
+			msg_resposta->c_type = CT_RESULT;
+			msg_resposta->content.result = UP;
+			state = UP;
 		}
-		printf("The secundary is back on\n");
-		msg_resposta->opcode = OC_UP;
-		msg_resposta->c_type = CT_RESULT;
-		msg_resposta->content.result = UP;
-		state = UP;
 	}
 
 	if (msg_pedido->opcode == OC_DEL || msg_pedido->opcode == OC_PUT
@@ -164,7 +165,7 @@ int network_receive_send(int sockfd) {
 			if (msg_from_secundary == NULL && state != DOWN) {
 				printf("The secundary is down\n");
 				state = DOWN;
-				printf("State = %d Status = \n", state);
+				printf("State = %d Status = %d\n", state, status);
 			}
 		}
 	}
@@ -224,9 +225,12 @@ int find_free_connection(struct pollfd *conn) {
 	}
 	return free_index;
 }
-
+/*
+ * function to write to a file the str and the default
+ * port of primary into a file
+ */
 void write_to_file(char *name_file, char *str) {
-	char port[100];
+	char port[PORT_LEN];
 	sprintf(port, "%d", PORT_PRIM);
 
 	FILE *f = fopen(name_file, "w");
@@ -238,7 +242,10 @@ void write_to_file(char *name_file, char *str) {
 	printf("File with ip_port of client has been written\n");
 
 }
-
+/**
+ * function to check is a file withe name_file exists
+ * returns 0 if not exists and 1 if exists
+ */
 int file_exists(char *name_file) {
 	FILE *f;
 	if ((f = fopen(name_file, "r"))) {
@@ -270,25 +277,7 @@ void *main_secundary(void * argv) {
 	}
 	return NULL;
 }
-void *main_secundary2(void * argv) {
-	while (1) {
-		pthread_mutex_lock(&dados);
-		/* while bit_control is not 0 --> in the case of zero the secundary is "active"*/
-		while (bit_control != 0)
-			//waits for dados to be available
-			pthread_cond_wait(&dados_dispo, &dados);
-		bit_control = 0;
-		/*all done free mutex*/
-		pthread_mutex_unlock(&dados);
-		if (bit_control != 0)
-			break;
-	}
-	return NULL;
-}
 
-/**
- *
- */
 void create_thread(char **argv) {
 	pthread_t thread_sec;
 	if (pthread_create(&thread_sec, NULL, main_secundary, (void *) argv) != 0) {
@@ -297,19 +286,11 @@ void create_thread(char **argv) {
 	}
 }
 
-void create_thread2(char **argv) {
-	pthread_t thread_sec;
-	if (pthread_create(&thread_sec, NULL, main_secundary2, (void *) argv)
-			!= 0) {
-		perror("Thread failed");
-		exit(EXIT_FAILURE);
-	}
-}
-
-void deal_with_secundary(char ** argv_copy) {
+void secundary(char ** argv_copy) {
 	char ip_sec[INET_ADDRSTRLEN];
 	char ip_secundary_client[INET_ADDRSTRLEN];
-	char address[INET_ADDRSTRLEN + 6];
+	char address[INET_ADDRSTRLEN + PORT_LEN];
+
 	socklen_t len = sizeof(struct sockaddr_in);
 	struct sockaddr_in local;
 
@@ -319,7 +300,7 @@ void deal_with_secundary(char ** argv_copy) {
 		fscanf(f, "%[^\n]", address);
 		fclose(f);
 		//connect from the secundary to the primary to update its state
-		//<IP_PRIM: PORT DE ESCUTA DELE>
+		//<IP_PRIM: His listening port>
 		struct server_t *temp_client_s = network_connect(address);
 		if (temp_client_s == NULL) {
 			printf("Connection failed\n");
@@ -333,7 +314,7 @@ void deal_with_secundary(char ** argv_copy) {
 					INET_ADDRSTRLEN);
 			printf("The Secundary is client of the Primary\n");
 			update_state(temp_client_s);
-			//<reconnect to primary send the IP_SEC:MYPORT_ESCUTA>
+			//reconnect to primary send the IP_SEC:LIST_PORT_SEC>
 			hello_again(temp_client_s,
 					strcat(strcat(ip_sec, ":"), argv_copy[1]));
 		}
@@ -342,7 +323,7 @@ void deal_with_secundary(char ** argv_copy) {
 	state = UP;
 }
 
-void deal_with_primary(char **argv_copy) {
+void primary(char **argv_copy) {
 	socklen_t len = sizeof(struct sockaddr_in);
 	struct sockaddr_in local;
 
@@ -350,29 +331,28 @@ void deal_with_primary(char **argv_copy) {
 	struct server_t *temp_client_s = network_connect(argv_copy[3]);
 	//send message to obtain current status
 	int status_value = ask_status(temp_client_s);
-	printf("Status %d\n", status_value);
+	printf("The primary is asking the Status of the other server %d\n",
+			status_value);
 	if (status_value == PRIMARY) {
 		//this one is going to be the secundary
-		char ip[INET_ADDRSTRLEN + 6];
-		char port[6];
+		char ip[INET_ADDRSTRLEN + PORT_LEN];
+		char port[PORT_LEN];
 		sprintf(port, "%d", PORT_PRIM);
 		//reconnect again
-		temp_client_s = network_connect(argv_copy[3]);
+		//temp_client_s = network_connect(argv_copy[3]);
 		//make the update of its table
 		update_state(temp_client_s);
-
 		getsockname(temp_client_s->sock_file_descriptor,
 				(struct sockaddr *) &local, &len);
 		inet_ntop(AF_INET, &(local.sin_addr), ip,
 		INET_ADDRSTRLEN);
-		printf("IP===%s\n", ip);
 		//send the message with his ip and port address so the current primary connects to him
 		hello_again(temp_client_s, strcat(strcat(ip, ":"), port));
 		status = SECUNDARY;
 		state = UP;
-		//create_thread2(argv_copy);
 
 	} else {
+		network_close(temp_client_s);
 		//this server is going to be the primary
 		status = PRIMARY;
 		state = UP;
@@ -388,22 +368,21 @@ int main(int argc, char **argv) {
 	int listening_socket, result, i = 1, j = 1, l = 1;
 	int number_clients = 0;
 
-	/*	if (argc != 3 || argc != 4) {
-	 printf(
-	 "------------------------------------------------------------\n");
-	 printf(
-	 "Use for primary: \n./table-server <port TCP> <size table> <IP:Port primary>\n");
-	 printf("Ex: ./table-server 54321 10 127.0.0.1:44445\n");
-	 printf(
-	 "------------------------------------------------------------\n");
-	 printf(
-	 "Use for secundary: \n./table-server <port TCP> <size table> \n");
-	 printf("Ex: ./table-server 54321 10 \n");
-	 printf(
-	 "------------------------------------------------------------\n");
-	 exit(EXIT_FAILURE);
-	 }
-	 */
+	if (argc < 3 || argc > 4) {
+		printf(
+				"------------------------------------------------------------\n");
+		printf(
+				"Use for primary: \n./table-server <port TCP> <size table> <IP:Port primary>\n");
+		printf("Ex: ./table-server 54321 10 127.0.0.1:44445\n");
+		printf(
+				"------------------------------------------------------------\n");
+		printf(
+				"Use for secundary: \n./table-server <port TCP> <size table> \n");
+		printf("Ex: ./table-server 54321 10 \n");
+		printf(
+				"------------------------------------------------------------\n");
+		exit(EXIT_FAILURE);
+	}
 	/*listening socket up*/
 	if ((listening_socket = make_server_socket(atoi(argv[1]))) < 0) {
 		return -1;
@@ -421,16 +400,21 @@ int main(int argc, char **argv) {
 
 	//its primary passing here
 	if (argc == 4) {
-		deal_with_primary(argv);
+		primary(argv);
 	}
 
 	if (argc == 3) {
-		deal_with_secundary(argv);
+		secundary(argv);
 	}
 
 	printf("***********************************\n");
-	printf("*  SERVER -  SUPPORTS %d CLIENTS  *\n",
-	MAX_SOCKETS - N_POS_NOT_FREE);
+	if (status == PRIMARY) {
+		printf("*  SERVER -  SUPPORTS %d CLIENTS  *\n",
+		MAX_SOCKETS - N_POS_NOT_FREE);
+	}else{
+		printf("*  SECUNDARY                      *\n");
+	}
+
 	printf("***********************************\n\n");
 	printf("Waiting for clients\n");
 
@@ -498,7 +482,8 @@ int main(int argc, char **argv) {
 				//if socket has data to read
 				if (connections[j].revents & POLLIN) {
 					if (network_receive_send(connections[j].fd) < 0) {
-						close(connections[j].fd);
+						int value = close(connections[j].fd);
+						printf("VALUE CLOSE %d\n", value);
 						number_clients--;
 						connections[j].fd = -1;
 						printf("A client has disconnect from the server\n");
@@ -508,8 +493,6 @@ int main(int argc, char **argv) {
 						if (status == SECUNDARY) {
 							status = PRIMARY;
 							state = DOWN;
-							printf(
-									"Primary server is offline, status switched to primary\n");
 						}
 					}
 

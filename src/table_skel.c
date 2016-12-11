@@ -32,19 +32,12 @@ int table_skel_destroy() {
 	return tabela == NULL ? 0 : -1;
 }
 
-struct message_t * build_error_msg(struct message_t *msg_error) {
-	msg_error->c_type = CT_RESULT;
-	msg_error->opcode = OC_RT_ERROR;
-	msg_error->content.result = -1;
-	return msg_error;
-}
-
 void print_status(int sta) {
 	printf("*************************\n");
 	if (sta == PRIMARY) {
-		printf("*** PRIMARY  *********\n");
+		printf("*** PRIMARY *************\n");
 	}if (sta == SECUNDARY) {
-		printf("*** SECUNDARY  *********\n");
+		printf("*** SECUNDARY ***********\n");
 	}
 	printf("                         \n");
 	printf(" Table keys              \n");
@@ -103,7 +96,7 @@ struct message_t *invoke(struct message_t *msg_in) {
 			msg_resposta->content.result = result;
 		}
 		break;
-	case (OC_PUT):
+	case OC_PUT:
 		result = table_put(tabela, msg_in->content.entry->key,
 				msg_in->content.entry->value);
 		//table_put failed
@@ -121,25 +114,6 @@ struct message_t *invoke(struct message_t *msg_in) {
 			msg_resposta->content.result = result;
 		}
 		break;
-	case (OC_PUT + 1):
-		result = table_put(tabela, msg_in->content.entry->key,
-				msg_in->content.entry->value);
-		//table_put failed
-		if (result == -1) {
-			msg_resposta = build_error_msg(msg_resposta);
-			//table_put of a key that is in the system
-		} else if (result == -10) {
-			msg_resposta->c_type = CT_RESULT;
-			msg_resposta->opcode = OC_PUT + 2;
-			msg_resposta->content.result = -10;
-			//table put success
-		} else {
-			msg_resposta->c_type = CT_RESULT;
-			msg_resposta->opcode = OC_PUT + 2;
-			msg_resposta->content.result = result;
-		}
-		break;
-
 	case OC_GET:
 
 		temp_key = strdup(msg_in->content.key);
@@ -191,30 +165,7 @@ struct message_t *invoke(struct message_t *msg_in) {
 			msg_resposta->content.result = result;
 		}
 		break;
-	case OC_UPDATE + 1:
-		result = table_update(tabela, msg_in->content.entry->key,
-				msg_in->content.entry->value);
-		//table_update failed
-		if (result == -1) {
-			msg_resposta = build_error_msg(msg_resposta);
-		} else {
-			msg_resposta->c_type = CT_RESULT;
-			msg_resposta->opcode = OC_UPDATE + 2;
-			msg_resposta->content.result = result;
-		}
-		break;
 	case OC_DEL:
-		result = table_del(tabela, msg_in->content.key);
-		//table_del failed
-		if (result == -1) {
-			msg_resposta = build_error_msg(msg_resposta);
-		} else {
-			msg_resposta->opcode = OC_DEL + 1;
-			msg_resposta->c_type = CT_RESULT;
-			msg_resposta->content.result = result;
-		}
-		break;
-	case OC_DEL + 1:
 		result = table_del(tabela, msg_in->content.key);
 		//table_del failed
 		if (result == -1) {
@@ -229,7 +180,7 @@ struct message_t *invoke(struct message_t *msg_in) {
 		break;
 	}
 
-	printf("----Message Sent------\n");
+	printf("----Message Sent--------\n");
 	print_msg(msg_resposta);
 	return msg_resposta;
 }

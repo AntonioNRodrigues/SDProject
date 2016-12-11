@@ -14,6 +14,7 @@
 #define LISTENING_SOCKET_POS 0
 #define N_POS_NOT_FREE 2
 
+#define PORT_LEN 6
 #define PORT_PRIM 44444
 #define UP 1
 #define DOWN 0

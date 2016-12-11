@@ -2,7 +2,7 @@
 #define _PRIMARY_BACKUP_H
 
 #include "primary_backup-private.h"
-#include "message.h"
+#include "message-private.h"
 #include "network_client-private.h"
 #include "table_skel-private.h"
 #include <stdio.h>
@@ -13,23 +13,7 @@
  * Retorna 0 em caso de sucesso, -1 em caso de insucesso
  */
 int hello(struct server_t *server) {
-	if (server == NULL) {
-		printf("the message was not send, The server is down\n");
-		return -1;
-	}
-	struct message_t *msg_out = (struct message_t *) malloc(
-			sizeof(struct message_t));
-	if (msg_out == NULL)
-		return -1;
-	msg_out->opcode = OC_UP;
-	msg_out->c_type = CT_KEY;
-	msg_out->content.key = "127.0.0.1:44445"; //<IP_PRIM:PORT_PRIM> // estamos no ambito do secundario logo nao temos acesso a isto
-	struct message_t *tt = network_send_receive(server, msg_out);
-	if (tt == NULL) {
-		return -1;
-	}
-	printf("the message was send\n");
-	network_close(server);
+	//function not used;
 	return 0;
 }
 
@@ -98,15 +82,16 @@ int hello_again(struct server_t *server, char *ip_port) {
 			sizeof(struct message_t));
 	if (msg_out == NULL)
 		return -1;
-	msg_out->opcode = OC_UP;
-	msg_out->c_type = CT_KEY;
-	msg_out->content.key = strdup(ip_port);
+	msg_out = build_ip_msg(msg_out, ip_port);
 	struct message_t *tt = network_send_receive(server, msg_out);
 	if (tt == NULL) {
 		return -1;
 	}
 	printf("the message was send\n");
+	re_use_socket(server);
 	network_close(server);
+	free_message(tt);
+	free_message(msg_out);
 	return 0;
 }
 int ask_status(struct server_t *server) {
@@ -118,16 +103,31 @@ int ask_status(struct server_t *server) {
 			sizeof(struct message_t));
 	if (msg_out == NULL)
 		return -1;
-	msg_out->opcode = OC_STATUS;
-	msg_out->c_type = CT_RESULT;
-	msg_out->content.result = -100;
+	msg_out = build_status_msg(msg_out);
+
 	struct message_t *tt = network_send_receive(server, msg_out);
 	if (tt == NULL) {
 		return -1;
 	}
 	printf("the message with OC_STATUS was send\n");
-	network_close(server);
-	return tt->content.result;
+	int result = tt->content.result;
+	free_message(tt);
+	free_message(msg_out);
+	return result;
 }
 
+void re_use_socket(struct server_t *server) {
+	//make the socket reusable
+	int reuse_address = 1, reuse_port = 1;
+	//REUSEADDR
+	if (setsockopt(server->sock_file_descriptor, SOL_SOCKET, SO_REUSEADDR,
+			(int *) &reuse_address, sizeof(reuse_address)) < 0) {
+		perror("Error reusing the socket :: REUSEADDR");
+	}
+	//REUSEPORT
+	if (setsockopt(server->sock_file_descriptor, SOL_SOCKET, SO_REUSEPORT,
+			(int *) &reuse_port, sizeof(reuse_port)) < 0) {
+		perror("Error reusing the socket :: REUSEPORT");
+	}
+}
 #endif

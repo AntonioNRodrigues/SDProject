@@ -6,6 +6,7 @@
 
 int ask_status(struct server_t *server);
 int hello_again(struct server_t *server, char *ip_port);
+void re_use_socket (struct server_t *server);
 
 #endif
 

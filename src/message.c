@@ -12,6 +12,27 @@
 
 #include "message-private.h"
 
+struct message_t * build_ip_msg(struct message_t *msg_ip, char *ip_port) {
+	msg_ip->opcode = OC_UP;
+	msg_ip->c_type = CT_KEY;
+	msg_ip->content.key = strdup(ip_port);
+	return msg_ip;
+}
+
+struct message_t * build_status_msg(struct message_t *msg_status) {
+	msg_status->opcode = OC_STATUS;
+	msg_status->c_type = CT_RESULT;
+	msg_status->content.result = -100;
+	return msg_status;
+}
+
+struct message_t * build_error_msg(struct message_t *msg_error) {
+	msg_error->c_type = CT_RESULT;
+	msg_error->opcode = OC_RT_ERROR;
+	msg_error->content.result = -1;
+	return msg_error;
+}
+
 void free_message(struct message_t *msg) {
 
 	if (msg != NULL) {
@@ -275,13 +296,12 @@ struct message_t *buffer_to_message(char *msg_buf, int msg_size) {
  */
 
 int valid(short opcode, short c_type) {
-	return ((opcode = OC_STATUS ||opcode == OC_UP || opcode == OC_DOWN || opcode == OC_DEL
-			|| opcode == OC_SIZE || opcode == OC_PUT || opcode == OC_UPDATE
-			|| opcode == OC_GET || opcode == OC_RT_ERROR || opcode == OC_DEL + 1
-			|| opcode == OC_SIZE + 1 || opcode == OC_PUT + 1
-			|| opcode == OC_UPDATE + 1 || opcode == OC_GET + 1
-			|| opcode == OC_DEL + 1 || opcode == OC_PUT + 2
-			|| opcode == OC_UPDATE + 2)
+	return ((opcode = OC_STATUS || opcode == OC_UP || opcode == OC_DOWN
+			|| opcode == OC_DEL || opcode == OC_SIZE || opcode == OC_PUT
+			|| opcode == OC_UPDATE || opcode == OC_GET || opcode == OC_RT_ERROR
+			|| opcode == OC_DEL + 1 || opcode == OC_SIZE + 1
+			|| opcode == OC_PUT + 1 || opcode == OC_UPDATE + 1
+			|| opcode == OC_GET + 1 || opcode == OC_DEL + 1)
 			&& (c_type == CT_ENTRY || c_type == CT_KEY || c_type == CT_KEYS
 					|| c_type == CT_RESULT || c_type == CT_VALUE)) ? 0 : -1;
 
@@ -291,34 +311,36 @@ int valid(short opcode, short c_type) {
  */
 void print_msg(struct message_t *msg) {
 	int i;
-
-	printf("====== MESSAGE =========\n");
-	printf("opcode: %d, c_type: %d\n", msg->opcode, msg->c_type);
-	switch (msg->c_type) {
-	case CT_ENTRY: {
-		printf("key: %s\n", msg->content.entry->key);
-		printf("datasize: %d\n", msg->content.entry->value->datasize);
-	}
-		break;
-	case CT_KEY: {
-		printf("key: %s\n", msg->content.key);
-	}
-		break;
-	case CT_KEYS: {
-		for (i = 0; msg->content.keys[i] != NULL; i++) {
-			printf("key[%d]: %s\n", i, msg->content.keys[i]);
+	if (valid(msg->opcode, msg->c_type) == 0) {
+		printf("====== MESSAGE =========\n");
+		printf("opcode: %d, c_type: %d\n", msg->opcode, msg->c_type);
+		switch (msg->c_type) {
+		case CT_ENTRY: {
+			printf("key: %s\n", msg->content.entry->key);
+			printf("datasize: %d\n", msg->content.entry->value->datasize);
 		}
+			break;
+		case CT_KEY: {
+			printf("key: %s\n", msg->content.key);
+		}
+			break;
+		case CT_KEYS: {
+			for (i = 0; msg->content.keys[i] != NULL; i++) {
+				printf("key[%d]: %s\n", i, msg->content.keys[i]);
+			}
+		}
+			break;
+		case CT_VALUE: {
+			printf("datasize: %d\n", msg->content.data->datasize);
+		}
+			break;
+		case CT_RESULT: {
+			printf("result: %d\n", msg->content.result);
+		}
+			;
+		}
+		printf("========================\n\n");
 	}
-		break;
-	case CT_VALUE: {
-		printf("datasize: %d\n", msg->content.data->datasize);
-	}
-		break;
-	case CT_RESULT: {
-		printf("result: %d\n", msg->content.result);
-	}
-		;
-	}
-	printf("========================\n\n");
+
 }
 
