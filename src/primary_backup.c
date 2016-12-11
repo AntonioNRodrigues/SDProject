@@ -46,7 +46,7 @@ int update_state(struct server_t *server) {
 		struct message_t * t = network_send_receive(server, msg_out);
 		//is the table is empty the message sent is with content.result wit zero
 		if (t->content.result == 0) {
-			printf("the state was updated table has no elements\n");
+			printf("The state was updated\n Table had no elements\n");
 		} else {
 			char ** temp1 = t->content.keys;
 			int i = 0;
@@ -66,16 +66,16 @@ int update_state(struct server_t *server) {
 		free_message(msg_out_2);
 		free_message(msg_out);
 
-		printf("the state was updated\n");
+		printf("The state was updated\n");
 		return 0;
 	}
-	printf("the state was not updated the server was null\n");
+	printf("The state was not updated the server was null\n");
 	return -1;
 }
 
-int hello_again(struct server_t *server, char *ip_port) {
+int send_connect_ip(struct server_t *server, char *ip_port) {
 	if (server == NULL) {
-		printf("the message was not send, The server is down\n");
+		printf("The message was not send, The server is down\n");
 		return -1;
 	}
 	struct message_t *msg_out = (struct message_t *) malloc(
@@ -87,8 +87,7 @@ int hello_again(struct server_t *server, char *ip_port) {
 	if (tt == NULL) {
 		return -1;
 	}
-	printf("the message was send\n");
-	re_use_socket(server);
+	printf("The message OC_UP with ip was send\n");
 	network_close(server);
 	free_message(tt);
 	free_message(msg_out);
@@ -96,7 +95,7 @@ int hello_again(struct server_t *server, char *ip_port) {
 }
 int ask_status(struct server_t *server) {
 	if (server == NULL) {
-		printf("the message was not send, The server is down\n");
+		printf("The message was not send, The server is down\n");
 		return -1;
 	}
 	struct message_t *msg_out = (struct message_t *) malloc(
@@ -109,25 +108,11 @@ int ask_status(struct server_t *server) {
 	if (tt == NULL) {
 		return -1;
 	}
-	printf("the message with OC_STATUS was send\n");
+	printf("The message OC_STATUS was send\n");
 	int result = tt->content.result;
 	free_message(tt);
 	free_message(msg_out);
 	return result;
 }
 
-void re_use_socket(struct server_t *server) {
-	//make the socket reusable
-	int reuse_address = 1, reuse_port = 1;
-	//REUSEADDR
-	if (setsockopt(server->sock_file_descriptor, SOL_SOCKET, SO_REUSEADDR,
-			(int *) &reuse_address, sizeof(reuse_address)) < 0) {
-		perror("Error reusing the socket :: REUSEADDR");
-	}
-	//REUSEPORT
-	if (setsockopt(server->sock_file_descriptor, SOL_SOCKET, SO_REUSEPORT,
-			(int *) &reuse_port, sizeof(reuse_port)) < 0) {
-		perror("Error reusing the socket :: REUSEPORT");
-	}
-}
 #endif

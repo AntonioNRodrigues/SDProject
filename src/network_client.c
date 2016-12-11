@@ -93,110 +93,11 @@ struct server_t *network_connect(const char *address_port) {
 
 	if (connect(server->sock_file_descriptor,
 			(struct sockaddr *) &server->server, sizeof(server->server)) < 0) {
-		perror("Erro ao conectar-se ao servidor");
+		perror("Error connection to server");
 		close(server->sock_file_descriptor);
 		free(server);
 		return NULL;
 	}
-	return server;
-}
-
-/**
- * function to establish the connection with the server
- */
-struct server_t *net_connect(struct server_t *server) {
-
-	if (server == NULL) {
-		return NULL;
-	}
-
-	if (connect(server->sock_file_descriptor,
-			(struct sockaddr *) &server->server, sizeof(server->server)) < 0) {
-		perror("Erro ao conectar-se ao servidor");
-		close(server->sock_file_descriptor);
-		//free(server);
-		return NULL;
-	}
-	return server;
-}
-
-struct server_t *network_reconnect(struct server_t* server) {
-	if (server == NULL) {
-		return NULL;
-	}
-
-	struct server_t *new_server = (struct server_t *) malloc(
-			sizeof(struct server_t));
-	if (new_server == NULL) {
-		return NULL;
-	}
-
-	if ((new_server->sock_file_descriptor = socket(AF_INET, SOCK_STREAM, 0))
-			< 0) {
-		perror("Error creating the socket");
-		free(new_server);
-		return NULL;
-	}
-	new_server->server.sin_family = AF_INET;
-	new_server->server.sin_port = server->server.sin_port;
-	new_server->server.sin_addr = server->server.sin_addr;
-
-	if (connect(new_server->sock_file_descriptor,
-			(struct sockaddr *) &new_server->server, sizeof(new_server->server))
-			< 0) {
-		perror("Error connecting to server");
-		close(new_server->sock_file_descriptor);
-		free(new_server);
-		return NULL;
-	}
-	//
-	if (network_close(server) == 0) {
-		printf(
-				"The reconnect has been made properly.\n"
-						" The old struct server has been closed and a new one has been init\n");
-	} else {
-		printf("The reconnect has not been made properly.\n"
-				" The old struct server has been closed with errors\n");
-	}
-
-	return new_server;
-
-}
-
-struct server_t *network_prepare(const char *address_port) {
-
-	if (address_port == NULL) {
-		return NULL;
-	}
-	struct server_t *server = (struct server_t *) malloc(
-			sizeof(struct server_t));
-	if (server == NULL) {
-		return NULL;
-	}
-
-	char *token1, *token2;
-
-	token1 = strtok(strdup(address_port), ":");
-	token2 = strtok(NULL, "\n");
-
-	//Cria a socket
-	if ((server->sock_file_descriptor = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
-		perror("Erro ao criar socket");
-		free(server);
-		return NULL;
-	}
-
-	//Preenche estrutura struct sockaddr_in server com dados do endereço do servidor
-	server->server.sin_family = AF_INET;
-	server->server.sin_port = htons(atoi(token2)); //Porta TCP
-
-	if (inet_pton(AF_INET, token1, &server->server.sin_addr) < 1) {
-		printf("Erro ao converter IP\n");
-		close(server->sock_file_descriptor);
-		free(server);
-		return NULL;
-	}
-
 	return server;
 }
 
@@ -283,7 +184,6 @@ int network_close(struct server_t *server) {
 	/* Terminar ligação ao servidor */
 	/*result = (0 ==> sucess) || (-1 ==> error) */
 	int result = close(server->sock_file_descriptor);
-	printf("Network close result: %d\n", result);
 	free(server);
 	return result;
 }

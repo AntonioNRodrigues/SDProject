@@ -5,8 +5,7 @@
 #include "network_client.h"
 
 int ask_status(struct server_t *server);
-int hello_again(struct server_t *server, char *ip_port);
-void re_use_socket (struct server_t *server);
+int send_connect_ip(struct server_t *server, char *ip_port);
 
 #endif
 

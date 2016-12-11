@@ -30,8 +30,9 @@ struct rtable_t *rtable_bind(const char *address_port) {
 	remote_table->current_server = SERVER_ONE;
 	return remote_table;
 }
+/*@see client_stub-private.h*/
 void complete_remote_table(struct rtable_t *remote_table, char **argv_copy) {
-	if (remote_table != NULL) {
+	if (remote_table != NULL && argv_copy != NULL) {
 		remote_table->server_two = NULL;
 		remote_table->ip_port_server_one = strdup(argv_copy[1]);
 		remote_table->ip_port_server_two = strdup(argv_copy[2]);
@@ -58,7 +59,7 @@ struct server_t *current_server(struct rtable_t *rtable) {
 	return (rtable->current_server == SERVER_ONE) ?
 			rtable->server_one : rtable->server_two;
 }
-
+/*@see client_stub-private.h*/
 void switch_server(struct rtable_t *rtable) {
 	if (rtable != NULL) {
 		if (rtable->current_server == SERVER_ONE) {

@@ -315,7 +315,7 @@ void secundary(char ** argv_copy) {
 			printf("The Secundary is client of the Primary\n");
 			update_state(temp_client_s);
 			//reconnect to primary send the IP_SEC:LIST_PORT_SEC>
-			hello_again(temp_client_s,
+			send_connect_ip(temp_client_s,
 					strcat(strcat(ip_sec, ":"), argv_copy[1]));
 		}
 	}
@@ -347,7 +347,7 @@ void primary(char **argv_copy) {
 		inet_ntop(AF_INET, &(local.sin_addr), ip,
 		INET_ADDRSTRLEN);
 		//send the message with his ip and port address so the current primary connects to him
-		hello_again(temp_client_s, strcat(strcat(ip, ":"), port));
+		send_connect_ip(temp_client_s, strcat(strcat(ip, ":"), port));
 		status = SECUNDARY;
 		state = UP;
 
@@ -461,7 +461,7 @@ int main(int argc, char **argv) {
 								"Client on IP = %s connected.\nIt's client number %d\n\n",
 								str, number_clients);
 					} else {
-						printf("there was some error with the accept\n");
+						printf("There was some error with the accept\n");
 					}
 				}
 
@@ -482,11 +482,10 @@ int main(int argc, char **argv) {
 				//if socket has data to read
 				if (connections[j].revents & POLLIN) {
 					if (network_receive_send(connections[j].fd) < 0) {
-						int value = close(connections[j].fd);
-						printf("VALUE CLOSE %d\n", value);
+						close(connections[j].fd);
 						number_clients--;
 						connections[j].fd = -1;
-						printf("A client has disconnect from the server\n");
+						printf("Client has disconnect from the server\n");
 						printf("The server has %d clients\n", number_clients);
 						/* Since a secundary server only has the primary server as client
 						 * a disconnection means the primary server is down*/

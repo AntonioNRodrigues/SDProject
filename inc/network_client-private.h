@@ -26,23 +26,6 @@ int write_all(int sock, char *buf, int len);
  armazenando-os em buf.
  */
 int read_all(int sock, char *buf, int len);
-
-/**
- * function that reconnects to the server. Uses the information presented in the
- * param server to fill a new_server an closes the server in the param.
- */
-struct server_t *network_reconnect(struct server_t *server);
-/**
- * function that prepares a sever_t with the propor IP and Port to be connected
- * if the primary is down
- */
-struct server_t *network_prepare(const char *address_port);
-
-/**
- * function to establish the connection with the server
- */
-struct server_t *net_connect(struct server_t *server);
-
 /*
  * function to deal with SIGPIPE signals
  */
