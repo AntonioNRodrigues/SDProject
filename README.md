@@ -52,7 +52,7 @@ Sistemas Distribuidos 2016/2017
 </ul>
 
 <h4>4.ºPhase<h4>
-<p>.....</p>
+<p></p>
 <h5>Build Project</h5>
 <ul>
 <li><b>make</b> build all project</li>
@@ -63,9 +63,15 @@ Sistemas Distribuidos 2016/2017
 </ul>
 <h5>Run the clients and the server</h5>
 <ul>
-<li><b>Run Server</b> ./table-server tcp_port size_table</li>
-<li><b>Run Client</b> ./table-client ip_server_primary:port_server_primary ip_server_backup:port_server_backup</li>
+<li><b>Run Secundary Server</b> ./table-server tcp_port size_table </li>
+<li><b>Alternative</b> ./secundary.sh </li> 
+<li><b>Run Primary Server</b> ./table-server tcp_port size_table ip_secundary:port_secundary</li>
+<li><b>Alternative</b> ./primary.sh [<b>PS:</b> default ip is 127.0.0.1] </li>
+<li><b>Run Client</b> ./table-client ip_primary:port_primary ip_secundary:port_secundary</li>
+<li><b>Alternative</b> ./client.sh [<b>PS:</b> default ip is 127.0.0.1]</li>
+<li><b><u>The port for the primary server is include in the code and its 44444</u></b></li>
 </ul>
+
 
 
 
