@@ -14,7 +14,7 @@
  */
 int hello(struct server_t *server) {
 	//function not used;
-	return 0;
+	return -1;
 }
 
 /**
@@ -63,9 +63,6 @@ int update_state(struct server_t *server) {
 			table_free_keys(temp1);
 		}
 
-		free_message(msg_out_2);
-		free_message(msg_out);
-
 		printf("The state was updated\n");
 		return 0;
 	}
@@ -89,8 +86,6 @@ int send_connect_ip(struct server_t *server, char *ip_port) {
 	}
 	printf("The message OC_UP with ip was send\n");
 	network_close(server);
-	free_message(tt);
-	free_message(msg_out);
 	return 0;
 }
 int ask_status(struct server_t *server) {
@@ -110,8 +105,6 @@ int ask_status(struct server_t *server) {
 	}
 	printf("The message OC_STATUS was send\n");
 	int result = tt->content.result;
-	free_message(tt);
-	free_message(msg_out);
 	return result;
 }
 

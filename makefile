@@ -90,7 +90,7 @@ clean:
 	rm -fr $(OBJ)/*.o *.log test_data test_entry test_list test_table test_message table-client table-server
 	
 zip_work:
-	zip -r $(GG) $(OBJ) $(INC)/*.h $(SRC)/*.c *.md makefile	
+	zip -r $(GG) $(OBJ) $(INC)/*.h $(SRC)/*.c *.sh *.md makefile	
 		
 valgrindData:
 	valgrind -v --leak-check=full --track-origins=yes --log-file=valgrind_Data.log ./test_data
