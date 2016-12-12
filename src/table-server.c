@@ -23,12 +23,8 @@
 #include "table_skel-private.h"
 #include "primary_backup.h"
 
-/*data type to share the sever_t*/
-struct shared_t {
-	struct server_t *current_backup;
-};
+struct server_t *current_backup;
 
-struct shared_t shared;
 int bit_control = 0;
 int state = NONE;
 int status;
@@ -139,8 +135,8 @@ int network_receive_send(int sockfd) {
 	}
 
 	if (msg_pedido->opcode == OC_UP) {
-		shared.current_backup = network_connect(msg_pedido->content.key);
-		if (shared.current_backup == NULL) {
+		current_backup = network_connect(msg_pedido->content.key);
+		if (current_backup == NULL) {
 			printf(
 					"The secundary could not establish connection to the primary\n");
 		} else {
@@ -158,7 +154,7 @@ int network_receive_send(int sockfd) {
 		/*only runs if the state is UP (scundary is on) and the primary
 		 * sent's the msg to the secundary*/
 		if (state == UP && status == PRIMARY) {
-			msg_from_secundary = network_send_receive(shared.current_backup,
+			msg_from_secundary = network_send_receive(current_backup,
 					msg_pedido);
 
 			//in the first time the message from the server is null mark the state of the secundary as DOWN
@@ -260,7 +256,7 @@ int file_exists(char *name_file) {
 void *main_secundary(void * argv) {
 	char ** argv_backup = (char **) argv;
 	// build a server to be the client of the secundary
-	shared.current_backup = network_connect(argv_backup[3]);
+	current_backup = network_connect(argv_backup[3]);
 
 	while (1) {
 		pthread_mutex_lock(&dados);
@@ -410,7 +406,7 @@ int main(int argc, char **argv) {
 	if (status == PRIMARY) {
 		printf("*  SERVER -  SUPPORTS %d CLIENTS  *\n",
 		MAX_SOCKETS - N_POS_NOT_FREE);
-	}else{
+	} else {
 		printf("*  SECUNDARY                      *\n");
 	}
 
